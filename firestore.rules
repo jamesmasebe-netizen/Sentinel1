@@ -1,0 +1,964 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    function isSafetyManager() {
+      return isAuthenticated() && (getUserRole() == 'admin' || getUserRole() == 'safety_manager');
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string &&
+        dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidRiskAssessment(data) {
+      let allowedKeys = ['taskName', 'hazard', 'inherentProbability', 'inherentSeverity', 'inherentRiskScore', 'controls', 'residualProbability', 'residualSeverity', 'residualRiskScore', 'requiredPPE', 'requiredCompetencies', 'applicableLegislation', 'environmentalImpacts', 'consultedStakeholders', 'location', 'assetId', 'assetName', 'version', 'originalId', 'previousId', 'reviewDate', 'reviewTriggers', 'authorId', 'authorName', 'reviewerId', 'reviewerName', 'reviewComments', 'reviewedAt', 'approverId', 'approverName', 'approvalComments', 'approvedAt', 'createdAt', 'status'];
+      return data.keys().hasAll(['taskName', 'hazard', 'inherentProbability', 'inherentSeverity', 'inherentRiskScore', 'controls', 'residualProbability', 'residualSeverity', 'residualRiskScore', 'authorId', 'authorName', 'createdAt', 'status']) &&
+             data.keys().hasOnly(allowedKeys) &&
+             data.taskName is string && data.taskName.size() > 0 && data.taskName.size() < 200 &&
+             data.hazard is string && data.hazard.size() > 0 && data.hazard.size() < 1000 &&
+             data.inherentProbability is number && data.inherentProbability >= 1 && data.inherentProbability <= 5 &&
+             data.inherentSeverity is number && data.inherentSeverity >= 1 && data.inherentSeverity <= 5 &&
+             data.inherentRiskScore is number && data.inherentRiskScore == (data.inherentProbability * data.inherentSeverity) &&
+             data.controls is list && data.controls.size() > 0 && data.controls.size() < 20 &&
+             data.residualProbability is number && data.residualProbability >= 1 && data.residualProbability <= 5 &&
+             data.residualSeverity is number && data.residualSeverity >= 1 && data.residualSeverity <= 5 &&
+             data.residualRiskScore is number && data.residualRiskScore == (data.residualProbability * data.residualSeverity) &&
+             data.residualRiskScore <= data.inherentRiskScore &&
+             (!('requiredPPE' in data) || data.requiredPPE is list) &&
+             (!('requiredCompetencies' in data) || data.requiredCompetencies is list) &&
+             (!('applicableLegislation' in data) || data.applicableLegislation is list) &&
+             (!('environmentalImpacts' in data) || data.environmentalImpacts is list) &&
+             (!('consultedStakeholders' in data) || data.consultedStakeholders is list) &&
+             (!('location' in data) || data.location == null || data.location is string) &&
+             (!('assetId' in data) || data.assetId == null || data.assetId is string) &&
+             (!('assetName' in data) || data.assetName == null || data.assetName is string) &&
+             (!('version' in data) || data.version is number) &&
+             (!('originalId' in data) || data.originalId == null || data.originalId is string) &&
+             (!('previousId' in data) || data.previousId == null || data.previousId is string) &&
+             (!('reviewDate' in data) || data.reviewDate == null || isValidDateString(data.reviewDate)) &&
+             (!('reviewTriggers' in data) || data.reviewTriggers is list) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
+             (!('reviewerId' in data) || data.reviewerId == null || (data.reviewerId is string && data.reviewerId.size() < 100)) &&
+             (!('reviewerName' in data) || data.reviewerName == null || (data.reviewerName is string && data.reviewerName.size() < 100)) &&
+             (!('reviewComments' in data) || data.reviewComments == null || (data.reviewComments is string && data.reviewComments.size() < 1000)) &&
+             (!('reviewedAt' in data) || data.reviewedAt == null || isValidDateString(data.reviewedAt)) &&
+             (!('approverId' in data) || data.approverId == null || (data.approverId is string && data.approverId.size() < 100)) &&
+             (!('approverName' in data) || data.approverName == null || (data.approverName is string && data.approverName.size() < 100)) &&
+             (!('approvalComments' in data) || data.approvalComments == null || (data.approvalComments is string && data.approvalComments.size() < 1000)) &&
+             (!('approvedAt' in data) || data.approvedAt == null || isValidDateString(data.approvedAt)) &&
+             isValidDateString(data.createdAt) &&
+             data.status in ['Draft', 'Awaiting Review', 'Awaiting Approval', 'Active', 'Rejected', 'Under Review', 'Archived'];
+    }
+
+    function isValidActionItem(data) {
+      let allowedKeys = ['assessmentId', 'description', 'assigneeId', 'assigneeName', 'dueDate', 'status', 'completedAt', 'completedBy'];
+      return data.keys().hasAll(['assessmentId', 'description', 'assigneeId', 'assigneeName', 'dueDate', 'status']) &&
+             data.keys().hasOnly(allowedKeys) &&
+             data.assessmentId is string && data.assessmentId.size() > 0 && data.assessmentId.size() < 100 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
+             data.assigneeId is string && data.assigneeId.size() > 0 && data.assigneeId.size() < 100 &&
+             data.assigneeName is string && data.assigneeName.size() > 0 && data.assigneeName.size() < 100 &&
+             isValidDateString(data.dueDate) &&
+             data.status in ['Pending', 'In Progress', 'Completed', 'Overdue'] &&
+             (!('completedAt' in data) || data.completedAt == null || isValidDateString(data.completedAt)) &&
+             (!('completedBy' in data) || data.completedBy == null || (data.completedBy is string && data.completedBy.size() < 100));
+    }
+
+    function isValidAsset(data) {
+      return data.keys().hasAll(['name', 'category', 'location', 'status', 'qrCodeId', 'lastInspectionDate', 'nextInspectionDate', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['name', 'category', 'location', 'status', 'qrCodeId', 'lastInspectionDate', 'nextInspectionDate', 'authorId', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.category in ['HVAC', 'Electrical', 'Fire Safety', 'Heavy Machinery', 'Other'] &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             data.status in ['Operational', 'Maintenance Required', 'Out of Service'] &&
+             data.qrCodeId is string && data.qrCodeId.size() > 0 && data.qrCodeId.size() < 100 &&
+             isValidDateString(data.lastInspectionDate) &&
+             isValidDateString(data.nextInspectionDate) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidMaintenanceLog(data) {
+      return data.keys().hasAll(['assetId', 'type', 'description', 'performedById', 'performedByName', 'date']) &&
+             data.keys().hasOnly(['assetId', 'type', 'description', 'performedById', 'performedByName', 'date']) &&
+             data.assetId is string && data.assetId.size() > 0 && data.assetId.size() < 100 &&
+             data.type in ['Preventative', 'Statutory', 'Repair'] &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 2000 &&
+             data.performedById is string && data.performedById.size() > 0 && data.performedById.size() < 100 &&
+             data.performedByName is string && data.performedByName.size() > 0 && data.performedByName.size() < 100 &&
+             isValidDateString(data.date);
+    }
+
+    function isValidIncident(data) {
+      let requiredFields = ['title', 'description', 'type', 'severity', 'location', 'status', 'reporterId', 'reporterName', 'dateOfIncident', 'createdAt'];
+      let optionalFields = ['contractorId', 'contractorName'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(requiredFields.concat(optionalFields)) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 3000 &&
+             data.type in ['Injury', 'Near Miss', 'Property Damage', 'Environmental', 'Hazard Observation'] &&
+             data.severity in ['Minor', 'Major', 'Critical'] &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             data.status in ['Open', 'Investigating', 'Closed'] &&
+             data.reporterId is string && data.reporterId.size() > 0 && data.reporterId.size() < 100 &&
+             data.reporterName is string && data.reporterName.size() > 0 && data.reporterName.size() < 100 &&
+             (!('contractorId' in data) || data.contractorId == null || (data.contractorId is string && data.contractorId.size() < 100)) &&
+             (!('contractorName' in data) || data.contractorName == null || (data.contractorName is string && data.contractorName.size() < 200)) &&
+             isValidDateString(data.dateOfIncident) &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidCAPA(data) {
+      return data.keys().hasAll(['description', 'assignedToName', 'dueDate', 'status', 'createdById', 'createdAt']) &&
+             // incidentId is optional, so we don't enforce hasOnly strictly if we allow it
+             data.description is string && data.description.size() > 0 && data.description.size() < 2000 &&
+             data.assignedToName is string && data.assignedToName.size() > 0 && data.assignedToName.size() < 100 &&
+             data.status in ['Open', 'In Progress', 'Closed'] &&
+             data.createdById is string && data.createdById.size() > 0 && data.createdById.size() < 100 &&
+             isValidDateString(data.dueDate) &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidDocument(data) {
+      return data.keys().hasAll(['title', 'type', 'version', 'status', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['title', 'type', 'version', 'status', 'authorId', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.type in ['Policy', 'Procedure', 'Manual', 'Form', 'Other'] &&
+             data.version is string && data.version.size() > 0 && data.version.size() < 50 &&
+             data.status in ['Draft', 'Published', 'Archived'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidAudit(data) {
+      return data.keys().hasAll(['title', 'type', 'date', 'auditorName', 'score', 'status', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['title', 'type', 'date', 'auditorName', 'score', 'status', 'authorId', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.type in ['Internal', 'External', 'Safety Walk', 'Compliance'] &&
+             isValidDateString(data.date) &&
+             data.auditorName is string && data.auditorName.size() > 0 && data.auditorName.size() < 100 &&
+             data.score is number && data.score >= 0 && data.score <= 100 &&
+             data.status in ['Planned', 'In Progress', 'Completed'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidLegalAppointment(data) {
+      return data.keys().hasAll(['appointeeName', 'role', 'appointedBy', 'dateAppointed', 'expiryDate', 'status', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['appointeeName', 'role', 'appointedBy', 'dateAppointed', 'expiryDate', 'status', 'authorId', 'createdAt']) &&
+             data.appointeeName is string && data.appointeeName.size() > 0 && data.appointeeName.size() < 100 &&
+             data.role is string && data.role.size() > 0 && data.role.size() < 100 &&
+             data.appointedBy is string && data.appointedBy.size() > 0 && data.appointedBy.size() < 100 &&
+             isValidDateString(data.dateAppointed) &&
+             isValidDateString(data.expiryDate) &&
+             data.status in ['Active', 'Expired', 'Revoked'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidContractor(data) {
+      return data.keys().hasAll(['companyName', 'contactPerson', 'contactEmail', 'complianceStatus', 'section37Signed', 'safetyPassportQr', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['companyName', 'contactPerson', 'contactEmail', 'complianceStatus', 'section37Signed', 'safetyPassportQr', 'authorId', 'createdAt']) &&
+             data.companyName is string && data.companyName.size() > 0 && data.companyName.size() < 200 &&
+             data.contactPerson is string && data.contactPerson.size() > 0 && data.contactPerson.size() < 100 &&
+             isValidEmail(data.contactEmail) &&
+             data.complianceStatus in ['Green', 'Amber', 'Red'] &&
+             data.section37Signed is bool &&
+             data.safetyPassportQr is string && data.safetyPassportQr.size() > 0 && data.safetyPassportQr.size() < 100 &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidContractorDocument(data) {
+      let requiredFields = ['contractorId', 'type', 'status', 'expiryDate', 'uploadedById', 'createdAt'];
+      let optionalFields = ['workerId'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(requiredFields.concat(optionalFields)) &&
+             data.contractorId is string && data.contractorId.size() > 0 && data.contractorId.size() < 100 &&
+             (!('workerId' in data) || (data.workerId is string && data.workerId.size() < 100)) &&
+             data.type in ['Letter of Good Standing', 'Public Liability Insurance', 'Medical Certificate', 'Safety File', 'Trade Certificate', 'ID Document', 'Method Statement', 'Risk Assessment', 'Appointment Letter', 'Insurance Certificate', 'Safety File Index', 'Other'] &&
+             data.status in ['Pending', 'Approved', 'Rejected', 'Expired'] &&
+             isValidDateString(data.expiryDate) &&
+             data.uploadedById is string && data.uploadedById.size() > 0 && data.uploadedById.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidContractorWorker(data) {
+      return data.keys().hasAll(['contractorId', 'fullName', 'idNumber', 'safetyPassportQr', 'complianceStatus', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['contractorId', 'fullName', 'idNumber', 'jobTitle', 'safetyPassportQr', 'complianceStatus', 'authorId', 'createdAt']) &&
+             data.contractorId is string && data.contractorId.size() > 0 && data.contractorId.size() < 100 &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 200 &&
+             data.idNumber is string && data.idNumber.size() > 0 && data.idNumber.size() < 50 &&
+             (!('jobTitle' in data) || (data.jobTitle is string && data.jobTitle.size() < 100)) &&
+             data.safetyPassportQr is string && data.safetyPassportQr.size() > 0 && data.safetyPassportQr.size() < 100 &&
+             data.complianceStatus in ['Green', 'Amber', 'Red'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidPermitToWork(data) {
+      let requiredFields = ['type', 'location', 'status', 'validFrom', 'validTo', 'applicantId', 'applicantName', 'lotoRequired', 'createdAt'];
+      let optionalFields = ['assetId', 'approverId', 'contractorId', 'contractorName', 'workerIds'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(requiredFields.concat(optionalFields)) &&
+             data.type in ['Hot Work', 'Working at Heights', 'Confined Space', 'Electrical', 'Excavation', 'Other'] &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             (!('assetId' in data) || data.assetId == null || (data.assetId is string && data.assetId.size() < 100)) &&
+             data.status in ['Requested', 'Approved', 'Active', 'Suspended', 'Closed'] &&
+             isValidDateString(data.validFrom) &&
+             isValidDateString(data.validTo) &&
+             data.applicantId is string && data.applicantId.size() > 0 && data.applicantId.size() < 100 &&
+             data.applicantName is string && data.applicantName.size() > 0 && data.applicantName.size() < 100 &&
+             (!('approverId' in data) || data.approverId == null || (data.approverId is string && data.approverId.size() < 100)) &&
+             (!('contractorId' in data) || data.contractorId == null || (data.contractorId is string && data.contractorId.size() < 100)) &&
+             (!('contractorName' in data) || data.contractorName == null || (data.contractorName is string && data.contractorName.size() < 200)) &&
+             (!('workerIds' in data) || data.workerIds == null || (data.workerIds is list && data.workerIds.size() <= 50)) &&
+             data.lotoRequired is bool &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidLOTO(data) {
+      return data.keys().hasAll(['permitId', 'equipmentName', 'isolationPoints', 'appliedById', 'appliedByName', 'appliedAt', 'status']) &&
+             data.permitId is string && data.permitId.size() > 0 && data.permitId.size() < 100 &&
+             (!('assetId' in data) || (data.assetId is string && data.assetId.size() < 100)) &&
+             data.equipmentName is string && data.equipmentName.size() > 0 && data.equipmentName.size() < 200 &&
+             data.isolationPoints is list && data.isolationPoints.size() <= 20 &&
+             data.appliedById is string && data.appliedById.size() > 0 && data.appliedById.size() < 100 &&
+             data.appliedByName is string && data.appliedByName.size() > 0 && data.appliedByName.size() < 100 &&
+             isValidDateString(data.appliedAt) &&
+             (!('removedById' in data) || (data.removedById is string && data.removedById.size() < 100)) &&
+             (!('removedAt' in data) || isValidDateString(data.removedAt)) &&
+             data.status in ['Active', 'Removed'];
+    }
+
+    function isValidTrainingRecord(data) {
+      return data.keys().hasAll(['employeeName', 'courseName', 'dateCompleted', 'expiryDate', 'status', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['employeeName', 'courseName', 'dateCompleted', 'expiryDate', 'status', 'authorId', 'createdAt']) &&
+             data.employeeName is string && data.employeeName.size() > 0 && data.employeeName.size() < 100 &&
+             data.courseName is string && data.courseName.size() > 0 && data.courseName.size() < 100 &&
+             isValidDateString(data.dateCompleted) &&
+             isValidDateString(data.expiryDate) &&
+             data.status in ['Active', 'Expired'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidToolboxTalk(data) {
+      return data.keys().hasAll(['topic', 'date', 'conductorName', 'location', 'attendees', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['topic', 'date', 'conductorName', 'location', 'attendees', 'authorId', 'createdAt']) &&
+             data.topic is string && data.topic.size() > 0 && data.topic.size() < 200 &&
+             isValidDateString(data.date) &&
+             data.conductorName is string && data.conductorName.size() > 0 && data.conductorName.size() < 100 &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             data.attendees is list && data.attendees.size() <= 100 &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidMedicalRecord(data) {
+      return data.keys().hasAll(['employeeName', 'idNumber', 'medicalType', 'status', 'dateConducted', 'nextDueDate', 'authorId', 'createdAt']) &&
+             data.employeeName is string && data.employeeName.size() > 0 && data.employeeName.size() < 100 &&
+             data.idNumber is string && data.idNumber.size() > 0 && data.idNumber.size() < 50 &&
+             data.medicalType in ['Pre-employment', 'Annual', 'Exit', 'Baseline', 'Other'] &&
+             data.status in ['Fit', 'Fit with Restrictions', 'Unfit'] &&
+             (!('restrictions' in data) || (data.restrictions is string && data.restrictions.size() < 500)) &&
+             isValidDateString(data.dateConducted) &&
+             isValidDateString(data.nextDueDate) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidHygieneSurvey(data) {
+      return data.keys().hasAll(['zoneName', 'hazardType', 'readingValue', 'legalLimit', 'requiresMedicalSurveillance', 'dateConducted', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['zoneName', 'hazardType', 'readingValue', 'legalLimit', 'requiresMedicalSurveillance', 'dateConducted', 'authorId', 'createdAt']) &&
+             data.zoneName is string && data.zoneName.size() > 0 && data.zoneName.size() < 100 &&
+             data.hazardType in ['Noise', 'Dust', 'Chemical', 'Ergonomic', 'Illumination', 'Thermal', 'Other'] &&
+             data.readingValue is string && data.readingValue.size() > 0 && data.readingValue.size() < 50 &&
+             data.legalLimit is string && data.legalLimit.size() > 0 && data.legalLimit.size() < 50 &&
+             data.requiresMedicalSurveillance is bool &&
+             isValidDateString(data.dateConducted) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidWasteManifest(data) {
+      return data.keys().hasAll(['wasteType', 'quantity', 'unit', 'transporterName', 'disposalFacility', 'status', 'collectionDate', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['wasteType', 'quantity', 'unit', 'transporterName', 'disposalFacility', 'status', 'collectionDate', 'authorId', 'createdAt']) &&
+             data.wasteType in ['Hazardous', 'General', 'Recyclable', 'Medical', 'E-Waste'] &&
+             data.quantity is number && data.quantity >= 0 &&
+             data.unit in ['kg', 'tons', 'liters', 'm3'] &&
+             data.transporterName is string && data.transporterName.size() > 0 && data.transporterName.size() < 100 &&
+             data.disposalFacility is string && data.disposalFacility.size() > 0 && data.disposalFacility.size() < 100 &&
+             data.status in ['Pending Pickup', 'In Transit', 'Disposed'] &&
+             isValidDateString(data.collectionDate) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEnvironmentalSpill(data) {
+      return data.keys().hasAll(['substance', 'volume', 'location', 'contained', 'reportedToAuthorities', 'dateOfSpill', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['substance', 'volume', 'location', 'contained', 'reportedToAuthorities', 'dateOfSpill', 'authorId', 'createdAt']) &&
+             data.substance is string && data.substance.size() > 0 && data.substance.size() < 100 &&
+             data.volume is string && data.volume.size() > 0 && data.volume.size() < 50 &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             data.contained is bool &&
+             data.reportedToAuthorities is bool &&
+             isValidDateString(data.dateOfSpill) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEmergencyDrill(data) {
+      return data.keys().hasAll(['drillType', 'dateConducted', 'durationMinutes', 'evaluatorName', 'scenarioDescription', 'authorId', 'createdAt']) &&
+             data.drillType in ['Fire', 'Medical', 'Spill', 'Security', 'Other'] &&
+             isValidDateString(data.dateConducted) &&
+             data.durationMinutes is number && data.durationMinutes > 0 &&
+             data.evaluatorName is string && data.evaluatorName.size() > 0 && data.evaluatorName.size() < 100 &&
+             data.scenarioDescription is string && data.scenarioDescription.size() > 0 && data.scenarioDescription.size() < 1000 &&
+             (!('areasForImprovement' in data) || (data.areasForImprovement is string && data.areasForImprovement.size() < 1000)) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEmergencyEquipment(data) {
+      return data.keys().hasAll(['equipmentType', 'location', 'nextInspectionDate', 'status', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['equipmentType', 'location', 'nextInspectionDate', 'status', 'authorId', 'createdAt']) &&
+             data.equipmentType in ['Extinguisher', 'First Aid Kit', 'Spill Kit', 'AED', 'Other'] &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             isValidDateString(data.nextInspectionDate) &&
+             data.status in ['Operational', 'Needs Inspection', 'Out of Service'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidBBSObservation(data) {
+      return data.keys().hasAll(['location', 'observationType', 'description', 'pointsAwarded', 'authorId', 'createdAt']) &&
+             (!('assessmentId' in data) || (data.assessmentId is string && data.assessmentId.size() < 100)) &&
+             (!('observerName' in data) || (data.observerName is string && data.observerName.size() < 100)) &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             data.observationType in ['Safe Act', 'Unsafe Act', 'Unsafe Condition'] &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 1000 &&
+             (!('interventionAction' in data) || (data.interventionAction is string && data.interventionAction.size() < 1000)) &&
+             data.pointsAwarded is number && data.pointsAwarded >= 0 &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidRiskSignOff(data) {
+      return data.keys().hasAll(['assessmentId', 'userId', 'userName', 'signedAt', 'version']) &&
+             data.keys().hasOnly(['assessmentId', 'userId', 'userName', 'signedAt', 'version']) &&
+             data.assessmentId is string && data.assessmentId.size() > 0 && data.assessmentId.size() < 100 &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.userName is string && data.userName.size() > 0 && data.userName.size() < 100 &&
+             isValidDateString(data.signedAt) &&
+             data.version is number;
+    }
+
+    function isValidDRA(data) {
+      return data.keys().hasAll(['taskDescription', 'location', 'hazardsIdentified', 'controlsApplied', 'isSafeToProceed', 'authorId', 'authorName', 'createdAt']) &&
+             data.keys().hasOnly(['taskDescription', 'location', 'hazardsIdentified', 'controlsApplied', 'isSafeToProceed', 'authorId', 'authorName', 'createdAt']) &&
+             data.taskDescription is string && data.taskDescription.size() > 0 && data.taskDescription.size() < 1000 &&
+             data.location is string && data.location.size() > 0 && data.location.size() < 200 &&
+             data.hazardsIdentified is list && data.hazardsIdentified.size() <= 20 &&
+             data.controlsApplied is list && data.controlsApplied.size() <= 20 &&
+             data.isSafeToProceed is bool &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             data.authorName is string && data.authorName.size() > 0 && data.authorName.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidSafetySuggestion(data) {
+      return data.keys().hasAll(['suggestionText', 'category', 'isAnonymous', 'aiSentiment', 'authorId', 'createdAt']) &&
+             data.keys().hasOnly(['suggestionText', 'category', 'isAnonymous', 'aiSentiment', 'authorId', 'createdAt']) &&
+             data.suggestionText is string && data.suggestionText.size() > 0 && data.suggestionText.size() < 2000 &&
+             data.category in ['Process Improvement', 'Hazard Removal', 'Welfare', 'Other'] &&
+             data.isAnonymous is bool &&
+             data.aiSentiment in ['Positive', 'Neutral', 'Negative', 'Pending'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidMoC(data) {
+      return data.keys().hasAll(['title', 'description', 'changeType', 'status', 'targetDate', 'authorId', 'createdAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 2000 &&
+             data.changeType in ['Equipment', 'Process', 'Personnel', 'Document', 'Other'] &&
+             data.status in ['Draft', 'Under Review', 'Approved', 'Implemented', 'Closed'] &&
+             isValidDateString(data.targetDate) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidLegalRegister(data) {
+      return data.keys().hasAll(['actOrRegulation', 'section', 'relevance', 'complianceStatus', 'lastReviewed', 'authorId', 'createdAt']) &&
+             data.actOrRegulation is string && data.actOrRegulation.size() > 0 && data.actOrRegulation.size() < 200 &&
+             data.section is string && data.section.size() > 0 && data.section.size() < 200 &&
+             data.relevance is string && data.relevance.size() > 0 && data.relevance.size() < 1000 &&
+             data.complianceStatus in ['Compliant', 'Non-Compliant', 'Under Review'] &&
+             isValidDateString(data.lastReviewed) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidBowTieAnalysis(data) {
+      return data.keys().hasAll(['topEvent', 'hazard', 'threats', 'consequences', 'preventativeBarriers', 'mitigativeBarriers', 'authorId', 'createdAt']) &&
+             data.topEvent is string && data.topEvent.size() > 0 && data.topEvent.size() < 200 &&
+             data.hazard is string && data.hazard.size() > 0 && data.hazard.size() < 200 &&
+             data.threats is list && data.threats.size() <= 20 &&
+             data.consequences is list && data.consequences.size() <= 20 &&
+             data.preventativeBarriers is list && data.preventativeBarriers.size() <= 20 &&
+             data.mitigativeBarriers is list && data.mitigativeBarriers.size() <= 20 &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidStrategicRisk(data) {
+  return hasOnlyAllowedFields(['title', 'category', 'description', 'impact', 'likelihood', 'riskScore', 'owner', 'mitigationStrategy', 'status', 'authorId', 'createdAt']) &&
+    data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+    data.category in ['Financial', 'Operational', 'Reputational', 'Compliance', 'Strategic', 'Environmental'] &&
+    data.description is string && data.description.size() < 2000 &&
+    data.impact is number && data.impact >= 1 && data.impact <= 5 &&
+    data.likelihood is number && data.likelihood >= 1 && data.likelihood <= 5 &&
+    data.riskScore is number &&
+    data.owner is string && data.owner.size() < 100 &&
+    (!('mitigationStrategy' in data) || (data.mitigationStrategy is string && data.mitigationStrategy.size() < 2000)) &&
+    data.status in ['Active', 'Mitigated', 'Closed'] &&
+    data.authorId == request.auth.uid &&
+    isValidDateString(data.createdAt);
+}
+
+function isValidCoidaClaim(data) {
+      return data.keys().hasAll(['employeeName', 'incidentDate', 'claimNumber', 'status', 'lostDays', 'rtwStatus', 'authorId', 'createdAt']) &&
+             data.employeeName is string && data.employeeName.size() > 0 && data.employeeName.size() < 100 &&
+             isValidDateString(data.incidentDate) &&
+             data.claimNumber is string && data.claimNumber.size() > 0 && data.claimNumber.size() < 100 &&
+             data.status in ['Submitted', 'Accepted', 'Rejected', 'Closed'] &&
+             data.lostDays is number && data.lostDays >= 0 &&
+             data.rtwStatus in ['Off Sick', 'Light Duty', 'Full Duty'] &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['userId', 'title', 'message', 'type', 'severity', 'isRead', 'createdAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.message is string && data.message.size() > 0 && data.message.size() < 1000 &&
+             data.type in ['Expiry', 'Compliance', 'Incident', 'System'] &&
+             data.severity in ['Info', 'Warning', 'Critical'] &&
+             data.isRead is bool &&
+             (!('link' in data) || (data.link is string && data.link.size() < 200)) &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEsgMetric(data) {
+      return data.keys().hasAll(['category', 'value', 'unit', 'period', 'authorId', 'createdAt']) &&
+             data.category in ['Scope 1', 'Scope 2', 'Scope 3', 'Water', 'Waste', 'Diversity', 'Training', 'Board', 'Ethics'] &&
+             data.value is number && data.value >= 0 &&
+             data.unit is string && data.unit.size() > 0 && data.unit.size() < 50 &&
+             data.period is string && data.period.size() > 0 && data.period.size() < 50 &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEmployee(data) {
+      let requiredFields = ['fullName', 'employeeCode', 'idNumber', 'status', 'authorId', 'createdAt'];
+      let optionalFields = ['jobTitle', 'department', 'email', 'phone', 'dateOfBirth', 'dateJoined', 'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship', 'medicalAidName', 'medicalAidNumber', 'bloodType', 'inductionDate', 'inductionExpiry', 'safetyPassportQr', 'photoUrl'];
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(requiredFields.concat(optionalFields)) &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() < 200 &&
+             data.employeeCode is string && data.employeeCode.size() > 0 && data.employeeCode.size() < 50 &&
+             data.idNumber is string && data.idNumber.size() > 0 && data.idNumber.size() < 50 &&
+             data.status in ['Active', 'Inactive', 'On Leave', 'Terminated'] &&
+             (!('email' in data) || isValidEmail(data.email)) &&
+             (!('bloodType' in data) || data.bloodType in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown']) &&
+             (!('inductionDate' in data) || isValidDateString(data.inductionDate)) &&
+             (!('inductionExpiry' in data) || isValidDateString(data.inductionExpiry)) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEmployeeAuthorization(data) {
+      return data.keys().hasAll(['employeeId', 'type', 'expiryDate', 'status', 'authorId', 'createdAt']) &&
+             data.employeeId is string && data.employeeId.size() > 0 && data.employeeId.size() < 100 &&
+             data.type is string && data.type.size() > 0 && data.type.size() < 200 &&
+             data.status in ['Valid', 'Expired', 'Suspended'] &&
+             isValidDateString(data.expiryDate) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidEmployeePPE(data) {
+      return data.keys().hasAll(['employeeId', 'itemType', 'issueDate', 'authorId', 'createdAt']) &&
+             data.employeeId is string && data.employeeId.size() > 0 && data.employeeId.size() < 100 &&
+             data.itemType is string && data.itemType.size() > 0 && data.itemType.size() < 200 &&
+             (!('condition' in data) || data.condition in ['New', 'Good', 'Worn', 'Damaged']) &&
+             isValidDateString(data.issueDate) &&
+             (!('expiryDate' in data) || isValidDateString(data.expiryDate)) &&
+             data.authorId is string && data.authorId.size() > 0 && data.authorId.size() < 100 &&
+             isValidDateString(data.createdAt);
+    }
+
+    // ===============================================================
+    // Collections
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    match /risk_assessments/{assessmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidRiskAssessment(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidRiskAssessment(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt &&
+                    request.auth.uid == resource.data.authorId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /assets/{assetId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidAsset(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidAsset(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /maintenance_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidMaintenanceLog(request.resource.data) && 
+                    request.resource.data.performedById == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidMaintenanceLog(request.resource.data) &&
+                    request.resource.data.performedById == resource.data.performedById && // Immutable
+                    request.resource.data.date == resource.data.date && // Immutable
+                    request.auth.uid == resource.data.performedById;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.performedById;
+    }
+
+    match /incidents/{incidentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidIncident(request.resource.data) && 
+                    request.resource.data.reporterId == request.auth.uid;
+      // Allow any authenticated user to update status (e.g. investigators)
+      allow update: if isAuthenticated() && 
+                    isValidIncident(request.resource.data) &&
+                    request.resource.data.reporterId == resource.data.reporterId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.reporterId;
+    }
+
+    match /capas/{capaId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidCAPA(request.resource.data) && 
+                    request.resource.data.createdById == request.auth.uid;
+      // Allow any authenticated user to update CAPA status
+      allow update: if isAuthenticated() && 
+                    isValidCAPA(request.resource.data) &&
+                    request.resource.data.createdById == resource.data.createdById && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.createdById;
+    }
+
+    match /documents/{documentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidDocument(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidDocument(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /audits/{auditId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidAudit(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidAudit(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /legal_appointments/{appointmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidLegalAppointment(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidLegalAppointment(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /contractors/{contractorId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidContractor(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidContractor(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /contractor_documents/{documentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidContractorDocument(request.resource.data) && 
+                    request.resource.data.uploadedById == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidContractorDocument(request.resource.data) &&
+                    request.resource.data.uploadedById == resource.data.uploadedById && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.uploadedById;
+    }
+
+    match /contractor_workers/{workerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidContractorWorker(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidContractorWorker(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /permits/{permitId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidPermitToWork(request.resource.data) && 
+                    request.resource.data.applicantId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidPermitToWork(request.resource.data) &&
+                    request.resource.data.applicantId == resource.data.applicantId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.applicantId;
+    }
+
+    match /loto_records/{lotoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidLOTO(request.resource.data) && 
+                    request.resource.data.appliedById == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidLOTO(request.resource.data) &&
+                    request.resource.data.appliedById == resource.data.appliedById && // Immutable
+                    request.resource.data.appliedAt == resource.data.appliedAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.appliedById;
+    }
+
+    match /training_records/{recordId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidTrainingRecord(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidTrainingRecord(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /toolbox_talks/{talkId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidToolboxTalk(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidToolboxTalk(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /medical_records/{recordId} {
+      // In a real app, this would be restricted to specific roles (e.g., OHP, HR)
+      // For this prototype, we allow authenticated users to read, but note the POPIA restriction.
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidMedicalRecord(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidMedicalRecord(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /hygiene_surveys/{surveyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidHygieneSurvey(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidHygieneSurvey(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /waste_manifests/{manifestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidWasteManifest(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidWasteManifest(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /environmental_spills/{spillId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEnvironmentalSpill(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEnvironmentalSpill(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /emergency_drills/{drillId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEmergencyDrill(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEmergencyDrill(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /emergency_equipment/{equipmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEmergencyEquipment(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEmergencyEquipment(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /bbs_observations/{observationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidBBSObservation(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidBBSObservation(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /safety_suggestions/{suggestionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidSafetySuggestion(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidSafetySuggestion(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId && // Immutable
+                    request.resource.data.createdAt == resource.data.createdAt; // Immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /mocs/{mocId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidMoC(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidMoC(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /legal_register/{registerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidLegalRegister(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidLegalRegister(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /bowtie_analyses/{bowtieId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidBowTieAnalysis(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidBowTieAnalysis(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /strategic_risks/{riskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidStrategicRisk(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidStrategicRisk(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /coida_claims/{claimId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidCoidaClaim(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidCoidaClaim(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /esg_metrics/{metricId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEsgMetric(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEsgMetric(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEmployee(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEmployee(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /employees/{employeeId}/authorizations/{authId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEmployeeAuthorization(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEmployeeAuthorization(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /employees/{employeeId}/ppe/{ppeId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidEmployeePPE(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+                    isValidEmployeePPE(request.resource.data) &&
+                    request.resource.data.authorId == resource.data.authorId &&
+                    request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /action_items/{itemId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidActionItem(request.resource.data);
+      allow update: if isAuthenticated() && isValidActionItem(request.resource.data);
+      allow delete: if isAuthenticated();
+    }
+
+    match /risk_signoffs/{signOffId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidRiskSignOff(request.resource.data) && 
+                    request.resource.data.userId == request.auth.uid;
+      allow update: if false; // Sign-offs are immutable
+      allow delete: if false; // Sign-offs are immutable
+    }
+
+    match /dynamic_risk_assessments/{draId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && 
+                    isValidDRA(request.resource.data) && 
+                    request.resource.data.authorId == request.auth.uid;
+      allow update: if false; // DRAs are immutable
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.authorId;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated(); // Allow system to create notifications
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && 
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
