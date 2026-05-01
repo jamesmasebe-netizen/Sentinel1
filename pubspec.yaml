@@ -1,0 +1,88 @@
+name: xm_system
+description: XM System — Enterprise SHEQ Management Platform
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: any
+  firebase_auth: any
+  cloud_firestore: any
+  firebase_storage: any
+  firebase_messaging: any
+  cloud_functions: any
+
+  # State Management
+  flutter_riverpod: any
+  riverpod_annotation: any
+
+  # Navigation
+  go_router: any
+
+  # UI
+  google_fonts: any
+  flutter_animate: any
+  fl_chart: any
+  shimmer: any
+
+  # Security
+  flutter_secure_storage: any
+  local_auth: any
+  screen_protector: any
+
+  # AI
+  google_generative_ai: any
+
+  # Utilities
+  intl: any
+  connectivity_plus: any
+  hive_flutter: any
+  image_picker: any
+  qr_flutter: any
+  path_provider: any
+  share_plus: any
+  url_launcher: any
+  pdf: any
+  uuid: any
+  cached_network_image: any
+  flutter_svg: any
+  timeago: any
+
+  # Google Sign In
+  google_sign_in: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.14
+  riverpod_generator: ^2.6.3
+  flutter_native_splash: any
+  flutter_launcher_icons: any
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+
+flutter_native_splash:
+  color: "#0a192f"
+  image: "assets/icon/app_icon.png"
+  android: true
+  ios: true
+

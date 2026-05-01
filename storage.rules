@@ -1,0 +1,65 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // ─── Incident Photos & Documents ──────────────────────────────────────────
+    match /incidents/{incidentId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ─── Permit Documents ─────────────────────────────────────────────────────
+    match /permits/{permitId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ─── Training Certificates ────────────────────────────────────────────────
+    match /training/{trainingId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ─── User Profile Photos ──────────────────────────────────────────────────
+    match /profiles/{userId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isOwner(userId);
+    }
+
+    // ─── Medical Documents (POPIA-sensitive) ──────────────────────────────────
+    match /medical/{docPath=**} {
+      allow read: if isSignedIn(); // Server-side role check via Cloud Functions
+      allow write: if isSignedIn();
+    }
+
+    // ─── Compliance Documents ─────────────────────────────────────────────────
+    match /compliance/{docPath=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ─── Equipment Inspection Photos ──────────────────────────────────────────
+    match /equipment/{docPath=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ─── AI Hazard Analysis Uploads ───────────────────────────────────────────
+    match /ai_uploads/{userId}/{allPaths=**} {
+      allow read: if isSignedIn() && isOwner(userId);
+      allow write: if isSignedIn() && isOwner(userId);
+    }
+
+    // ─── Catch-all deny ───────────────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

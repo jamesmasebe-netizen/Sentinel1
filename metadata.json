@@ -1,5 +1,0 @@
-{
-  "name": "Sentinel SHEQ Pro",
-  "description": "Next-generation Enterprise SHEQ & Facility Management platform. ISO 45001, 9001, 14001 compliant with Gemini AI safety intelligence. Centralized People & Employee 360 management.",
-  "requestFramePermissions": ["camera", "microphone", "geolocation"]
-}
