@@ -6,6 +6,7 @@ import '../providers/app_providers.dart';
 import '../services/offline_sync_service.dart';
 import '../services/session_manager.dart';
 import '../../config/theme.dart';
+import '../utils/ui_utils.dart';
 
 /// Main app shell with bottom navigation, drawer, and sync status indicator.
 /// This replaces the React Layout component with its sidebar navigation.
@@ -96,30 +97,31 @@ class _AppShellState extends ConsumerState<AppShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (index) => _onItemTapped(index, context),
+        indicatorShape: const StadiumBorder(), // Pill-shaped thumb zone indicator
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
+            selectedIcon: Icon(Icons.dashboard_rounded),
             label: 'Dashboard',
           ),
           NavigationDestination(
             icon: Icon(Icons.shield_outlined),
-            selectedIcon: Icon(Icons.shield),
+            selectedIcon: Icon(Icons.shield_rounded),
             label: 'Safety',
           ),
           NavigationDestination(
-            icon: Icon(Icons.warning_amber_outlined),
-            selectedIcon: Icon(Icons.warning_amber),
+            icon: Icon(Icons.warning_amber_rounded),
+            selectedIcon: Icon(Icons.warning_rounded),
             label: 'Risk',
           ),
           NavigationDestination(
             icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people),
+            selectedIcon: Icon(Icons.people_rounded),
             label: 'People',
           ),
           NavigationDestination(
             icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy),
+            selectedIcon: Icon(Icons.smart_toy_rounded),
             label: 'AI',
           ),
         ],
@@ -127,11 +129,15 @@ class _AppShellState extends ConsumerState<AppShell> {
 
       // ─── FAB for Quick Actions ───
       floatingActionButton: FloatingActionButton(
+        backgroundColor: XMTheme.info, // Intelligence Purple for Copilot/Quick Actions
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(XMTheme.radiusXl), // Fully rounded
+        ),
         onPressed: () {
           HapticFeedback.lightImpact();
           _showQuickActions(context);
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
     ));
   }
@@ -328,11 +334,8 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   void _showQuickActions(BuildContext context) {
-    showModalBottomSheet(
+    UIUtils.showAppBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(XMTheme.radiusLg)),
-      ),
       builder: (context) => Padding(
         padding: const EdgeInsets.all(XMTheme.spacingLg),
         child: Column(
@@ -375,7 +378,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               },
             ),
             _QuickActionTile(
-              icon: Icons.visibility,
+              icon: Icons.visibility_rounded,
               color: XMTheme.success,
               title: 'Safety Observation',
               subtitle: 'Record a behavioral safety observation',

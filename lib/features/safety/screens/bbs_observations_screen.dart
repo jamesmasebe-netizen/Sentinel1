@@ -112,8 +112,8 @@ class _BBSObservationsScreenState extends ConsumerState<BBSObservationsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('BBS Observations', style: Theme.of(context).textTheme.titleMedium),
-                    Text('Peer observations & safety culture', style: Theme.of(context).textTheme.bodySmall),
+                    Text('BBS Observations', style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('Peer observations & safety culture', style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),
@@ -289,8 +289,8 @@ class _ObservationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(type, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _typeColor(type))),
-                      Text(location, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      Text(type, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _typeColor(type)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(location, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
@@ -336,7 +336,8 @@ class _ObservationCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(observer, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                Expanded(child: Text(observer, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
                 Text(_formatDate(data['createdAt']), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ),

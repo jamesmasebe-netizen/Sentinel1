@@ -104,9 +104,9 @@ class _EmergencyState extends ConsumerState<EmergencyResponseScreen> with Single
             final d = docs[i].data() as Map<String, dynamic>;
             return Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(
               leading: Icon(_drillIcon(d['drillType']), color: XMTheme.error),
-              title: Text('${d['drillType']} Drill', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: Text('${d['durationMinutes'] ?? 0} min • ${d['evaluatorName'] ?? ''}', style: const TextStyle(fontSize: 12)),
-              trailing: Text(d['scenarioDescription'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 2, overflow: TextOverflow.ellipsis),
+              title: Text('${d['drillType']} Drill', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text('${d['durationMinutes'] ?? 0} min • ${d['evaluatorName'] ?? ''}', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+              trailing: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 120), child: Text(d['scenarioDescription'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 2, overflow: TextOverflow.ellipsis)),
             ));
           });
         },
@@ -147,8 +147,8 @@ class _EmergencyState extends ConsumerState<EmergencyResponseScreen> with Single
               child: Row(children: [
                 Icon(_equipIcon(d['equipmentType']), size: 20, color: statusColor), const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(d['equipmentType'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  Text(d['location'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  Text(d['equipmentType'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(d['location'] ?? '', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ])),
                 Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                   child: Text(d['status'] ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor))),
@@ -193,8 +193,8 @@ class _ContactCard extends StatelessWidget {
     child: Row(children: [
       Icon(icon, color: color, size: 24), const SizedBox(width: 14),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        Text(number, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(number, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
       ])),
       Icon(Icons.phone, color: color, size: 20),
     ]),

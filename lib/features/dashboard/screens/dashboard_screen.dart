@@ -124,7 +124,7 @@ class _Bento extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(gradient: gradient, color: color, borderRadius: BorderRadius.circular(12), border: gradient == null ? Border.all(color: Theme.of(context).dividerColor) : null),
+    decoration: BoxDecoration(gradient: gradient, color: color, borderRadius: BorderRadius.circular(XMTheme.radiusLg), border: gradient == null ? Border.all(color: Theme.of(context).dividerColor) : null),
     child: child,
   );
 }
@@ -135,11 +135,11 @@ class _KpiSmall extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Expanded(child: Container(
     padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withValues(alpha: 0.2))),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(XMTheme.radiusLg), border: Border.all(color: color.withValues(alpha: 0.2))),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Icon(icon, color: color, size: 20), const SizedBox(height: 8),
-      Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
-      Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
+      Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color), maxLines: 1, overflow: TextOverflow.ellipsis),
     ]),
   ));
 }
@@ -149,7 +149,7 @@ class _SectionCard extends StatelessWidget {
   const _SectionCard({required this.title, required this.icon, required this.iconColor, required this.children});
   @override
   Widget build(BuildContext context) => Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [Icon(icon, color: iconColor, size: 20), const SizedBox(width: 8), Text(title, style: Theme.of(context).textTheme.titleSmall)]),
+    Row(children: [Icon(icon, color: iconColor, size: 20), const SizedBox(width: 8), Expanded(child: Text(title, style: Theme.of(context).textTheme.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis))]),
     const SizedBox(height: 12), ...children,
   ])));
 }
@@ -159,13 +159,14 @@ class _RiskRow extends StatelessWidget {
   const _RiskRow({required this.text, required this.site, required this.sev, required this.color});
   @override
   Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Theme.of(context).dividerColor)),
+    decoration: BoxDecoration(borderRadius: BorderRadius.circular(XMTheme.radiusMd), border: Border.all(color: Theme.of(context).dividerColor)),
     child: Row(children: [
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-        Text(site, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(text, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(site, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
       ])),
-      Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+      const SizedBox(width: 8),
+      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
         child: Text(sev, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color))),
     ]),
   );
@@ -178,13 +179,14 @@ class _ActionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = urgent ? XMTheme.error : XMTheme.primary;
     return Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(XMTheme.radiusMd)),
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          Text(type, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(type, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
         ])),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+        const SizedBox(width: 8),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
           child: Text(urgent ? 'Urgent' : 'Pending', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: c))),
       ]),
     );
@@ -199,13 +201,14 @@ class _IncRow extends StatelessWidget {
     final isOpen = data['status'] == 'Open';
     final c = isOpen ? XMTheme.error : XMTheme.success;
     return Container(margin: const EdgeInsets.only(bottom: 6), padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(XMTheme.radiusMd)),
       child: Row(children: [
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(data['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-          Text('${data['type'] ?? ''} • ${data['severity'] ?? ''}', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(data['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text('${data['type'] ?? ''} • ${data['severity'] ?? ''}', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
         ])),
-        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+        const SizedBox(width: 8),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
           child: Text(data['status'] ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: c))),
       ]),
     );

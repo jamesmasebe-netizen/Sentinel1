@@ -27,6 +27,7 @@ dependencies:
 
   # UI
   google_fonts: any
+  material_symbols_icons: any
   flutter_animate: any
   fl_chart: any
   shimmer: any
