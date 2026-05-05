@@ -276,9 +276,9 @@ class _CAPACard extends StatelessWidget {
     final isOverdue = _isOverdue(dueDateStr, status);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(XMTheme.radiusSm),
+        borderRadius: BorderRadius.circular(XMTheme.radiusLg),
         side: BorderSide(
           color: isOverdue ? XMTheme.error.withValues(alpha: 0.4) : Colors.transparent,
           width: isOverdue ? 1.5 : 0,
@@ -392,7 +392,7 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(XMTheme.radiusXl), // Fully rounded pill
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),

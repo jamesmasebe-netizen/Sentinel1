@@ -26,7 +26,7 @@ dependencies:
   go_router: any
 
   # UI
-  google_fonts: any
+  google_fonts: ^6.3.2
   material_symbols_icons: any
   flutter_animate: any
   fl_chart: any
@@ -57,6 +57,8 @@ dependencies:
 
   # Google Sign In
   google_sign_in: any
+  google_maps_flutter: ^2.14.0
+  google_maps_flutter_web: ^0.5.14+3
 
 dev_dependencies:
   flutter_test:
@@ -86,4 +88,7 @@ flutter_native_splash:
   image: "assets/icon/app_icon.png"
   android: true
   ios: true
+
+dependency_overrides:
+  vector_math: 2.3.0
 

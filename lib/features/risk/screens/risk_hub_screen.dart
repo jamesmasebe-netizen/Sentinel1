@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
+import 'risk_command_center_screen.dart';
+import 'hira_screen.dart';
 import 'dynamic_risk_assessment_screen.dart';
+import 'bowtie_screen.dart';
+import 'strategic_risk_register_screen.dart';
 
-/// Risk Intelligence Hub — tabs for risk management modules
+/// Risk Intelligence Hub — tabs for all risk management modules
 class RiskHubScreen extends StatelessWidget {
   const RiskHubScreen({super.key});
 
@@ -23,44 +26,17 @@ class RiskHubScreen extends StatelessWidget {
               Tab(icon: Icon(Icons.list_alt, size: 16), text: 'Strategic Register'),
             ],
           ),
-          Expanded(
+          const Expanded(
             child: TabBarView(
               children: [
-                _RiskTab(title: 'Risk Command Center', icon: Icons.dashboard, color: XMTheme.riskExtreme),
-                _RiskTab(title: 'Baseline Risk (HIRA)', icon: Icons.assessment, color: XMTheme.riskHigh),
-                const DynamicRiskAssessmentScreen(),
-                _RiskTab(title: 'Bow-Tie Analysis', icon: Icons.account_tree, color: XMTheme.primary),
-                _RiskTab(title: 'Strategic Risk Register', icon: Icons.list_alt, color: XMTheme.secondary),
+                RiskCommandCenterScreen(),
+                HiraScreen(),
+                DynamicRiskAssessmentScreen(),
+                BowtieScreen(),
+                StrategicRiskRegisterScreen(),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RiskTab extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color color;
-  const _RiskTab({required this.title, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, size: 48, color: color),
-          ),
-          const SizedBox(height: 16),
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text('Coming soon', style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );

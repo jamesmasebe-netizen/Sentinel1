@@ -101,7 +101,7 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
           icon: Icon(_showWasteForm ? Icons.close : Icons.add, size: 18), label: Text(_showWasteForm ? 'Cancel' : 'Add Manifest'),
           style: FilledButton.styleFrom(backgroundColor: XMTheme.success)),
       ])),
-      if (_showWasteForm) Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (_showWasteForm) Card(elevation: 0, margin: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Waste Manifest', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
         Row(children: [
           Expanded(child: DropdownButtonFormField<String>(value: _wasteType, decoration: const InputDecoration(labelText: 'Waste Type', isDense: true),
@@ -124,8 +124,8 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
           return ListView.builder(padding: const EdgeInsets.all(16), itemCount: docs.length, itemBuilder: (ctx, i) {
             final d = docs[i].data() as Map<String, dynamic>;
             final typeColor = d['wasteType'] == 'Hazardous' ? XMTheme.error : d['wasteType'] == 'Recyclable' ? XMTheme.success : XMTheme.info;
-            return Container(margin: const EdgeInsets.only(bottom: 6), padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
+            return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
+              child: Padding(padding: const EdgeInsets.all(12),
               child: Row(children: [
                 Container(width: 4, height: 36, decoration: BoxDecoration(color: typeColor, borderRadius: BorderRadius.circular(2))),
                 const SizedBox(width: 12),
@@ -133,9 +133,9 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
                   Text('${d['wasteType']} — ${d['quantity']} ${d['unit']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   Text('${d['transporterName'] ?? ''} → ${d['disposalFacility'] ?? ''}', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ])),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: XMTheme.info.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text(d['status'] ?? '', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: XMTheme.info))),
-              ]));
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: XMTheme.info.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
+                  child: Text(d['status'] ?? '', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: XMTheme.info))),
+              ])));
           });
         },
       )),
@@ -150,7 +150,7 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
           icon: Icon(_showSpillForm ? Icons.close : Icons.add, size: 18), label: Text(_showSpillForm ? 'Cancel' : 'Log Spill'),
           style: FilledButton.styleFrom(backgroundColor: XMTheme.error)),
       ])),
-      if (_showSpillForm) Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (_showSpillForm) Card(elevation: 0, margin: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Log Environmental Spill', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
         TextFormField(controller: _substanceCtrl, decoration: const InputDecoration(labelText: 'Substance *')), const SizedBox(height: 10),
         Row(children: [Expanded(child: TextFormField(controller: _volCtrl, decoration: const InputDecoration(labelText: 'Volume/Quantity'))),
@@ -167,16 +167,16 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
           if (docs.isEmpty) return const Center(child: Text('No spill records'));
           return ListView.builder(padding: const EdgeInsets.all(16), itemCount: docs.length, itemBuilder: (ctx, i) {
             final d = docs[i].data() as Map<String, dynamic>;
-            return Card(margin: const EdgeInsets.only(bottom: 8), child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
+            return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))), child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
               Icon(Icons.water_drop, color: d['contained'] == true ? XMTheme.success : XMTheme.error, size: 20),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(d['substance'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                 Text('${d['volume'] ?? ''} @ ${d['location'] ?? ''}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ])),
-              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(
-                color: (d['contained'] == true ? XMTheme.success : XMTheme.error).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: Text(d['contained'] == true ? 'Contained' : 'Uncontained', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: d['contained'] == true ? XMTheme.success : XMTheme.error))),
+              Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(
+                color: (d['contained'] == true ? XMTheme.success : XMTheme.error).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
+                child: Text(d['contained'] == true ? 'Contained' : 'Uncontained', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: d['contained'] == true ? XMTheme.success : XMTheme.error))),
             ])));
           });
         },
@@ -191,7 +191,7 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
         FilledButton.icon(onPressed: () => setState(() => _showMetricForm = !_showMetricForm),
           icon: Icon(_showMetricForm ? Icons.close : Icons.add, size: 18), label: Text(_showMetricForm ? 'Cancel' : 'Add Metric')),
       ])),
-      if (_showMetricForm) Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (_showMetricForm) Card(elevation: 0, margin: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('ESG Metric', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
         Row(children: [
           Expanded(child: DropdownButtonFormField<String>(value: _esgCategory, decoration: const InputDecoration(labelText: 'Category', isDense: true),
@@ -210,25 +210,160 @@ class _EnvState extends ConsumerState<EnvironmentalScreen> with SingleTickerProv
           if (docs.isEmpty) return const Center(child: Text('No ESG metrics'));
           return ListView.builder(padding: const EdgeInsets.all(16), itemCount: docs.length, itemBuilder: (ctx, i) {
             final d = docs[i].data() as Map<String, dynamic>;
-            return Container(margin: const EdgeInsets.only(bottom: 4), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(color: Theme.of(context).cardColor, border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor))),
+            return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
+              child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(children: [
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: XMTheme.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                  child: Text(d['category'] ?? '', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: XMTheme.success))),
+                Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: XMTheme.success.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
+                  child: Text(d['category'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: XMTheme.success))),
                 const SizedBox(width: 16),
                 Text('${d['value']} ${d['unit']}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                 const Spacer(),
                 Text(d['period'] ?? '', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ]));
+              ])));
           });
         },
       )),
     ]);
   }
 
-  Widget _analyticsTab() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-    Icon(Icons.bar_chart, size: 48, color: XMTheme.success.withValues(alpha: 0.3)), const SizedBox(height: 16),
-    Text('Environmental Analytics', style: Theme.of(context).textTheme.titleLarge), const SizedBox(height: 8),
-    const Text('Charts and trend analysis coming soon'),
-  ]));
+  Widget _analyticsTab() {
+    final siteId = ref.watch(currentSiteIdProvider);
+    final fs = ref.watch(firestoreProvider);
+    if (siteId == null) return const Center(child: Text('No site assigned'));
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Environmental Analytics', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('Performance overview for $siteId', style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 20),
+
+        // ─── Spill KPIs ───
+        Text('Spill Response', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: fs.collection('environmental_spills').where('siteId', isEqualTo: siteId).snapshots(),
+          builder: (ctx, snap) {
+            final docs = snap.data?.docs ?? [];
+            int total = docs.length, contained = 0, uncontained = 0;
+            for (final doc in docs) {
+              final d = doc.data() as Map<String, dynamic>;
+              if (d['contained'] == true) { contained++; } else { uncontained++; }
+            }
+            return Wrap(spacing: 12, runSpacing: 12, children: [
+              _AnalyticsKpi(label: 'Total Spills', value: '$total', icon: Icons.water_drop, color: XMTheme.info),
+              _AnalyticsKpi(label: 'Contained', value: '$contained', icon: Icons.check_circle, color: XMTheme.success),
+              _AnalyticsKpi(label: 'Uncontained', value: '$uncontained', icon: Icons.cancel, color: XMTheme.error),
+              _AnalyticsKpi(label: 'Containment %', value: total > 0 ? '${(contained / total * 100).toStringAsFixed(0)}%' : '—', icon: Icons.percent, color: XMTheme.primary),
+            ]);
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // ─── Waste Distribution ───
+        Text('Waste Distribution', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: fs.collection('waste_manifests').where('siteId', isEqualTo: siteId).snapshots(),
+          builder: (ctx, snap) {
+            final docs = snap.data?.docs ?? [];
+            final byType = <String, int>{};
+            for (final doc in docs) {
+              final d = doc.data() as Map<String, dynamic>;
+              final t = (d['wasteType'] ?? d['type'] ?? 'Other').toString();
+              byType[t] = (byType[t] ?? 0) + 1;
+            }
+            if (byType.isEmpty) return const Text('No waste data');
+            final total = byType.values.reduce((a, b) => a + b);
+            return Column(children: byType.entries.map((e) {
+              final pct = e.value / total;
+              final color = e.key == 'Hazardous' ? XMTheme.error : e.key == 'Recyclable' ? XMTheme.success : e.key == 'General' ? XMTheme.info : XMTheme.warning;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(children: [
+                  SizedBox(width: 100, child: Text(e.key, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                  Expanded(child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(value: pct, minHeight: 14, backgroundColor: color.withValues(alpha: 0.1), color: color),
+                  )),
+                  const SizedBox(width: 8),
+                  Text('${e.value} (${(pct * 100).toStringAsFixed(0)}%)', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                ]),
+              );
+            }).toList());
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // ─── ESG Scorecard ───
+        Text('ESG Scorecard', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        StreamBuilder<QuerySnapshot>(
+          stream: fs.collection('esg_metrics').where('siteId', isEqualTo: siteId).snapshots(),
+          builder: (ctx, snap) {
+            final docs = snap.data?.docs ?? [];
+            if (docs.isEmpty) return const Text('No ESG metrics');
+            return Wrap(spacing: 12, runSpacing: 12, children: docs.map((doc) {
+              final d = doc.data() as Map<String, dynamic>;
+              final metric = d['metric'] ?? d['category'] ?? 'Metric';
+              final value = d['value']?.toString() ?? '0';
+              final target = d['target']?.toString() ?? '';
+              final status = d['status'] ?? '';
+              final statusColor = status == 'On Track' || status == 'Achieved' ? XMTheme.success : XMTheme.warning;
+              return Card(
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(XMTheme.radiusLg),
+                  side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1)),
+                ),
+                child: Container(width: 180, padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(metric, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+                  if (target.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text('Target: $target', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  ],
+                  if (status.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
+                      child: Text(status, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: statusColor)),
+                    ),
+                  ],
+                ])),
+              );
+            }).toList());
+          },
+        ),
+      ]),
+    );
+  }
+}
+
+class _AnalyticsKpi extends StatelessWidget {
+  final String label, value;
+  final IconData icon;
+  final Color color;
+  const _AnalyticsKpi({required this.label, required this.value, required this.icon, required this.color});
+  @override
+  Widget build(BuildContext context) => Card(
+    elevation: 0,
+    margin: EdgeInsets.zero,
+    color: color.withValues(alpha: 0.06),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(XMTheme.radiusLg),
+      side: BorderSide(color: color.withValues(alpha: 0.15)),
+    ),
+    child: Container(width: 140, padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, color: color, size: 20),
+      const SizedBox(height: 8),
+      Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+      const SizedBox(height: 2),
+      Text(label, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+    ])),
+  );
 }

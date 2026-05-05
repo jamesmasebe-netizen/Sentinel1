@@ -268,7 +268,7 @@ class _ObservationCard extends StatelessWidget {
     final location = data['location'] ?? '';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -299,7 +299,7 @@ class _ObservationCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: XMTheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(XMTheme.radiusXl),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,

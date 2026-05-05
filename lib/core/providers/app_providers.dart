@@ -36,18 +36,18 @@ final authStateProvider = StreamProvider<User?>((ref) {
 });
 
 /// Current user profile from Firestore
-final userProfileProvider = StreamProvider<UserProfile?>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final firestore = ref.watch(firestoreProvider);
-
-  return Stream.value(UserProfile(
-    uid: 'preview_user',
-    email: 'preview@xmsystem.com',
-    displayName: 'Preview Admin',
+final userProfileProvider = StreamProvider<UserProfile?>((ref) async* {
+  // DEV BYPASS: Return a dummy admin profile
+  yield UserProfile(
+    uid: 'dev-admin-123',
+    email: 'admin@xmsystem.com',
     role: 'admin',
+    displayName: 'Dev Admin',
     siteId: 'Site A',
     createdAt: DateTime.now(),
-  ));
+    lastLogin: DateTime.now(),
+  );
+  return;
 });
 
 /// Current site ID (used for all Firestore queries)
@@ -58,13 +58,14 @@ final currentSiteIdProvider = Provider<String?>((ref) {
 
 /// Whether the user is authenticated
 final isAuthenticatedProvider = Provider<bool>((ref) {
+  // DEV BYPASS: Always return true
   return true;
 });
 
 /// User role for access control
 final userRoleProvider = Provider<String>((ref) {
-  final profile = ref.watch(userProfileProvider);
-  return profile.whenOrNull(data: (p) => p?.role) ?? 'employee';
+  // DEV BYPASS: Always return admin
+  return 'admin';
 });
 
 /// Is executive access

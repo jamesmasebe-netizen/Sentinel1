@@ -101,7 +101,7 @@ class _EmployeeState extends ConsumerState<EmployeeProfilesScreen> {
     );
   }
 
-  Widget _buildForm() => Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _buildForm() => Card(elevation: 0, margin: const EdgeInsets.symmetric(horizontal: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Text('Add Employee', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
     Row(children: [Expanded(child: TextFormField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Full Name *'))),
       const SizedBox(width: 12), Expanded(child: TextFormField(controller: _codeCtrl, decoration: const InputDecoration(labelText: 'Employee Code *')))]),
@@ -149,9 +149,10 @@ class _EmployeeCard extends StatelessWidget {
   const _EmployeeCard({required this.data, required this.onTap});
   @override
   Widget build(BuildContext context) {
-    return Container(margin: const EdgeInsets.only(bottom: 6), child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(10),
-      child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
-        child: Row(children: [
+    return Card(elevation: 0, margin: const EdgeInsets.only(bottom: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg), side: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1))),
+      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(XMTheme.radiusLg),
+        child: Padding(padding: const EdgeInsets.all(12),
+          child: Row(children: [
           CircleAvatar(radius: 20, backgroundColor: XMTheme.primary.withValues(alpha: 0.1),
             child: Text((data['fullName'] ?? 'U')[0].toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600, color: XMTheme.primary))),
           const SizedBox(width: 12),
@@ -161,8 +162,8 @@ class _EmployeeCard extends StatelessWidget {
           ])),
           _StatusBadge(status: data['status'] ?? 'Active'),
           const SizedBox(width: 8), const Icon(Icons.chevron_right, size: 18),
-        ])),
-    ));
+        ]))),
+    );
   }
 }
 
@@ -171,9 +172,9 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.status});
   Color get _color { switch (status) { case 'Active': return XMTheme.success; case 'On Leave': return XMTheme.info; case 'Terminated': return XMTheme.error; default: return XMTheme.statusDraft; } }
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(color: _color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-    child: Text(status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _color)));
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(color: _color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(XMTheme.radiusXl)),
+    child: Text(status, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _color)));
 }
 
 class _DetailRow extends StatelessWidget {

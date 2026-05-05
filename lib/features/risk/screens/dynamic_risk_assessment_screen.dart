@@ -174,5 +174,5 @@ class _DRACard extends StatelessWidget {
       ])),
     ]));
   }
-  String _fmtDate(String? iso) { if (iso == null) return ''; try { final dt = DateTime.parse(iso); return '${dt.day}/${dt.month}/${dt.year}'; } catch (_) { return iso ?? ''; } }
+  String _fmtDate(String? iso) { if (iso == null) return ''; try { final dt = DateTime.parse(iso); return '${dt.day}/${dt.month}/${dt.year}'; } catch (_) { return iso; } }
 }

@@ -85,4 +85,104 @@ class UIUtils {
       },
     );
   }
+
+  /// Shows a Material 3 Side Sheet for large screens, falling back to a Bottom Sheet for mobile.
+  /// Used for "In-Place Drill Downs" without losing dashboard context.
+  static Future<T?> showSideSheet<T>({
+    required BuildContext context,
+    required WidgetBuilder builder,
+    required String title,
+    double width = 450,
+  }) {
+    final isWideScreen = MediaQuery.sizeOf(context).width >= 800;
+    
+    if (!isWideScreen) {
+      // Mobile fallback: show bottom sheet
+      return showAppBottomSheet<T>(
+        context: context,
+        builder: (ctx) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(title, style: Theme.of(ctx).textTheme.titleLarge),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(child: builder(ctx)),
+          ],
+        )
+      );
+    }
+
+    // Desktop/Tablet: Show Side Sheet sliding from the right edge
+    return showGeneralDialog<T>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      barrierColor: Colors.black.withValues(alpha: 0.2), // Soft Google Workspace dimming
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerRight,
+          child: Material(
+            elevation: 8,
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.horizontal(left: Radius.circular(XMTheme.radiusLg)),
+            child: SizedBox(
+              width: width,
+              height: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Side Sheet Header
+                  Padding(
+                    padding: const EdgeInsets.all(XMTheme.spacingLg),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(context),
+                          color: XMTheme.secondaryLight,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // Side Sheet Content
+                  Expanded(child: builder(context)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic, // Smooth expressive curve
+          )),
+          child: child,
+        );
+      },
+    );
+  }
 }

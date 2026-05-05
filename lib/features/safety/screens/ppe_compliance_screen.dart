@@ -172,7 +172,7 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: XMTheme.warning.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(XMTheme.radiusXl),
                                   ),
                                   child: Text('$daysLeft days left', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: XMTheme.warning)),
                                 ),
@@ -328,7 +328,7 @@ class _PPERow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(XMTheme.radiusXl),
                 border: Border.all(color: statusColor.withValues(alpha: 0.3)),
               ),
               child: Text(status, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor)),

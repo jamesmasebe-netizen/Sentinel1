@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/skeleton_loader.dart';
+import '../../../core/utils/ui_utils.dart';
 
 /// Incidents register — real-time list with filters, severity chips, and status updates.
 /// Mirrors the React "register" tab of IncidentsCAPA.
@@ -170,9 +171,9 @@ class _IncidentCard extends StatelessWidget {
     final isAnonymous = data['isAnonymous'] == true;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(XMTheme.radiusSm),
         onTap: () => _showIncidentDetail(context),
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -257,72 +258,57 @@ class _IncidentCard extends StatelessWidget {
   }
 
   void _showIncidentDetail(BuildContext context) {
-    showModalBottomSheet(
+    UIUtils.showSideSheet(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.95,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (_, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2)),
+      title: 'Incident Details',
+      width: 500, // Slightly narrower for details
+      builder: (ctx) => SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(data['title'] ?? 'Untitled', style: Theme.of(ctx).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                _StatusChip(status: data['status'] ?? 'Open'),
+                Chip(
+                  label: Text(data['severity'] ?? 'Minor'),
+                  backgroundColor: _sevColor(data['severity'] ?? 'Minor').withValues(alpha: 0.1),
+                  labelStyle: TextStyle(color: _sevColor(data['severity'] ?? 'Minor'), fontSize: 12, fontWeight: FontWeight.bold),
+                  side: BorderSide.none,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(data['title'] ?? 'Untitled', style: Theme.of(ctx).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _StatusChip(status: data['status'] ?? 'Open'),
-                  Chip(
-                    label: Text(data['severity'] ?? 'Minor'),
-                    backgroundColor: _sevColor(data['severity'] ?? 'Minor').withValues(alpha: 0.1),
-                    labelStyle: TextStyle(color: _sevColor(data['severity'] ?? 'Minor'), fontSize: 12),
-                    side: BorderSide.none,
-                  ),
-                  Chip(
-                    label: Text(data['type'] ?? 'Unknown'),
-                    side: BorderSide.none,
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-              Text('Description', style: Theme.of(ctx).textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Text(data['description'] ?? 'No description', style: const TextStyle(fontSize: 14)),
-              const SizedBox(height: 16),
-              if (data['location'] != null) ...[
-                _DetailRow(icon: Icons.location_on, label: 'Location', value: data['location']),
-              ],
-              _DetailRow(icon: Icons.person, label: 'Reporter', value: data['isAnonymous'] == true ? 'Anonymous' : data['reporterName'] ?? 'Unknown'),
-              if (data['contractorName'] != null)
-                _DetailRow(icon: Icons.engineering, label: 'Contractor', value: data['contractorName']),
-              if (data['totalCost'] != null && (data['totalCost'] as num) > 0)
-                _DetailRow(icon: Icons.attach_money, label: 'Total Cost', value: 'R${data['totalCost']}'),
-              if (data['photoUrl'] != null) ...[
-                const SizedBox(height: 12),
-                Text('Photo Evidence', style: Theme.of(ctx).textTheme.titleSmall),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(data['photoUrl'], height: 200, width: double.infinity, fit: BoxFit.cover),
+                Chip(
+                  label: Text(data['type'] ?? 'Unknown'),
+                  side: BorderSide.none,
                 ),
               ],
+            ),
+            const Divider(height: 32),
+            Text('Description', style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Text(data['description'] ?? 'No description', style: const TextStyle(fontSize: 15, height: 1.5)),
+            const SizedBox(height: 24),
+            if (data['location'] != null) ...[
+              _DetailRow(icon: Icons.location_on, label: 'Location', value: data['location']),
             ],
-          ),
+            _DetailRow(icon: Icons.person, label: 'Reporter', value: data['isAnonymous'] == true ? 'Anonymous' : data['reporterName'] ?? 'Unknown'),
+            if (data['contractorName'] != null)
+              _DetailRow(icon: Icons.engineering, label: 'Contractor', value: data['contractorName']),
+            if (data['totalCost'] != null && (data['totalCost'] as num) > 0)
+              _DetailRow(icon: Icons.attach_money, label: 'Total Cost', value: 'R${data['totalCost']}'),
+            if (data['photoUrl'] != null) ...[
+              const SizedBox(height: 24),
+              Text('Photo Evidence', style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(data['photoUrl'], height: 250, width: double.infinity, fit: BoxFit.cover),
+              ),
+            ],
+            const SizedBox(height: 40), // Padding at bottom
+          ],
         ),
       ),
     );
@@ -366,7 +352,7 @@ class _StatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(XMTheme.radiusXl), // Fully rounded pill
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
@@ -386,7 +372,7 @@ class _InfoChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(XMTheme.radiusXl), // Fully rounded pill
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

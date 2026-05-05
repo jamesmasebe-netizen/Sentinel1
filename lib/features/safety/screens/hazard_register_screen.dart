@@ -220,7 +220,7 @@ class _HazardCard extends StatelessWidget {
     final severity = data['severity'] ?? 'Medium';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -237,7 +237,7 @@ class _HazardCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _sevColor(severity).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(XMTheme.radiusXl),
                     border: Border.all(color: _sevColor(severity).withValues(alpha: 0.3)),
                   ),
                   child: Text(severity, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _sevColor(severity))),

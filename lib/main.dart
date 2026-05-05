@@ -12,6 +12,8 @@ import 'package:screen_protector/screen_protector.dart';
 import 'config/theme.dart';
 import 'config/router.dart';
 import 'core/providers/app_providers.dart';
+import 'core/services/session_manager.dart';
+import 'scripts/seed_dummy_data.dart';
 
 /// Top-level background message handler — must be a top-level function.
 @pragma('vm:entry-point')
@@ -62,6 +64,15 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
+  // --- DEV ONLY: SEED DUMMY DATA ON STARTUP ---
+  try {
+    debugPrint('Seeding dummy data...');
+    await seedAllDummyData(firestore);
+    debugPrint('Successfully seeded dummy data.');
+  } catch (e) {
+    debugPrint('Error seeding dummy data: $e');
+  }
+
   // ─── Initialize Hive for offline queue ───
   await Hive.initFlutter();
 
@@ -83,6 +94,7 @@ void main() async {
   if (!kIsWeb) {
     try {
       await ScreenProtector.preventScreenshotOn();
+      await ScreenProtector.protectDataLeakageWithBlur();
     } catch (_) {}
   }
 
@@ -105,13 +117,17 @@ class XMSystemApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final isDarkMode = ref.watch(isDarkModeProvider);
 
-    return MaterialApp.router(
-      title: 'XM System',
-      debugShowCheckedModeBanner: false,
-      theme: XMTheme.lightTheme,
-      darkTheme: XMTheme.darkTheme,
-      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      routerConfig: router,
+    return Listener(
+      onPointerDown: (_) => ref.read(sessionManagerProvider).userInteracted(),
+      behavior: HitTestBehavior.translucent,
+      child: MaterialApp.router(
+        title: 'XM System',
+        debugShowCheckedModeBanner: false,
+        theme: XMTheme.lightTheme,
+        darkTheme: XMTheme.darkTheme,
+        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        routerConfig: router,
+      ),
     );
   }
 }
