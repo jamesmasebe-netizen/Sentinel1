@@ -1,6 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'ui_indexer.dart';
 import '../widgets/ds_widgets.dart';
 
@@ -19,22 +23,55 @@ class FeedbackOverlay extends StatefulWidget {
 }
 
 class _FeedbackOverlayState extends State<FeedbackOverlay> {
+  final GlobalKey _boundaryKey = GlobalKey();
   Offset _position = const Offset(20, 100);
-  bool _isFeedbackMode = false;
+  bool _isUploading = false;
+
+  Future<String?> _captureAndUploadScreenshot(String feedbackId) async {
+    try {
+      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) return null;
+
+      final image = await boundary.toImage(pixelRatio: 2.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return null;
+
+      final bytes = byteData.buffer.asUint8List();
+      final storageRef = FirebaseStorage.instance.ref().child('feedback_screenshots/$feedbackId.png');
+      
+      final uploadTask = await storageRef.putData(
+        bytes,
+        SettableMetadata(contentType: 'image/png'),
+      );
+      
+      return await uploadTask.ref.getDownloadURL();
+    } catch (e) {
+      debugPrint('Error capturing screenshot: $e');
+      return null;
+    }
+  }
 
   void _submitFeedback(BuildContext context, Map<String, dynamic> snapshot, String userText) async {
+    setState(() => _isUploading = true);
+    final feedbackId = DateTime.now().millisecondsSinceEpoch.toString();
+    
     try {
+      // Capture and upload screenshot first
+      final screenshotUrl = await _captureAndUploadScreenshot(feedbackId);
+
       final feedbackData = {
         ...snapshot,
+        'id': feedbackId,
         'user_feedback': userText,
-        'user_id': 'dev_user', // Replace with actual user ID if available
+        'user_id': 'dev_user',
+        'screenshot_url': screenshotUrl,
       };
 
-      await FirebaseFirestore.instance.collection('dev_feedback').add(feedbackData);
+      await FirebaseFirestore.instance.collection('dev_feedback').doc(feedbackId).set(feedbackData);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Feedback submitted with UI snapshot!')),
+          const SnackBar(content: Text('Feedback submitted with UI snapshot and screenshot!')),
         );
       }
     } catch (e) {
@@ -43,6 +80,8 @@ class _FeedbackOverlayState extends State<FeedbackOverlay> {
           SnackBar(content: Text('Error submitting feedback: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 
@@ -95,13 +134,21 @@ class _FeedbackOverlayState extends State<FeedbackOverlay> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () {
-                        final text = controller.text;
-                        Navigator.pop(context);
-                        _submitFeedback(context, snapshot, text);
-                      },
-                      icon: const Icon(Icons.send_rounded),
-                      label: const Text('Submit to AI'),
+                      onPressed: _isUploading
+                          ? null
+                          : () {
+                              final text = controller.text;
+                              Navigator.pop(context);
+                              _submitFeedback(context, snapshot, text);
+                            },
+                      icon: _isUploading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.send_rounded),
+                      label: Text(_isUploading ? 'Uploading...' : 'Submit to AI'),
                     ),
                   ),
                 ],
@@ -126,7 +173,10 @@ class _FeedbackOverlayState extends State<FeedbackOverlay> {
 
     return Stack(
       children: [
-        widget.child,
+        RepaintBoundary(
+          key: _boundaryKey,
+          child: widget.child,
+        ),
         Positioned(
           left: _position.dx,
           top: _position.dy,
