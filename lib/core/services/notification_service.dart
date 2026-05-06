@@ -12,7 +12,9 @@ class NotificationService {
   final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   // ─── Providers ─────────────────────────────────────────────────────────────
-  static final provider = Provider<NotificationService>((ref) => NotificationService());
+  static final provider = Provider<NotificationService>(
+    (ref) => NotificationService(),
+  );
 
   // ─── Initialisation ────────────────────────────────────────────────────────
 
@@ -21,7 +23,10 @@ class NotificationService {
     // Request permissions (iOS / macOS / Web)
     if (!kIsWeb && !Platform.isAndroid) {
       final settings = await _fcm.requestPermission(
-        alert: true, badge: true, sound: true, announcement: false,
+        alert: true,
+        badge: true,
+        sound: true,
+        announcement: false,
       );
       if (settings.authorizationStatus == AuthorizationStatus.denied) return;
     } else if (kIsWeb || Platform.isAndroid) {
@@ -31,7 +36,10 @@ class NotificationService {
     // Get FCM token
     final token = await _fcm.getToken(
       // For web, provide VAPID key if available
-      vapidKey: const String.fromEnvironment('VAPID_PUBLIC_KEY', defaultValue: ''),
+      vapidKey: const String.fromEnvironment(
+        'VAPID_PUBLIC_KEY',
+        defaultValue: '',
+      ),
     );
 
     if (token != null) {
@@ -86,7 +94,8 @@ class NotificationService {
   final _messageStreamController = _StreamController<RemoteMessage>();
   final _tapStreamController = _StreamController<RemoteMessage>();
 
-  Stream<RemoteMessage> get onForegroundMessage => _messageStreamController.stream;
+  Stream<RemoteMessage> get onForegroundMessage =>
+      _messageStreamController.stream;
   Stream<RemoteMessage> get onNotificationTap => _tapStreamController.stream;
 
   // ─── Callable Function Wrappers ─────────────────────────────────────────────
@@ -99,7 +108,12 @@ class NotificationService {
     String? html,
   }) async {
     final callable = _functions.httpsCallable('sendEmail');
-    await callable.call({'to': to, 'subject': subject, 'text': text, 'html': html});
+    await callable.call({
+      'to': to,
+      'subject': subject,
+      'text': text,
+      'html': html,
+    });
   }
 
   /// Send a push to specific device tokens via Cloud Function.
@@ -152,6 +166,13 @@ class _StreamController<T> {
     controller.onCancel = () => _listeners.remove(listener);
   });
 
-  void add(T event) { for (final l in _listeners) { l(event); } }
-  void close() { _listeners.clear(); }
+  void add(T event) {
+    for (final l in _listeners) {
+      l(event);
+    }
+  }
+
+  void close() {
+    _listeners.clear();
+  }
 }

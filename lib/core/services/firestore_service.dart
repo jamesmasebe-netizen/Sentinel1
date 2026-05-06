@@ -22,7 +22,8 @@ class FirestoreService {
     int? limit,
     List<QueryFilter>? filters,
   }) {
-    Query query = _firestore.collection(collection)
+    Query query = _firestore
+        .collection(collection)
         .where('siteId', isEqualTo: siteId);
 
     if (filters != null) {
@@ -58,8 +59,8 @@ class FirestoreService {
       query = query.limit(limit);
     }
 
-    return query.snapshots().map((snapshot) =>
-      snapshot.docs.map((doc) => fromFirestore(doc)).toList(),
+    return query.snapshots().map(
+      (snapshot) => snapshot.docs.map((doc) => fromFirestore(doc)).toList(),
     );
   }
 
@@ -85,7 +86,8 @@ class FirestoreService {
     bool descending = true,
     int? limit,
   }) async {
-    Query query = _firestore.collection(collection)
+    Query query = _firestore
+        .collection(collection)
         .where('siteId', isEqualTo: siteId);
 
     if (orderByField != null) {
@@ -197,7 +199,8 @@ class FirestoreService {
     required String siteId,
     List<QueryFilter>? filters,
   }) async {
-    Query query = _firestore.collection(collection)
+    Query query = _firestore
+        .collection(collection)
         .where('siteId', isEqualTo: siteId);
 
     if (filters != null) {
@@ -227,7 +230,14 @@ class QueryFilter {
   });
 }
 
-enum FilterOp { equals, notEquals, greaterThan, lessThan, arrayContains, whereIn }
+enum FilterOp {
+  equals,
+  notEquals,
+  greaterThan,
+  lessThan,
+  arrayContains,
+  whereIn,
+}
 
 class BatchOperation {
   final BatchOpType type;

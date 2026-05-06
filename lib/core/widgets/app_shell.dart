@@ -42,100 +42,116 @@ class _AppShellState extends ConsumerState<AppShell> {
       onPointerDown: (_) => ref.read(sessionManagerProvider).userInteracted(),
       onPointerMove: (_) => ref.read(sessionManagerProvider).userInteracted(),
       child: Scaffold(
-        appBar: _buildWorkspaceAppBar(context, profile, syncStatus, pendingCount.valueOrNull ?? 0),
-        body: isWideScreen
-            ? Row(
-                children: [
-                  NavigationRail(
-                    selectedIndex: currentIndex,
-                    onDestinationSelected: (index) => _onItemTapped(index, context),
-                    labelType: NavigationRailLabelType.all,
-                    groupAlignment: -0.85, // Align items closer to the top
-                    leading: Padding(
-                      padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
-                      child: FloatingActionButton(
-                        elevation: 0,
-                        backgroundColor: XMTheme.primaryLight.withValues(alpha: 0.2),
-                        foregroundColor: XMTheme.primaryDark,
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          _showQuickActions(context);
-                        },
-                        child: const Icon(Icons.add_rounded, size: 28),
+        appBar: _buildWorkspaceAppBar(
+          context,
+          profile,
+          syncStatus,
+          pendingCount.valueOrNull ?? 0,
+        ),
+        body:
+            isWideScreen
+                ? Row(
+                  children: [
+                    NavigationRail(
+                      selectedIndex: currentIndex,
+                      onDestinationSelected:
+                          (index) => _onItemTapped(index, context),
+                      labelType: NavigationRailLabelType.all,
+                      groupAlignment: -0.85, // Align items closer to the top
+                      leading: Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0, top: 8.0),
+                        child: FloatingActionButton(
+                          elevation: 0,
+                          backgroundColor: XMTheme.primaryLight.withValues(
+                            alpha: 0.2,
+                          ),
+                          foregroundColor: XMTheme.primaryDark,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            _showQuickActions(context);
+                          },
+                          child: const Icon(Icons.add_rounded, size: 28),
+                        ),
                       ),
+                      destinations: const [
+                        NavigationRailDestination(
+                          icon: Icon(Icons.home_outlined),
+                          selectedIcon: Icon(Icons.home_rounded),
+                          label: Text('Home'),
+                        ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.shield_outlined),
+                          selectedIcon: Icon(Icons.shield_rounded),
+                          label: Text('Safety & Risk'),
+                        ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.people_outline),
+                          selectedIcon: Icon(Icons.people_rounded),
+                          label: Text('People'),
+                        ),
+                        NavigationRailDestination(
+                          icon: Icon(Icons.domain_outlined),
+                          selectedIcon: Icon(Icons.domain_rounded),
+                          label: Text('Operations'),
+                        ),
+                      ],
                     ),
-                    destinations: const [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.home_outlined),
-                        selectedIcon: Icon(Icons.home_rounded),
-                        label: Text('Home'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.shield_outlined),
-                        selectedIcon: Icon(Icons.shield_rounded),
-                        label: Text('Safety & Risk'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.people_outline),
-                        selectedIcon: Icon(Icons.people_rounded),
-                        label: Text('People'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.domain_outlined),
-                        selectedIcon: Icon(Icons.domain_rounded),
-                        label: Text('Operations'),
-                      ),
-                    ],
-                  ),
-                  const VerticalDivider(thickness: 1, width: 1),
-                  Expanded(child: widget.child),
-                ],
-              )
-            : widget.child,
-        bottomNavigationBar: isWideScreen
-            ? null
-            : NavigationBar(
-                selectedIndex: currentIndex,
-                onDestinationSelected: (index) => _onItemTapped(index, context),
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded),
-                    label: 'Home',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.shield_outlined),
-                    selectedIcon: Icon(Icons.shield_rounded),
-                    label: 'Safety & Risk',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.people_outline),
-                    selectedIcon: Icon(Icons.people_rounded),
-                    label: 'People',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.domain_outlined),
-                    selectedIcon: Icon(Icons.domain_rounded),
-                    label: 'Operations',
-                  ),
-                ],
-              ),
-        floatingActionButton: isWideScreen
-            ? null
-            : FloatingActionButton(
-                elevation: 4,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  _showQuickActions(context);
-                },
-                child: const Icon(Icons.add_rounded),
-              ),
+                    const VerticalDivider(thickness: 1, width: 1),
+                    Expanded(child: widget.child),
+                  ],
+                )
+                : widget.child,
+        bottomNavigationBar:
+            isWideScreen
+                ? null
+                : NavigationBar(
+                  selectedIndex: currentIndex,
+                  onDestinationSelected:
+                      (index) => _onItemTapped(index, context),
+                  destinations: const [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home_rounded),
+                      label: 'Home',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.shield_outlined),
+                      selectedIcon: Icon(Icons.shield_rounded),
+                      label: 'Safety & Risk',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.people_outline),
+                      selectedIcon: Icon(Icons.people_rounded),
+                      label: 'People',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.domain_outlined),
+                      selectedIcon: Icon(Icons.domain_rounded),
+                      label: 'Operations',
+                    ),
+                  ],
+                ),
+        floatingActionButton:
+            isWideScreen
+                ? null
+                : FloatingActionButton(
+                  elevation: 4,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _showQuickActions(context);
+                  },
+                  child: const Icon(Icons.add_rounded),
+                ),
       ),
     );
   }
 
   PreferredSizeWidget _buildWorkspaceAppBar(
-      BuildContext context, AsyncValue profile, AsyncValue<SyncStatus> syncStatus, int pendingCount) {
+    BuildContext context,
+    AsyncValue profile,
+    AsyncValue<SyncStatus> syncStatus,
+    int pendingCount,
+  ) {
     return AppBar(
       titleSpacing: 16,
       title: Row(
@@ -147,7 +163,11 @@ class _AppShellState extends ConsumerState<AppShell> {
               color: XMTheme.primary,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.gpp_good_rounded, color: Colors.white, size: 24),
+            child: const Icon(
+              Icons.gpp_good_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
           const Text(
@@ -169,7 +189,10 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search Sentinel1...',
-                prefixIcon: const Icon(Icons.search, color: XMTheme.secondaryLight),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: XMTheme.secondaryLight,
+                ),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
@@ -183,7 +206,9 @@ class _AppShellState extends ConsumerState<AppShell> {
 
         // Sync Status
         syncStatus.when(
-          data: (status) => _SyncIndicator(status: status, pendingCount: pendingCount),
+          data:
+              (status) =>
+                  _SyncIndicator(status: status, pendingCount: pendingCount),
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
@@ -194,7 +219,7 @@ class _AppShellState extends ConsumerState<AppShell> {
           tooltip: 'SHEQ AI Assistant',
           onPressed: () => context.go('/ai'),
         ),
-        
+
         // Notifications
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
@@ -204,23 +229,31 @@ class _AppShellState extends ConsumerState<AppShell> {
 
         // Profile Avatar
         profile.when(
-          data: (p) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GestureDetector(
-              onTap: () => _showProfileMenu(context, ref),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundColor: XMTheme.primaryLight.withValues(alpha: 0.3),
-                backgroundImage: p?.photoURL != null ? NetworkImage(p!.photoURL!) : null,
-                child: p?.photoURL == null
-                    ? Text(
-                        (p?.displayName ?? 'U')[0].toUpperCase(),
-                        style: const TextStyle(fontSize: 14, color: XMTheme.primaryDark),
-                      )
-                    : null,
+          data:
+              (p) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GestureDetector(
+                  onTap: () => _showProfileMenu(context, ref),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: XMTheme.primaryLight.withValues(
+                      alpha: 0.3,
+                    ),
+                    backgroundImage:
+                        p?.photoURL != null ? NetworkImage(p!.photoURL!) : null,
+                    child:
+                        p?.photoURL == null
+                            ? Text(
+                              (p?.displayName ?? 'U')[0].toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: XMTheme.primaryDark,
+                              ),
+                            )
+                            : null,
+                  ),
+                ),
               ),
-            ),
-          ),
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
@@ -231,57 +264,61 @@ class _AppShellState extends ConsumerState<AppShell> {
   void _showQuickActions(BuildContext context) {
     UIUtils.showAppBottomSheet(
       context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(XMTheme.spacingLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Create New', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: XMTheme.spacingMd),
-            _QuickActionTile(
-              icon: Icons.report_problem,
-              color: XMTheme.error,
-              title: 'Incident Report',
-              subtitle: 'Log a safety incident or near-miss',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/safety');
-              },
+      builder:
+          (context) => Padding(
+            padding: const EdgeInsets.all(XMTheme.spacingLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Create New',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: XMTheme.spacingMd),
+                _QuickActionTile(
+                  icon: Icons.report_problem,
+                  color: XMTheme.error,
+                  title: 'Incident Report',
+                  subtitle: 'Log a safety incident or near-miss',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/safety');
+                  },
+                ),
+                _QuickActionTile(
+                  icon: Icons.assignment,
+                  color: XMTheme.warning,
+                  title: 'Permit to Work',
+                  subtitle: 'Create a new PTW request',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/safety');
+                  },
+                ),
+                _QuickActionTile(
+                  icon: Icons.warning,
+                  color: XMTheme.info,
+                  title: 'Hazard Observation',
+                  subtitle: 'Report a workplace hazard',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/safety');
+                  },
+                ),
+                _QuickActionTile(
+                  icon: Icons.monitor_heart,
+                  color: XMTheme.success,
+                  title: 'Health Check',
+                  subtitle: 'Log a medical or occupational health entry',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/people');
+                  },
+                ),
+              ],
             ),
-            _QuickActionTile(
-              icon: Icons.assignment,
-              color: XMTheme.warning,
-              title: 'Permit to Work',
-              subtitle: 'Create a new PTW request',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/safety');
-              },
-            ),
-            _QuickActionTile(
-              icon: Icons.warning,
-              color: XMTheme.info,
-              title: 'Hazard Observation',
-              subtitle: 'Report a workplace hazard',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/safety');
-              },
-            ),
-            _QuickActionTile(
-              icon: Icons.monitor_heart,
-              color: XMTheme.success,
-              title: 'Health Check',
-              subtitle: 'Log a medical or occupational health entry',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/people');
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -292,9 +329,23 @@ class _AppShellState extends ConsumerState<AppShell> {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/dashboard')) return 0;
-    if (location.startsWith('/safety') || location.startsWith('/risk') || location.startsWith('/emergency')) return 1;
-    if (location.startsWith('/people') || location.startsWith('/health') || location.startsWith('/workers-comp')) return 2;
-    if (location.startsWith('/operations') || location.startsWith('/properties') || location.startsWith('/environment') || location.startsWith('/actions') || location.startsWith('/contractors')) return 3;
+    if (location.startsWith('/safety') ||
+        location.startsWith('/risk') ||
+        location.startsWith('/emergency')) {
+      return 1;
+    }
+    if (location.startsWith('/people') ||
+        location.startsWith('/health') ||
+        location.startsWith('/workers-comp')) {
+      return 2;
+    }
+    if (location.startsWith('/operations') ||
+        location.startsWith('/properties') ||
+        location.startsWith('/environment') ||
+        location.startsWith('/actions') ||
+        location.startsWith('/contractors')) {
+      return 3;
+    }
     return 0; // Default to Home
   }
 
@@ -366,7 +417,11 @@ class _SyncIndicator extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '$pendingCount',
-                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ],
@@ -404,7 +459,10 @@ class _QuickActionTile extends StatelessWidget {
         child: Icon(icon, color: color),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 13, color: XMTheme.secondaryLight)),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 13, color: XMTheme.secondaryLight),
+      ),
       onTap: () {
         HapticFeedback.selectionClick();
         onTap();

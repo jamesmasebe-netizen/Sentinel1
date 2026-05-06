@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/widgets/skeleton_loader.dart';
 import '../../../core/utils/ui_utils.dart';
 
@@ -32,17 +33,16 @@ class _IncidentsRegisterScreenState extends ConsumerState<IncidentsRegisterScree
       children: [
         // ─── Filter Bar ───
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Status filter
               Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _filterStatus,
                   decoration: const InputDecoration(
                     labelText: 'Status',
+                    prefixIcon: Icon(Icons.filter_list_rounded, size: 18),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   items: ['All', 'Open', 'Investigating', 'Resolved', 'Closed']
                       .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
@@ -50,15 +50,14 @@ class _IncidentsRegisterScreenState extends ConsumerState<IncidentsRegisterScree
                   onChanged: (v) => setState(() => _filterStatus = v!),
                 ),
               ),
-              const SizedBox(width: 12),
-              // Severity filter
+              GSpacing.hMd,
               Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _filterSeverity,
                   decoration: const InputDecoration(
                     labelText: 'Severity',
+                    prefixIcon: Icon(Icons.warning_amber_rounded, size: 18),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                   items: ['All', 'Minor', 'Moderate', 'Major', 'Critical']
                       .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
@@ -99,9 +98,9 @@ class _IncidentsRegisterScreenState extends ConsumerState<IncidentsRegisterScree
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, size: 48, color: XMTheme.success.withValues(alpha: 0.5)),
-                      const SizedBox(height: 12),
-                      const Text('No incidents found'),
+                      Icon(Icons.check_circle_outline, size: 48, color: XMTheme.success.withValues(alpha: 0.3)),
+                      GSpacing.vMd,
+                      Text('No incidents found', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 );
@@ -135,18 +134,15 @@ class _IncidentsRegisterScreenState extends ConsumerState<IncidentsRegisterScree
         'updatedAt': DateTime.now().toIso8601String(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Status updated to $newStatus'), backgroundColor: XMTheme.success),
-        );
+        UIUtils.showToast(context, 'Status updated to $newStatus', type: ToastType.success);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: XMTheme.error),
-        );
+        UIUtils.showToast(context, 'Error updating status: $e', type: ToastType.error);
       }
     }
   }
+
 }
 
 class _IncidentCard extends StatelessWidget {
@@ -170,89 +166,80 @@ class _IncidentCard extends StatelessWidget {
     final dateStr = data['dateOfIncident'] ?? data['createdAt'] ?? '';
     final isAnonymous = data['isAnonymous'] == true;
 
-    return Card(
+    return GCard(
       margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _showIncidentDetail(context),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      onTap: () => _showIncidentDetail(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // Title row
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: _sevColor(severity).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(Icons.report_problem, color: _sevColor(severity), size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${type.toString().replaceAll('_', ' ')} • ${isAnonymous ? "Anonymous" : reporter}',
-                          style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _StatusChip(status: status),
-                ],
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: _sevColor(severity).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(Icons.report_problem, color: _sevColor(severity), size: 18),
               ),
-              const SizedBox(height: 10),
-
-              // Info chips
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
-                  _InfoChip(icon: Icons.warning, label: severity, color: _sevColor(severity)),
-                  if (data['location'] != null && data['location'].toString().isNotEmpty)
-                    _InfoChip(icon: Icons.location_on, label: data['location'], color: XMTheme.info),
-                  if (dateStr.isNotEmpty)
-                    _InfoChip(icon: Icons.access_time, label: _formatDate(dateStr), color: XMTheme.primary),
-                  if (data['totalCost'] != null && (data['totalCost'] as num) > 0)
-                    _InfoChip(icon: Icons.attach_money, label: 'R${data['totalCost']}', color: XMTheme.warning),
-                ],
+              GSpacing.hMd,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${type.toString().replaceAll('_', ' ')} • ${isAnonymous ? "Anonymous" : reporter}',
+                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
               ),
-
-              // Quick status actions
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (status == 'Open')
-                    TextButton.icon(
-                      onPressed: () => onStatusUpdate('Investigating'),
-                      icon: const Icon(Icons.search, size: 16),
-                      label: const Text('Investigate', style: TextStyle(fontSize: 12)),
-                    ),
-                  if (status == 'Investigating')
-                    TextButton.icon(
-                      onPressed: () => onStatusUpdate('Resolved'),
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Resolve', style: TextStyle(fontSize: 12)),
-                    ),
-                  if (status == 'Resolved')
-                    TextButton.icon(
-                      onPressed: () => onStatusUpdate('Closed'),
-                      icon: const Icon(Icons.lock, size: 16),
-                      label: const Text('Close', style: TextStyle(fontSize: 12)),
-                    ),
-                ],
-              ),
+              GStatusTag(label: status, color: _statusColor(status)),
             ],
           ),
-        ),
+          GSpacing.vMd,
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _MiniInfo(icon: Icons.warning_amber_rounded, label: severity, color: _sevColor(severity)),
+              if (data['location'] != null && data['location'].toString().isNotEmpty)
+                _MiniInfo(icon: Icons.location_on_outlined, label: data['location']),
+              if (dateStr.isNotEmpty)
+                _MiniInfo(icon: Icons.access_time_rounded, label: UIUtils.formatTimestamp(dateStr)),
+              if (data['totalCost'] != null && (data['totalCost'] as num) > 0)
+                _MiniInfo(icon: Icons.attach_money_rounded, label: 'R${data['totalCost']}', color: XMTheme.warning),
+            ],
+          ),
+          if (status != 'Closed') ...[
+            GSpacing.vSm,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (status == 'Open')
+                  TextButton.icon(
+                    onPressed: () => onStatusUpdate('Investigating'),
+                    icon: const Icon(Icons.search, size: 16),
+                    label: const Text('Investigate', style: TextStyle(fontSize: 12)),
+                  ),
+                if (status == 'Investigating')
+                  TextButton.icon(
+                    onPressed: () => onStatusUpdate('Resolved'),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Resolve', style: TextStyle(fontSize: 12)),
+                  ),
+                if (status == 'Resolved')
+                  TextButton.icon(
+                    onPressed: () => onStatusUpdate('Closed'),
+                    icon: const Icon(Icons.lock, size: 16),
+                    label: const Text('Close', style: TextStyle(fontSize: 12)),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -272,17 +259,9 @@ class _IncidentCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               children: [
-                _StatusChip(status: data['status'] ?? 'Open'),
-                Chip(
-                  label: Text(data['severity'] ?? 'Minor'),
-                  backgroundColor: _sevColor(data['severity'] ?? 'Minor').withValues(alpha: 0.1),
-                  labelStyle: TextStyle(color: _sevColor(data['severity'] ?? 'Minor'), fontSize: 12, fontWeight: FontWeight.bold),
-                  side: BorderSide.none,
-                ),
-                Chip(
-                  label: Text(data['type'] ?? 'Unknown'),
-                  side: BorderSide.none,
-                ),
+                GStatusTag(label: data['status'] ?? 'Open', color: _statusColor(data['status'] ?? 'Open')),
+                GStatusTag(label: data['severity'] ?? 'Minor', color: _sevColor(data['severity'] ?? 'Minor')),
+                GStatusTag(label: data['type'] ?? 'Unknown', color: XMTheme.primary),
               ],
             ),
             const Divider(height: 32),
@@ -314,17 +293,18 @@ class _IncidentCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(String iso) {
-    try {
-      final dt = DateTime.parse(iso);
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return iso;
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Open': return XMTheme.statusOpen;
+      case 'Investigating': return XMTheme.statusInProgress;
+      case 'Resolved': return XMTheme.statusResolved;
+      case 'Closed': return XMTheme.statusClosed;
+      default: return XMTheme.statusDraft;
     }
   }
 
-  Color _sevColor(String severity) {
-    switch (severity) {
+  Color _sevColor(String sev) {
+    switch (sev) {
       case 'Critical': return XMTheme.severityCritical;
       case 'Major': return XMTheme.severityMajor;
       case 'Moderate': return XMTheme.severityModerate;
@@ -334,54 +314,22 @@ class _IncidentCard extends StatelessWidget {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    Color color;
-    switch (status) {
-      case 'Open': color = XMTheme.statusOpen;
-      case 'Investigating': color = XMTheme.statusInProgress;
-      case 'Resolved': color = XMTheme.statusResolved;
-      case 'Closed': color = XMTheme.statusClosed;
-      default: color = XMTheme.statusDraft;
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(XMTheme.radiusXl), // Fully rounded pill
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
+class _MiniInfo extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
-  const _InfoChip({required this.icon, required this.label, required this.color});
+  final Color? color;
+  const _MiniInfo({required this.icon, required this.label, this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(XMTheme.radiusXl), // Fully rounded pill
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: color)),
-        ],
-      ),
+    final c = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: c),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 12, color: c)),
+      ],
     );
   }
 }

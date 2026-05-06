@@ -7,7 +7,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 
-
 /// Full incident reporting form — matches React IncidentsCAPA component.
 /// Includes: form fields, photo capture, AI classification (placeholder),
 /// GPS location, anonymous reporting, cost tracking, dynamic sub-fields.
@@ -33,7 +32,6 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
   String? _selectedContractorId;
   XFile? _photoFile;
 
-
   // Cost tracking
   final _directCostsController = TextEditingController(text: '0');
   final _indirectCostsController = TextEditingController(text: '0');
@@ -51,9 +49,20 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
   final _assetIdController = TextEditingController();
   final _damageEstimateController = TextEditingController(text: '0');
 
-  static const _types = ['Injury', 'Near Miss', 'Property Damage', 'Environmental', 'Hazard Observation'];
+  static const _types = [
+    'Injury',
+    'Near Miss',
+    'Property Damage',
+    'Environmental',
+    'Hazard Observation',
+  ];
   static const _severities = ['Minor', 'Moderate', 'Major', 'Critical'];
-  static const _treatments = ['First Aid', 'Medical Treatment', 'Hospitalization', 'Fatality'];
+  static const _treatments = [
+    'First Aid',
+    'Medical Treatment',
+    'Hospitalization',
+    'Fatality',
+  ];
 
   @override
   void dispose() {
@@ -72,9 +81,15 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
 
   Future<void> _pickPhoto(ImageSource source) async {
     final picker = ImagePicker();
-    final photo = await picker.pickImage(source: source, maxWidth: 1200, imageQuality: 80);
+    final photo = await picker.pickImage(
+      source: source,
+      maxWidth: 1200,
+      imageQuality: 80,
+    );
     if (photo != null) {
-      setState(() { _photoFile = photo; });
+      setState(() {
+        _photoFile = photo;
+      });
       // TODO: AI photo analysis via Gemini in Phase 6
     }
   }
@@ -91,8 +106,9 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
       // Upload photo if present
       String? photoUrl;
       if (_photoFile != null) {
-        final storageRef = FirebaseStorage.instance.ref()
-            .child('incidents/${DateTime.now().millisecondsSinceEpoch}_${_photoFile!.name}');
+        final storageRef = FirebaseStorage.instance.ref().child(
+          'incidents/${DateTime.now().millisecondsSinceEpoch}_${_photoFile!.name}',
+        );
         await storageRef.putFile(File(_photoFile!.path));
         photoUrl = await storageRef.getDownloadURL();
       }
@@ -108,7 +124,8 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
         'location': _locationController.text.trim(),
         'status': 'Open',
         'reporterId': _isAnonymous ? 'anonymous' : profile.uid,
-        'reporterName': _isAnonymous ? 'Anonymous Whistleblower' : profile.displayName,
+        'reporterName':
+            _isAnonymous ? 'Anonymous Whistleblower' : profile.displayName,
         'siteId': profile.siteId,
         'contractorId': _selectedContractorId,
         'dateOfIncident': _dateOfIncident.toIso8601String(),
@@ -135,26 +152,32 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
       } else if (_type == 'Property Damage') {
         data['propertyDamageDetails'] = {
           'assetId': _assetIdController.text.trim(),
-          'estimatedDamage': double.tryParse(_damageEstimateController.text) ?? 0,
+          'estimatedDamage':
+              double.tryParse(_damageEstimateController.text) ?? 0,
         };
       }
 
       // Write through offline-first service
       final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(collection: 'incidents', data: data);
+      await firestoreService.createDocument(
+        collection: 'incidents',
+        data: data,
+      );
 
       // Auto-create CAPA for Major/Critical
       if (_severity == 'Major' || _severity == 'Critical') {
         await firestoreService.createDocument(
           collection: 'capas',
           data: {
-            'description': 'Automatic CAPA for $_severity incident: ${_titleController.text}',
+            'description':
+                'Automatic CAPA for $_severity incident: ${_titleController.text}',
             'status': 'Open',
             'createdById': profile.uid,
             'siteId': profile.siteId,
             'createdAt': DateTime.now().toIso8601String(),
             'assignedToName': 'Safety Manager',
-            'dueDate': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+            'dueDate':
+                DateTime.now().add(const Duration(days: 7)).toIso8601String(),
           },
         );
       }
@@ -162,7 +185,9 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Incident reported successfully${_severity == "Major" || _severity == "Critical" ? " — CAPA auto-created" : ""}'),
+            content: Text(
+              'Incident reported successfully${_severity == "Major" || _severity == "Critical" ? " — CAPA auto-created" : ""}',
+            ),
             backgroundColor: XMTheme.success,
           ),
         );
@@ -187,9 +212,14 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
         actions: [
           TextButton.icon(
             onPressed: _isSubmitting ? null : _submitIncident,
-            icon: _isSubmitting
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.send),
+            icon:
+                _isSubmitting
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(Icons.send),
             label: Text(_isSubmitting ? 'Submitting...' : 'Submit'),
           ),
         ],
@@ -222,7 +252,8 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                   hintText: 'Brief description of what happened',
                   prefixIcon: Icon(Icons.title),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                validator:
+                    (v) => v == null || v.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: XMTheme.spacingMd),
 
@@ -236,7 +267,8 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                   prefixIcon: Icon(Icons.description),
                   alignLabelWithHint: true,
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                validator:
+                    (v) => v == null || v.trim().isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: XMTheme.spacingMd),
 
@@ -246,8 +278,17 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _type,
-                      decoration: const InputDecoration(labelText: 'Type', prefixIcon: Icon(Icons.category)),
-                      items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                      decoration: const InputDecoration(
+                        labelText: 'Type',
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      items:
+                          _types
+                              .map(
+                                (t) =>
+                                    DropdownMenuItem(value: t, child: Text(t)),
+                              )
+                              .toList(),
                       onChanged: (v) => setState(() => _type = v!),
                     ),
                   ),
@@ -255,23 +296,32 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _severity,
-                      decoration: const InputDecoration(labelText: 'Severity', prefixIcon: Icon(Icons.warning)),
-                      items: _severities.map((s) => DropdownMenuItem(
-                        value: s,
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 10, height: 10,
-                              decoration: BoxDecoration(
-                                color: _severityColor(s),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(s),
-                          ],
-                        ),
-                      )).toList(),
+                      decoration: const InputDecoration(
+                        labelText: 'Severity',
+                        prefixIcon: Icon(Icons.warning),
+                      ),
+                      items:
+                          _severities
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: _severityColor(s),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(s),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setState(() => _severity = v!),
                     ),
                   ),
@@ -321,7 +371,13 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                     );
                     if (time != null) {
                       setState(() {
-                        _dateOfIncident = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                        _dateOfIncident = DateTime(
+                          date.year,
+                          date.month,
+                          date.day,
+                          time.hour,
+                          time.minute,
+                        );
                       });
                     }
                   }
@@ -330,7 +386,10 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
               const SizedBox(height: XMTheme.spacingMd),
 
               // ─── Photo Capture ───
-              Text('Photo Evidence', style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                'Photo Evidence',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -363,7 +422,10 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
               const SizedBox(height: XMTheme.spacingLg),
 
               // ─── Cost Tracking ───
-              Text('Cost Tracking', style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                'Cost Tracking',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -398,10 +460,17 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                 height: 52,
                 child: FilledButton.icon(
                   onPressed: _isSubmitting ? null : _submitIncident,
-                  icon: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.send),
-                  label: Text(_isSubmitting ? 'Submitting...' : 'Submit Incident Report'),
+                  icon:
+                      _isSubmitting
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : const Icon(Icons.send),
+                  label: Text(
+                    _isSubmitting ? 'Submitting...' : 'Submit Incident Report',
+                  ),
                 ),
               ),
               const SizedBox(height: XMTheme.spacingLg),
@@ -421,13 +490,22 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
           children: [
             TextFormField(
               controller: _bodyPartController,
-              decoration: const InputDecoration(labelText: 'Body Part Affected', prefixIcon: Icon(Icons.accessibility)),
+              decoration: const InputDecoration(
+                labelText: 'Body Part Affected',
+                prefixIcon: Icon(Icons.accessibility),
+              ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _treatmentType,
-              decoration: const InputDecoration(labelText: 'Treatment Type', prefixIcon: Icon(Icons.medical_services)),
-              items: _treatments.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+              decoration: const InputDecoration(
+                labelText: 'Treatment Type',
+                prefixIcon: Icon(Icons.medical_services),
+              ),
+              items:
+                  _treatments
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
               onChanged: (v) => setState(() => _treatmentType = v!),
             ),
           ],
@@ -439,7 +517,10 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
           children: [
             TextFormField(
               controller: _substanceController,
-              decoration: const InputDecoration(labelText: 'Substance', prefixIcon: Icon(Icons.science)),
+              decoration: const InputDecoration(
+                labelText: 'Substance',
+                prefixIcon: Icon(Icons.science),
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -457,9 +538,12 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                   child: DropdownButtonFormField<String>(
                     value: _envUnit,
                     decoration: const InputDecoration(labelText: 'Unit'),
-                    items: ['Liters', 'Gallons', 'kg', 'Tonnes']
-                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                        .toList(),
+                    items:
+                        ['Liters', 'Gallons', 'kg', 'Tonnes']
+                            .map(
+                              (u) => DropdownMenuItem(value: u, child: Text(u)),
+                            )
+                            .toList(),
                     onChanged: (v) => setState(() => _envUnit = v!),
                   ),
                 ),
@@ -474,13 +558,19 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
           children: [
             TextFormField(
               controller: _assetIdController,
-              decoration: const InputDecoration(labelText: 'Asset ID / Name', prefixIcon: Icon(Icons.inventory)),
+              decoration: const InputDecoration(
+                labelText: 'Asset ID / Name',
+                prefixIcon: Icon(Icons.inventory),
+              ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _damageEstimateController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Estimated Damage (R)', prefixIcon: Icon(Icons.attach_money)),
+              decoration: const InputDecoration(
+                labelText: 'Estimated Damage (R)',
+                prefixIcon: Icon(Icons.attach_money),
+              ),
             ),
           ],
         );
@@ -491,11 +581,16 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
 
   Color _severityColor(String severity) {
     switch (severity) {
-      case 'Critical': return XMTheme.severityCritical;
-      case 'Major': return XMTheme.severityMajor;
-      case 'Moderate': return XMTheme.severityModerate;
-      case 'Minor': return XMTheme.severityMinor;
-      default: return XMTheme.severityNegligible;
+      case 'Critical':
+        return XMTheme.severityCritical;
+      case 'Major':
+        return XMTheme.severityMajor;
+      case 'Moderate':
+        return XMTheme.severityModerate;
+      case 'Minor':
+        return XMTheme.severityMinor;
+      default:
+        return XMTheme.severityNegligible;
     }
   }
 }
@@ -506,7 +601,11 @@ class _PhotoButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _PhotoButton({required this.icon, required this.label, required this.onTap});
+  const _PhotoButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -522,7 +621,11 @@ class _SectionCard extends StatelessWidget {
   final String title;
   final Color color;
   final List<Widget> children;
-  const _SectionCard({required this.title, required this.color, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.color,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -539,11 +642,18 @@ class _SectionCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 4, height: 20,
-                  decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+                  width: 4,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
                 const SizedBox(width: 8),
-                Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.w600, color: color),
+                ),
               ],
             ),
             const SizedBox(height: 12),

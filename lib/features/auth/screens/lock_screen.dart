@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../../core/services/session_manager.dart';
 import '../../../core/providers/app_providers.dart';
@@ -33,8 +32,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     });
 
     try {
-      final bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
+      final bool canAuthenticateWithBiometrics =
+          await _localAuth.canCheckBiometrics;
+      final bool canAuthenticate =
+          canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
 
       if (canAuthenticate) {
         final bool didAuthenticate = await _localAuth.authenticate(
@@ -92,7 +93,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
               icon: const Icon(Icons.fingerprint),
               label: Text(_isAuthenticating ? 'Authenticating...' : 'Unlock'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
               ),
             ),
             const SizedBox(height: 16),

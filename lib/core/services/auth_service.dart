@@ -28,10 +28,10 @@ class AuthService {
     FirebaseFirestore? firestore,
     FlutterSecureStorage? secureStorage,
     LocalAuthentication? localAuth,
-  })  : _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance,
-        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _localAuth = localAuth ?? LocalAuthentication();
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance,
+       _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _localAuth = localAuth ?? LocalAuthentication();
 
   /// Sign in with Google
   Future<UserProfile?> signInWithGoogle() async {
@@ -59,6 +59,22 @@ class AuthService {
     }
   }
 
+  /// Bypass Login for Dev
+  Future<UserProfile?> devBypassLogin() async {
+    try {
+      final userCredential = await _auth.signInAnonymously();
+      final user = userCredential.user;
+      if (user == null) return null;
+      
+      final profile = await _getOrCreateProfile(user);
+      _currentProfile = profile;
+      _profileController.add(profile);
+      return profile;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Authenticate with biometrics (for app unlock)
   Future<bool> authenticateWithBiometrics() async {
     try {
@@ -67,7 +83,9 @@ class AuthService {
 
       if (!canCheck || !isDeviceSupported) return false;
 
-      final biometricEnabled = await _secureStorage.read(key: 'biometric_enabled');
+      final biometricEnabled = await _secureStorage.read(
+        key: 'biometric_enabled',
+      );
       if (biometricEnabled != 'true') return false;
 
       return await _localAuth.authenticate(

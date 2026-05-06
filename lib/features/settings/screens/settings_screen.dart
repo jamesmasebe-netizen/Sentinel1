@@ -11,14 +11,17 @@ class SettingsScreen extends ConsumerWidget {
     final isDarkMode = ref.watch(isDarkModeProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Theme Section
-          Text('Appearance', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: XMTheme.primary)),
+          Text(
+            'Appearance',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: XMTheme.primary),
+          ),
           const SizedBox(height: 8),
           Card(
             child: ListTile(
@@ -36,7 +39,12 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Security Section
-          Text('Security', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: XMTheme.primary)),
+          Text(
+            'Security',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: XMTheme.primary),
+          ),
           const SizedBox(height: 8),
           Card(
             child: Column(
@@ -44,15 +52,25 @@ class SettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.fingerprint),
                   title: const Text('Biometric Authentication'),
-                  subtitle: const Text('Required to unlock session after 15m of inactivity'),
-                  trailing: const Icon(Icons.check_circle, color: XMTheme.success),
+                  subtitle: const Text(
+                    'Required to unlock session after 15m of inactivity',
+                  ),
+                  trailing: const Icon(
+                    Icons.check_circle,
+                    color: XMTheme.success,
+                  ),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.screen_lock_portrait),
                   title: const Text('Screen Capture Protection'),
-                  subtitle: const Text('Enabled on sensitive screens (Executive Dashboard, Action Tracker)'),
-                  trailing: const Icon(Icons.check_circle, color: XMTheme.success),
+                  subtitle: const Text(
+                    'Enabled on sensitive screens (Executive Dashboard, Action Tracker)',
+                  ),
+                  trailing: const Icon(
+                    Icons.check_circle,
+                    color: XMTheme.success,
+                  ),
                 ),
               ],
             ),
@@ -60,7 +78,12 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // App Info Section
-          Text('About', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: XMTheme.primary)),
+          Text(
+            'About',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(color: XMTheme.primary),
+          ),
           const SizedBox(height: 8),
           const Card(
             child: ListTile(

@@ -85,10 +85,12 @@ void main() async {
   ]);
 
   // ─── Set system UI style ───
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   // ─── Global Screen Protection ───
   if (!kIsWeb) {
@@ -100,9 +102,7 @@ void main() async {
 
   runApp(
     ProviderScope(
-      overrides: [
-        firestoreProvider.overrideWithValue(firestore),
-      ],
+      overrides: [firestoreProvider.overrideWithValue(firestore)],
       child: const XMSystemApp(),
     ),
   );

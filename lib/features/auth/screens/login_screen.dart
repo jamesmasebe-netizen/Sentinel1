@@ -33,16 +33,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final authService = ref.read(authServiceProvider);
       await authService.signInWithGoogle();
     } catch (e) {
       if (mounted) {
-        setState(() { _error = 'Sign-in failed. Please try again.'; });
+        setState(() {
+          _error = 'Sign-in failed. Please try again.';
+        });
       }
     } finally {
-      if (mounted) setState(() { _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _devBypassLogin() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.devBypassLogin();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Bypass failed: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -59,11 +91,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              XMTheme.sidebarBg,
-              Color(0xFF1E293B),
-              XMTheme.primaryDark,
-            ],
+            colors: [XMTheme.sidebarBg, Color(0xFF1E293B), XMTheme.primaryDark],
           ),
         ),
         child: SafeArea(
@@ -71,7 +99,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(XMTheme.spacingLg),
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: isWide ? 420 : double.infinity),
+                constraints: BoxConstraints(
+                  maxWidth: isWide ? 420 : double.infinity,
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -143,20 +173,59 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             height: 52,
                             child: ElevatedButton.icon(
                               onPressed: _isLoading ? null : _signInWithGoogle,
-                              icon: _isLoading
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.login, size: 20),
-                              label: Text(_isLoading ? 'Signing in...' : 'Sign in with Google'),
+                              icon:
+                                  _isLoading
+                                      ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                      : const Icon(Icons.login, size: 20),
+                              label: Text(
+                                _isLoading
+                                    ? 'Signing in...'
+                                    : 'Sign in with Google',
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF1E293B),
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(XMTheme.radiusSm),
+                                  borderRadius: BorderRadius.circular(
+                                    XMTheme.radiusSm,
+                                  ),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: XMTheme.spacingMd),
+
+                          // Dev Bypass Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading ? null : _devBypassLogin,
+                              icon: const Icon(Icons.developer_mode, size: 20),
+                              label: const Text('Bypass Login (Dev)'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    XMTheme.radiusSm,
+                                  ),
+                                  side: BorderSide(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                  ),
                                 ),
                                 textStyle: const TextStyle(
                                   fontSize: 16,
@@ -172,17 +241,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: XMTheme.error.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(XMTheme.radiusSm),
-                                border: Border.all(color: XMTheme.error.withValues(alpha: 0.3)),
+                                borderRadius: BorderRadius.circular(
+                                  XMTheme.radiusSm,
+                                ),
+                                border: Border.all(
+                                  color: XMTheme.error.withValues(alpha: 0.3),
+                                ),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.error_outline, color: XMTheme.error, size: 18),
+                                  const Icon(
+                                    Icons.error_outline,
+                                    color: XMTheme.error,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       _error!,
-                                      style: const TextStyle(color: XMTheme.error, fontSize: 13),
+                                      style: const TextStyle(
+                                        color: XMTheme.error,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 ],

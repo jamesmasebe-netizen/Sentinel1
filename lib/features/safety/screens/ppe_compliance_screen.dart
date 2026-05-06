@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/utils/ui_utils.dart';
 
 /// PPE Compliance Tracker — Stats cards, compliance log, smart expiry reminders.
 /// Mirrors React PPEComplianceTracker: employee tracking, status, expiry alerts.
@@ -23,51 +25,64 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
   DateTime _expiryDate = DateTime.now().add(const Duration(days: 365));
 
   static const _ppeTypes = ['Hard Hat', 'Safety Boots', 'Hi-Vis Vest', 'Safety Glasses', 'Gloves', 'Ear Protection', 'Harness', 'Respirator'];
+  bool _isCompliant = true;
+  List<String> _missingItems = [];
+
+  final _employeeNameController = TextEditingController();
+  final _commentsController = TextEditingController();
   static const _statuses = ['Compliant', 'Non-Compliant', 'Expired'];
 
   @override
   void dispose() {
-    _employeeController.dispose();
+    _employeeNameController.dispose();
+    _commentsController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (_employeeController.text.isEmpty) return;
+  Future<void> _submitLog(BuildContext context) async {
+    if (_employeeNameController.text.isEmpty) {
+      UIUtils.showToast(context, 'Please enter employee name', type: ToastType.error);
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
 
-      await ref.read(firestoreServiceProvider).createDocument(
-        collection: 'ppe_compliance',
-        data: {
-          'employeeName': _employeeController.text.trim(),
-          'ppeType': _ppeType,
-          'status': _status,
-          'expiryDate': _expiryDate.toIso8601String(),
-          'authorId': profile.uid,
-          'siteId': profile.siteId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      final data = {
+        'employeeName': _employeeNameController.text.trim(),
+        'isCompliant': _isCompliant,
+        'missingItems': _missingItems,
+        'comments': _commentsController.text.trim(),
+        'siteId': profile.siteId,
+        'loggedById': profile.uid,
+        'loggedByName': profile.displayName,
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      final firestoreService = ref.read(firestoreServiceProvider);
+      await firestoreService.createDocument(collection: 'ppe_compliance', data: data);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('PPE record logged'), backgroundColor: XMTheme.success),
-        );
+        UIUtils.showToast(context, 'PPE check recorded successfully', type: ToastType.success);
+        Navigator.pop(context); // Close side sheet
         setState(() {
-          _showForm = false;
-          _employeeController.clear();
+          _employeeNameController.clear();
+          _commentsController.clear();
+          _isCompliant = true;
+          _missingItems = [];
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: XMTheme.error));
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +92,8 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
     if (siteId == null) return const Center(child: Text('No site assigned'));
 
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore
-          .collection('ppe_compliance')
+      stream: firestore.collection('ppe_compliance')
           .where('siteId', isEqualTo: siteId)
-          .orderBy('createdAt', descending: true)
-          .limit(200)
           .snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
@@ -109,21 +121,17 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('PPE Compliance', style: Theme.of(context).textTheme.titleMedium),
-                  FilledButton.icon(
-                    onPressed: () => setState(() => _showForm = !_showForm),
-                    icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
-                    label: Text(_showForm ? 'Cancel' : 'Log'),
-                  ),
-                ],
+              GHeader(
+                title: 'PPE Compliance',
+                subtitle: 'Track equipment assignments and expiry alerts',
+                trailing: FilledButton.icon(
+                  onPressed: () => setState(() => _showForm = !_showForm),
+                  icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
+                  label: Text(_showForm ? 'Cancel' : 'Log'),
+                ),
               ),
-              const SizedBox(height: 16),
+              GSpacing.vMd,
 
-              // Stats cards
               Row(
                 children: [
                   _StatCard(icon: Icons.engineering, label: 'Total', value: '${records.length}', color: XMTheme.info),
@@ -132,28 +140,26 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
                   _StatCard(icon: Icons.calendar_today, label: 'Expired', value: '$expired', color: XMTheme.warning),
                 ],
               ),
-              const SizedBox(height: 16),
+              GSpacing.vMd,
 
               // Form
               if (_showForm) _buildForm(),
 
               // Smart Reminders
               if (upcoming.isNotEmpty) ...[
-                Card(
+                GCard(
                   color: XMTheme.info.withValues(alpha: 0.05),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
+                  child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
                             Icon(Icons.notifications_active, color: XMTheme.info, size: 18),
-                            const SizedBox(width: 8),
+                            GSpacing.hSm,
                             Text('Smart Reminders', style: TextStyle(fontWeight: FontWeight.w600, color: XMTheme.info, fontSize: 14)),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        GSpacing.vSm,
                         ...upcoming.map((r) {
                           final daysLeft = DateTime.parse(r['expiryDate']).difference(DateTime.now()).inDays;
                           return Padding(
@@ -183,13 +189,12 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
+                GSpacing.vMd,
               ],
 
               // Compliance log
               Text('Compliance Log', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
+              GSpacing.vSm,
               if (records.isEmpty)
                 const Center(child: Padding(padding: EdgeInsets.all(32), child: Text('No PPE records found')))
               else
@@ -202,15 +207,13 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
   }
 
   Widget _buildForm() {
-    return Card(
+    return GCard(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             Text('Log PPE Compliance', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 12),
+            GSpacing.vMd,
             TextFormField(
               controller: _employeeController,
               decoration: const InputDecoration(labelText: 'Employee Name *', prefixIcon: Icon(Icons.person)),
@@ -252,15 +255,14 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _isSubmitting ? null : _submit,
+                onPressed: _isSubmitting ? null : () => _submitLog(context),
                 icon: _isSubmitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save),
                 label: Text(_isSubmitting ? 'Saving...' : 'Save Record'),
               ),
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -274,22 +276,20 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Card(
+      child: GCard(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: Icon(icon, color: color, size: 18),
-              ),
-              const SizedBox(height: 6),
-              Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-              Text(label, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            ],
-          ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            GSpacing.vSm,
+            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
+            Text(label, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
         ),
       ),
     );
@@ -311,30 +311,18 @@ class _PPERow extends StatelessWidget {
       default: statusColor = XMTheme.statusDraft;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 1),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-      ),
+    return GCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
           Expanded(flex: 3, child: Text(data['employeeName'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
           Expanded(flex: 2, child: Text(data['ppeType'] ?? '', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant))),
           Expanded(
             flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-              ),
-              child: Text(status, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: statusColor)),
-            ),
+            child: GStatusTag(label: status, color: statusColor),
           ),
-          const SizedBox(width: 8),
+          GSpacing.hSm,
           Expanded(flex: 2, child: Text(_fmtDate(data['expiryDate']), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant))),
         ],
       ),

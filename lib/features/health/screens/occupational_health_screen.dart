@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/utils/ui_utils.dart';
 
 /// Occupational Health — medical exams, hygiene surveys, first aid log, wellbeing.
 class OccupationalHealthScreen extends ConsumerStatefulWidget {
@@ -11,278 +13,1034 @@ class OccupationalHealthScreen extends ConsumerStatefulWidget {
   ConsumerState<OccupationalHealthScreen> createState() => _OHState();
 }
 
-class _OHState extends ConsumerState<OccupationalHealthScreen> with SingleTickerProviderStateMixin {
+class _OHState extends ConsumerState<OccupationalHealthScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tab;
-  bool _showMedForm = false, _showHygForm = false, _showFaForm = false, _isSub = false;
+  bool _isSub = false;
 
-  // Medical form
-  final _medEmpCtrl = TextEditingController(), _medIdCtrl = TextEditingController(), _medRestCtrl = TextEditingController();
-  String _medType = 'Pre-employment', _medStatus = 'Fit';
-  DateTime _medDate = DateTime.now(), _medNextDue = DateTime.now().add(const Duration(days: 365));
+  // Medical form controllers
+  final _medEmpCtrl = TextEditingController();
+  final _medIdCtrl = TextEditingController();
+  final _medRestCtrl = TextEditingController();
+  String _medType = 'Pre-employment';
+  String _medStatus = 'Fit';
+  DateTime _medDate = DateTime.now();
+  DateTime _medNextDue = DateTime.now().add(const Duration(days: 365));
 
-  // Hygiene survey form
-  final _zoneCtrl = TextEditingController(), _readingCtrl = TextEditingController(), _limitCtrl = TextEditingController();
+  // Hygiene survey form controllers
+  final _zoneCtrl = TextEditingController();
+  final _readingCtrl = TextEditingController();
+  final _limitCtrl = TextEditingController();
   String _hazardType = 'Noise';
   bool _requiresSurveillance = false;
 
-  // First aid form
-  final _faEmpCtrl = TextEditingController(), _faDescCtrl = TextEditingController(), _faTreatCtrl = TextEditingController();
+  // First aid form controllers
+  final _faEmpCtrl = TextEditingController();
+  final _faDescCtrl = TextEditingController();
+  final _faTreatCtrl = TextEditingController();
 
   @override
-  void initState() { super.initState(); _tab = TabController(length: 4, vsync: this); }
+  void initState() {
+    super.initState();
+    _tab = TabController(length: 4, vsync: this);
+  }
+
   @override
   void dispose() {
     _tab.dispose();
-    for (final c in [_medEmpCtrl, _medIdCtrl, _medRestCtrl, _zoneCtrl, _readingCtrl, _limitCtrl, _faEmpCtrl, _faDescCtrl, _faTreatCtrl]) { c.dispose(); }
+    _medEmpCtrl.dispose();
+    _medIdCtrl.dispose();
+    _medRestCtrl.dispose();
+    _zoneCtrl.dispose();
+    _readingCtrl.dispose();
+    _limitCtrl.dispose();
+    _faEmpCtrl.dispose();
+    _faDescCtrl.dispose();
+    _faTreatCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submitMedical() async {
-    if (_medEmpCtrl.text.isEmpty) return;
+    if (_medEmpCtrl.text.isEmpty) {
+      UIUtils.showToast(context, 'Employee name is required', type: ToastType.error);
+      return;
+    }
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(collection: 'medical_records', data: {
-        'employeeName': _medEmpCtrl.text.trim(), 'idNumber': _medIdCtrl.text.trim(),
-        'medicalType': _medType, 'status': _medStatus,
-        'restrictions': _medRestCtrl.text.trim(),
-        'dateConducted': _medDate.toIso8601String(), 'nextDueDate': _medNextDue.toIso8601String(),
-        'authorId': p.uid, 'siteId': p.siteId, 'createdAt': DateTime.now().toIso8601String(),
-      });
-      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medical record saved'), backgroundColor: XMTheme.success));
-        setState(() { _showMedForm = false; _medEmpCtrl.clear(); _medIdCtrl.clear(); _medRestCtrl.clear(); }); }
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: XMTheme.error)); }
-    finally { if (mounted) setState(() => _isSub = false); }
+      await ref.read(firestoreServiceProvider).createDocument(
+        collection: 'medical_records',
+        data: {
+          'employeeName': _medEmpCtrl.text.trim(),
+          'idNumber': _medIdCtrl.text.trim(),
+          'medicalType': _medType,
+          'status': _medStatus,
+          'restrictions': _medRestCtrl.text.trim(),
+          'dateConducted': _medDate.toIso8601String(),
+          'nextDueDate': _medNextDue.toIso8601String(),
+          'authorId': p.uid,
+          'siteId': p.siteId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+      if (mounted) {
+        Navigator.pop(context); // Close SideSheet
+        UIUtils.showToast(context, 'Medical record saved successfully');
+        setState(() {
+          _medEmpCtrl.clear();
+          _medIdCtrl.clear();
+          _medRestCtrl.clear();
+        });
+      }
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, '$e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isSub = false);
+    }
   }
 
   Future<void> _submitHygiene() async {
-    if (_zoneCtrl.text.isEmpty) return;
+    if (_zoneCtrl.text.isEmpty) {
+      UIUtils.showToast(context, 'Zone name is required', type: ToastType.error);
+      return;
+    }
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(collection: 'hygiene_surveys', data: {
-        'zoneName': _zoneCtrl.text.trim(), 'hazardType': _hazardType,
-        'readingValue': _readingCtrl.text.trim(), 'legalLimit': _limitCtrl.text.trim(),
-        'requiresMedicalSurveillance': _requiresSurveillance,
-        'dateConducted': DateTime.now().toIso8601String(),
-        'authorId': p.uid, 'siteId': p.siteId, 'createdAt': DateTime.now().toIso8601String(),
-      });
-      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Survey saved'), backgroundColor: XMTheme.success));
-        setState(() { _showHygForm = false; _zoneCtrl.clear(); _readingCtrl.clear(); _limitCtrl.clear(); }); }
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: XMTheme.error)); }
-    finally { if (mounted) setState(() => _isSub = false); }
+      await ref.read(firestoreServiceProvider).createDocument(
+        collection: 'hygiene_surveys',
+        data: {
+          'zoneName': _zoneCtrl.text.trim(),
+          'hazardType': _hazardType,
+          'readingValue': _readingCtrl.text.trim(),
+          'legalLimit': _limitCtrl.text.trim(),
+          'requiresMedicalSurveillance': _requiresSurveillance,
+          'dateConducted': DateTime.now().toIso8601String(),
+          'authorId': p.uid,
+          'siteId': p.siteId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+      if (mounted) {
+        Navigator.pop(context); // Close SideSheet
+        UIUtils.showToast(context, 'Hygiene survey saved successfully');
+        setState(() {
+          _zoneCtrl.clear();
+          _readingCtrl.clear();
+          _limitCtrl.clear();
+        });
+      }
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, '$e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isSub = false);
+    }
   }
 
   Future<void> _submitFirstAid() async {
-    if (_faEmpCtrl.text.isEmpty) return;
+    if (_faEmpCtrl.text.isEmpty) {
+      UIUtils.showToast(context, 'Employee name is required', type: ToastType.error);
+      return;
+    }
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(collection: 'first_aid_log', data: {
-        'employeeName': _faEmpCtrl.text.trim(), 'description': _faDescCtrl.text.trim(),
-        'treatment': _faTreatCtrl.text.trim(), 'date': DateTime.now().toIso8601String(),
-        'authorId': p.uid, 'siteId': p.siteId, 'createdAt': DateTime.now().toIso8601String(),
-      });
-      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('First aid entry saved'), backgroundColor: XMTheme.success));
-        setState(() { _showFaForm = false; _faEmpCtrl.clear(); _faDescCtrl.clear(); _faTreatCtrl.clear(); }); }
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e'), backgroundColor: XMTheme.error)); }
-    finally { if (mounted) setState(() => _isSub = false); }
+      await ref.read(firestoreServiceProvider).createDocument(
+        collection: 'first_aid_log',
+        data: {
+          'employeeName': _faEmpCtrl.text.trim(),
+          'description': _faDescCtrl.text.trim(),
+          'treatment': _faTreatCtrl.text.trim(),
+          'date': DateTime.now().toIso8601String(),
+          'authorId': p.uid,
+          'siteId': p.siteId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+      if (mounted) {
+        Navigator.pop(context); // Close SideSheet
+        UIUtils.showToast(context, 'First aid entry saved successfully');
+        setState(() {
+          _faEmpCtrl.clear();
+          _faDescCtrl.clear();
+          _faTreatCtrl.clear();
+        });
+      }
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, '$e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isSub = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Occupational Health'), bottom: TabBar(controller: _tab, isScrollable: true, tabAlignment: TabAlignment.start, tabs: const [
-        Tab(icon: Icon(Icons.monitor_heart, size: 16), text: 'Medicals'),
-        Tab(icon: Icon(Icons.science, size: 16), text: 'Hygiene'),
-        Tab(icon: Icon(Icons.medical_services, size: 16), text: 'First Aid'),
-        Tab(icon: Icon(Icons.favorite, size: 16), text: 'Wellbeing'),
-      ])),
-      body: TabBarView(controller: _tab, children: [_medicalsTab(), _hygieneTab(), _firstAidTab(), _wellbeingTab()]),
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        const GHeader(
+          title: 'Occupational Health',
+          subtitle: 'Medical surveillance, hygiene surveys, and wellbeing',
+        ),
+        // Premium Sub-Header for Tabs
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: TabBar(
+            controller: _tab,
+            dividerColor: Colors.transparent,
+            indicatorSize: TabBarIndicatorSize.tab,
+            indicator: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: theme.colorScheme.surface,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            labelColor: theme.colorScheme.primary,
+            unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            tabs: const [
+              Tab(text: 'Medicals'),
+              Tab(text: 'Hygiene'),
+              Tab(text: 'First Aid'),
+              Tab(text: 'Wellbeing'),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: TabBarView(
+            controller: _tab,
+            children: [
+              _medicalsTab(),
+              _hygieneTab(),
+              _firstAidTab(),
+              _wellbeingTab(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _medicalsTab() {
-    final siteId = ref.watch(currentSiteIdProvider); final fs = ref.watch(firestoreProvider);
-    return Column(children: [
-      Padding(padding: const EdgeInsets.all(16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        // Stats
-        _OHStat(label: 'Fit', icon: Icons.check_circle, color: XMTheme.success),
-        _OHStat(label: 'Restricted', icon: Icons.warning, color: XMTheme.warning),
-        _OHStat(label: 'Unfit', icon: Icons.cancel, color: XMTheme.error),
-        FilledButton.icon(onPressed: () => setState(() => _showMedForm = !_showMedForm),
-          icon: Icon(_showMedForm ? Icons.close : Icons.add, size: 16), label: Text(_showMedForm ? 'Cancel' : 'Add'),
-          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8))),
-      ])),
-      if (_showMedForm) Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Medical Examination Record', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
-        Row(children: [Expanded(child: TextFormField(controller: _medEmpCtrl, decoration: const InputDecoration(labelText: 'Employee Name *'))),
-          const SizedBox(width: 12), Expanded(child: TextFormField(controller: _medIdCtrl, decoration: const InputDecoration(labelText: 'ID Number')))]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(child: DropdownButtonFormField<String>(value: _medType, decoration: const InputDecoration(labelText: 'Exam Type', isDense: true),
-            items: ['Pre-employment', 'Annual', 'Exit', 'Baseline', 'Other'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => _medType = v!))),
-          const SizedBox(width: 12),
-          Expanded(child: DropdownButtonFormField<String>(value: _medStatus, decoration: const InputDecoration(labelText: 'Fitness Status', isDense: true),
-            items: ['Fit', 'Fit with Restrictions', 'Unfit'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => _medStatus = v!))),
-        ]), const SizedBox(height: 10),
-        TextFormField(controller: _medRestCtrl, decoration: const InputDecoration(labelText: 'Restrictions (if any)')), const SizedBox(height: 10),
-        Row(children: [
-          Expanded(child: ListTile(contentPadding: EdgeInsets.zero, title: const Text('Conducted', style: TextStyle(fontSize: 11)),
-            subtitle: Text('${_medDate.day}/${_medDate.month}/${_medDate.year}'),
-            onTap: () async { final d = await showDatePicker(context: context, initialDate: _medDate, firstDate: DateTime(2020), lastDate: DateTime.now()); if (d != null) setState(() => _medDate = d); })),
-          Expanded(child: ListTile(contentPadding: EdgeInsets.zero, title: const Text('Next Due', style: TextStyle(fontSize: 11)),
-            subtitle: Text('${_medNextDue.day}/${_medNextDue.month}/${_medNextDue.year}'),
-            onTap: () async { final d = await showDatePicker(context: context, initialDate: _medNextDue, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 1825))); if (d != null) setState(() => _medNextDue = d); })),
-        ]),
-        const SizedBox(height: 10),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: _isSub ? null : _submitMedical, child: Text(_isSub ? 'Saving…' : 'Save Record'))),
-      ]))),
-      Expanded(child: StreamBuilder<QuerySnapshot>(
-        stream: siteId == null ? null : fs.collection('medical_records').where('siteId', isEqualTo: siteId).orderBy('createdAt', descending: true).limit(100).snapshots(),
-        builder: (ctx, snap) {
-          final docs = snap.data?.docs ?? [];
-          if (docs.isEmpty) return const Center(child: Text('No medical records'));
-          return ListView.builder(padding: const EdgeInsets.all(16), itemCount: docs.length, itemBuilder: (ctx, i) {
-            final d = docs[i].data() as Map<String, dynamic>;
-            final c = d['status'] == 'Fit' ? XMTheme.success : d['status'] == 'Unfit' ? XMTheme.error : XMTheme.warning;
-            return Container(margin: const EdgeInsets.only(bottom: 6), padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(10)),
-              child: Row(children: [
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(d['employeeName'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  Text('${d['medicalType']} • ${d['idNumber'] ?? ''}', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                ])),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text(d['status'] ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: c))),
-              ]));
-          });
-        },
-      )),
-    ]);
+    final siteId = ref.watch(currentSiteIdProvider);
+    final fs = ref.watch(firestoreProvider);
+
+    return Column(
+      children: [
+        // Action Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _OHStatChip(label: 'Fit', count: '85%', color: XMTheme.success),
+                      GSpacing.hMd,
+                      _OHStatChip(label: 'Restricted', count: '12%', color: XMTheme.warning),
+                      GSpacing.hMd,
+                      _OHStatChip(label: 'Unfit', count: '3%', color: XMTheme.error),
+                    ],
+                  ),
+                ),
+              ),
+              GSpacing.hMd,
+              FilledButton.icon(
+                onPressed: () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'New Medical Record',
+                  builder: (ctx) => _buildMedicalForm(),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: const Text('Add Record'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: siteId == null
+                ? null
+                : fs
+                    .collection('medical_records')
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(100)
+                    .snapshots(),
+            builder: (ctx, snap) {
+              final docs = snap.data?.docs ?? [];
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (docs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.monitor_heart_outlined, size: 48, color: Theme.of(context).disabledColor),
+                      GSpacing.vMd,
+                      Text('No medical records found', style: Theme.of(context).textTheme.bodyLarge),
+                    ],
+                  ),
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: docs.length,
+                itemBuilder: (ctx, i) {
+                  final d = docs[i].data() as Map<String, dynamic>;
+                  return _MedicalListItem(data: d);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _hygieneTab() {
-    final siteId = ref.watch(currentSiteIdProvider); final fs = ref.watch(firestoreProvider);
-    return Column(children: [
-      Padding(padding: const EdgeInsets.all(16), child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        FilledButton.icon(onPressed: () => setState(() => _showHygForm = !_showHygForm),
-          icon: Icon(_showHygForm ? Icons.close : Icons.add, size: 18), label: Text(_showHygForm ? 'Cancel' : 'Add Survey')),
-      ])),
-      if (_showHygForm) Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Hygiene Survey', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
-        TextFormField(controller: _zoneCtrl, decoration: const InputDecoration(labelText: 'Zone / Area *')), const SizedBox(height: 10),
-        DropdownButtonFormField<String>(value: _hazardType, decoration: const InputDecoration(labelText: 'Hazard Type'),
-          items: ['Noise', 'Dust', 'Chemical', 'Ergonomic', 'Illumination', 'Thermal', 'Other'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => setState(() => _hazardType = v!)),
-        const SizedBox(height: 10),
-        Row(children: [Expanded(child: TextFormField(controller: _readingCtrl, decoration: const InputDecoration(labelText: 'Reading Value'))),
-          const SizedBox(width: 12), Expanded(child: TextFormField(controller: _limitCtrl, decoration: const InputDecoration(labelText: 'Legal Limit')))]),
-        const SizedBox(height: 10),
-        CheckboxListTile(contentPadding: EdgeInsets.zero, value: _requiresSurveillance, onChanged: (v) => setState(() => _requiresSurveillance = v!),
-          title: const Text('Requires Medical Surveillance?', style: TextStyle(fontSize: 13)), controlAffinity: ListTileControlAffinity.leading),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: _isSub ? null : _submitHygiene, child: Text(_isSub ? 'Saving…' : 'Save Survey'))),
-      ]))),
-      Expanded(child: StreamBuilder<QuerySnapshot>(
-        stream: siteId == null ? null : fs.collection('hygiene_surveys').where('siteId', isEqualTo: siteId).orderBy('createdAt', descending: true).limit(50).snapshots(),
-        builder: (ctx, snap) {
-          final docs = snap.data?.docs ?? [];
-          if (docs.isEmpty) return const Center(child: Text('No hygiene surveys'));
-          return ListView.builder(padding: const EdgeInsets.all(16), itemCount: docs.length, itemBuilder: (ctx, i) {
-            final d = docs[i].data() as Map<String, dynamic>;
-            return Card(margin: const EdgeInsets.only(bottom: 8), child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text(d['zoneName'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: XMTheme.info.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text(d['hazardType'] ?? '', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: XMTheme.info))),
-              ]),
-              const SizedBox(height: 4),
-              Text('Reading: ${d['readingValue']} / Limit: ${d['legalLimit']}', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              if (d['requiresMedicalSurveillance'] == true) Container(margin: const EdgeInsets.only(top: 6), padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: XMTheme.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                child: const Text('⚠ Medical Surveillance Required', style: TextStyle(fontSize: 10, color: XMTheme.warning))),
-            ])));
-          });
-        },
-      )),
-    ]);
+    final siteId = ref.watch(currentSiteIdProvider);
+    final fs = ref.watch(firestoreProvider);
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Hygiene Surveys', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  Text('Environmental monitoring logs', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ],
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'New Hygiene Assessment',
+                  builder: (ctx) => _buildHygieneForm(),
+                ),
+                icon: const Icon(Icons.science_rounded, size: 20),
+                label: const Text('New Survey'),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: siteId == null
+                ? null
+                : fs
+                    .collection('hygiene_surveys')
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(50)
+                    .snapshots(),
+            builder: (ctx, snap) {
+              final docs = snap.data?.docs ?? [];
+              if (docs.isEmpty) {
+                return const Center(child: Text('No hygiene surveys logged'));
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: docs.length,
+                itemBuilder: (ctx, i) {
+                  final d = docs[i].data() as Map<String, dynamic>;
+                  return _HygieneListItem(data: d);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _firstAidTab() {
-    final siteId = ref.watch(currentSiteIdProvider); final fs = ref.watch(firestoreProvider);
-    return Column(children: [
-      Padding(padding: const EdgeInsets.all(16), child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-        FilledButton.icon(onPressed: () => setState(() => _showFaForm = !_showFaForm),
-          icon: Icon(_showFaForm ? Icons.close : Icons.add, size: 18), label: Text(_showFaForm ? 'Cancel' : 'Log Entry'),
-          style: FilledButton.styleFrom(backgroundColor: XMTheme.error)),
-      ])),
-      if (_showFaForm) Card(margin: const EdgeInsets.symmetric(horizontal: 16), child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('First Aid Entry', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 12),
-        TextFormField(controller: _faEmpCtrl, decoration: const InputDecoration(labelText: 'Employee / Person *')), const SizedBox(height: 10),
-        TextFormField(controller: _faDescCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Injury / Complaint Description')), const SizedBox(height: 10),
-        TextFormField(controller: _faTreatCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'Treatment Provided')), const SizedBox(height: 12),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: _isSub ? null : _submitFirstAid, child: Text(_isSub ? 'Saving…' : 'Save Entry'))),
-      ]))),
-      Expanded(child: StreamBuilder<QuerySnapshot>(
-        stream: siteId == null ? null : fs.collection('first_aid_log').where('siteId', isEqualTo: siteId).orderBy('createdAt', descending: true).limit(50).snapshots(),
-        builder: (ctx, snap) {
-          final docs = snap.data?.docs ?? [];
-          if (docs.isEmpty) return const Center(child: Text('No first aid entries'));
-          return ListView.builder(padding: const EdgeInsets.all(16), itemCount: docs.length, itemBuilder: (ctx, i) {
-            final d = docs[i].data() as Map<String, dynamic>;
-            return Card(margin: const EdgeInsets.only(bottom: 8), child: ListTile(
-              leading: const CircleAvatar(backgroundColor: Color(0x1AEF4444), child: Icon(Icons.medical_services, color: XMTheme.error, size: 20)),
-              title: Text(d['employeeName'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              subtitle: Text(d['description'] ?? '', style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
-              trailing: Text(_fmtDate(d['date']), style: const TextStyle(fontSize: 11)),
-            ));
-          });
-        },
-      )),
-    ]);
+    final siteId = ref.watch(currentSiteIdProvider);
+    final fs = ref.watch(firestoreProvider);
+    final theme = Theme.of(context);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('First Aid Log', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  Text('Incident treatment records', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ],
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'New First Aid Incident',
+                  builder: (ctx) => _buildFirstAidForm(),
+                ),
+                icon: const Icon(Icons.medical_services_rounded, size: 20),
+                label: const Text('Log Entry'),
+                style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: siteId == null
+                ? null
+                : fs
+                    .collection('first_aid_log')
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(50)
+                    .snapshots(),
+            builder: (ctx, snap) {
+              final docs = snap.data?.docs ?? [];
+              if (docs.isEmpty) {
+                return const Center(child: Text('No first aid entries logged'));
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: docs.length,
+                itemBuilder: (ctx, i) {
+                  final d = docs[i].data() as Map<String, dynamic>;
+                  return _FirstAidListItem(data: d);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _wellbeingTab() {
-    return SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Wellbeing Initiatives', style: Theme.of(context).textTheme.titleSmall), const SizedBox(height: 16),
-      _WellbeingCard(title: 'Mental Health Support', subtitle: 'Employee Assistance Programme (EAP) available 24/7', icon: Icons.psychology, color: XMTheme.primary),
-      _WellbeingCard(title: 'Fatigue Management', subtitle: 'Shift rotation monitoring and rest period compliance', icon: Icons.bedtime, color: XMTheme.secondary),
-      _WellbeingCard(title: 'Substance Awareness', subtitle: 'Alcohol & drug awareness training schedule', icon: Icons.local_bar, color: XMTheme.warning),
-      _WellbeingCard(title: 'Wellness Campaigns', subtitle: 'Monthly health campaigns and screening drives', icon: Icons.favorite, color: XMTheme.error),
-      const SizedBox(height: 24),
-      Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [XMTheme.success.withValues(alpha: 0.08), XMTheme.primary.withValues(alpha: 0.05)]),
-        borderRadius: BorderRadius.circular(12), border: Border.all(color: XMTheme.success.withValues(alpha: 0.2))),
-        child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [Icon(Icons.tips_and_updates, color: XMTheme.success, size: 18), SizedBox(width: 8), Text('EAP Helpline', style: TextStyle(fontWeight: FontWeight.w700))]),
-          SizedBox(height: 8),
-          Text('0800 611 655 — Confidential, free, 24/7 counselling and support services available to all employees.', style: TextStyle(fontSize: 13, height: 1.4)),
-        ])),
-    ]));
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Wellbeing Hub', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text('Mental resilience and health initiatives', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          GSpacing.vLg,
+          GridView.count(
+            crossAxisCount: MediaQuery.of(context).size.width > 900 ? 2 : 1,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 2.8,
+            children: const [
+              _WellbeingCard(
+                title: 'Mental Health Support',
+                subtitle: 'EAP available 24/7 for counseling',
+                icon: Icons.psychology_rounded,
+                color: XMTheme.primary,
+              ),
+              _WellbeingCard(
+                title: 'Fatigue Management',
+                subtitle: 'Monitoring rest period compliance',
+                icon: Icons.bedtime_rounded,
+                color: XMTheme.secondary,
+              ),
+              _WellbeingCard(
+                title: 'Substance Awareness',
+                subtitle: 'Training schedule and support',
+                icon: Icons.local_bar_rounded,
+                color: XMTheme.warning,
+              ),
+              _WellbeingCard(
+                title: 'Wellness Campaigns',
+                subtitle: 'Monthly screening drives',
+                icon: Icons.favorite_rounded,
+                color: XMTheme.error,
+              ),
+            ],
+          ),
+          GSpacing.vLg,
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  XMTheme.success.withValues(alpha: 0.1),
+                  XMTheme.primary.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: XMTheme.success.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: XMTheme.success.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.tips_and_updates, color: XMTheme.success, size: 20),
+                    ),
+                    GSpacing.hMd,
+                    const Text(
+                      'EAP Helpline',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                  ],
+                ),
+                GSpacing.vSm,
+                const Text(
+                  '0800 611 655 — Confidential, free, 24/7 counselling and support services available to all employees.',
+                  style: TextStyle(fontSize: 14, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _fmtDate(String? iso) { if (iso == null) return ''; try { final dt = DateTime.parse(iso); return '${dt.day}/${dt.month}/${dt.year}'; } catch (_) { return ''; } }
+  Widget _buildMedicalForm() {
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Employee Details', style: Theme.of(context).textTheme.titleSmall),
+              GSpacing.vSm,
+              TextFormField(
+                controller: _medEmpCtrl,
+                decoration: const InputDecoration(labelText: 'Employee Name *', prefixIcon: Icon(Icons.person_outline)),
+              ),
+              GSpacing.vMd,
+              TextFormField(
+                controller: _medIdCtrl,
+                decoration: const InputDecoration(labelText: 'ID / Employee Number', prefixIcon: Icon(Icons.badge_outlined)),
+              ),
+              GSpacing.vLg,
+              Text('Examination Info', style: Theme.of(context).textTheme.titleSmall),
+              GSpacing.vSm,
+              DropdownButtonFormField<String>(
+                value: _medType,
+                decoration: const InputDecoration(labelText: 'Exam Type'),
+                items: ['Pre-employment', 'Annual', 'Exit', 'Baseline', 'Other']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setLocalState(() => _medType = v!),
+              ),
+              GSpacing.vMd,
+              DropdownButtonFormField<String>(
+                value: _medStatus,
+                decoration: const InputDecoration(labelText: 'Fitness Status'),
+                items: ['Fit', 'Fit with Restrictions', 'Unfit']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setLocalState(() => _medStatus = v!),
+              ),
+              GSpacing.vMd,
+              TextFormField(
+                controller: _medRestCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Restrictions / Comments'),
+              ),
+              GSpacing.vLg,
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Conducted On', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        GSpacing.vSm,
+                        InkWell(
+                          onTap: () async {
+                            final d = await showDatePicker(
+                              context: context,
+                              initialDate: _medDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                            );
+                            if (d != null) setLocalState(() => _medDate = d);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today, size: 16),
+                                GSpacing.hSm,
+                                Text(UIUtils.formatDate(_medDate)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GSpacing.hMd,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Next Due', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        GSpacing.vSm,
+                        InkWell(
+                          onTap: () async {
+                            final d = await showDatePicker(
+                              context: context,
+                              initialDate: _medNextDue,
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(const Duration(days: 1825)),
+                            );
+                            if (d != null) setLocalState(() => _medNextDue = d);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.event_repeat, size: 16),
+                                GSpacing.hSm,
+                                Text(UIUtils.formatDate(_medNextDue)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              GSpacing.vLg,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _isSub ? null : _submitMedical,
+                  child: Text(_isSub ? 'Saving…' : 'Save Record'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHygieneForm() {
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _zoneCtrl,
+                decoration: const InputDecoration(labelText: 'Zone / Area *', prefixIcon: Icon(Icons.place_outlined)),
+              ),
+              GSpacing.vMd,
+              DropdownButtonFormField<String>(
+                value: _hazardType,
+                decoration: const InputDecoration(labelText: 'Hazard Type'),
+                items: ['Noise', 'Dust', 'Chemical', 'Ergonomic', 'Illumination', 'Thermal', 'Other']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setLocalState(() => _hazardType = v!),
+              ),
+              GSpacing.vMd,
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _readingCtrl,
+                      decoration: const InputDecoration(labelText: 'Reading Value'),
+                    ),
+                  ),
+                  GSpacing.hMd,
+                  Expanded(
+                    child: TextFormField(
+                      controller: _limitCtrl,
+                      decoration: const InputDecoration(labelText: 'Legal Limit'),
+                    ),
+                  ),
+                ],
+              ),
+              GSpacing.vMd,
+              SwitchListTile(
+                value: _requiresSurveillance,
+                onChanged: (v) => setLocalState(() => _requiresSurveillance = v),
+                title: const Text('Requires Medical Surveillance?', style: TextStyle(fontSize: 14)),
+                contentPadding: EdgeInsets.zero,
+              ),
+              GSpacing.vLg,
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _isSub ? null : _submitHygiene,
+                  child: Text(_isSub ? 'Saving…' : 'Save Survey'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFirstAidForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextFormField(
+            controller: _faEmpCtrl,
+            decoration: const InputDecoration(labelText: 'Employee / Person *', prefixIcon: Icon(Icons.person_outline)),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _faDescCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Injury / Complaint Description'),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _faTreatCtrl,
+            maxLines: 3,
+            decoration: const InputDecoration(labelText: 'Treatment Provided'),
+          ),
+          GSpacing.vXl,
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _isSub ? null : _submitFirstAid,
+              child: Text(_isSub ? 'Saving…' : 'Save Entry'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _OHStat extends StatelessWidget {
-  final String label; final IconData icon; final Color color;
-  const _OHStat({required this.label, required this.icon, required this.color});
+class _MedicalListItem extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _MedicalListItem({required this.data});
+
   @override
-  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: color, size: 16), const SizedBox(width: 4), Text(label, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600))]);
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final status = data['status'] ?? 'Unknown';
+    final type = data['medicalType'] ?? 'Exam';
+    
+    Color color = XMTheme.success;
+    IconData icon = Icons.check_circle_outline_rounded;
+    
+    if (status == 'Unfit') {
+      color = XMTheme.error;
+      icon = Icons.cancel_outlined;
+    } else if (status.contains('Restriction')) {
+      color = XMTheme.warning;
+      icon = Icons.warning_amber_rounded;
+    }
+
+    return GCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          GSpacing.hLg,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(data['employeeName'] ?? 'Unknown Employee', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                GSpacing.vXs,
+                Text('$type • ${data['idNumber'] ?? "No ID"}',
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          GSpacing.hMd,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              GStatusTag(label: status.toUpperCase(), color: color),
+              GSpacing.vXs,
+              Text(
+                'Due: ${UIUtils.formatTimestamp(data['nextDueDate']).split(',').first}',
+                style: theme.textTheme.labelSmall?.copyWith(fontSize: 9, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HygieneListItem extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _HygieneListItem({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final reading = double.tryParse(data['readingValue']?.toString() ?? '0') ?? 0;
+    final limit = double.tryParse(data['legalLimit']?.toString() ?? '100') ?? 100;
+    final isOver = reading > limit;
+    final color = isOver ? XMTheme.error : XMTheme.info;
+
+    return GCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(data['zoneName'] ?? 'Unknown Zone', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(data['hazardType'] ?? 'Unknown Hazard', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              GStatusTag(
+                label: isOver ? 'THRESHOLD EXCEEDED' : 'WITHIN LIMITS',
+                color: isOver ? XMTheme.error : XMTheme.success,
+              ),
+            ],
+          ),
+          GSpacing.vMd,
+          Row(
+            children: [
+              _SurveyMetric(label: 'READING', value: '${data['readingValue'] ?? "0"}', color: color),
+              GSpacing.hLg,
+              _SurveyMetric(label: 'LEGAL LIMIT', value: '${data['legalLimit'] ?? "0"}', color: theme.colorScheme.outline),
+              const Spacer(),
+              if (data['requiresMedicalSurveillance'] == true)
+                _TinyBadge(label: 'SURVEILLANCE REQ', color: XMTheme.warning, icon: Icons.medical_services_rounded),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SurveyMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _SurveyMetric({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.labelSmall?.copyWith(fontSize: 8, letterSpacing: 1, color: theme.colorScheme.onSurfaceVariant)),
+        Text(value, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+}
+
+class _FirstAidListItem extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _FirstAidListItem({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: theme.colorScheme.errorContainer.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(14)),
+            child: Icon(Icons.medical_services_rounded, color: theme.colorScheme.error, size: 24),
+          ),
+          GSpacing.hLg,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(data['employeeName'] ?? 'Unknown', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      UIUtils.formatTimestamp(data['date']).split(',').first,
+                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+                GSpacing.vSm,
+                Text(data['description'] ?? 'No description', style: theme.textTheme.bodySmall),
+                GSpacing.vMd,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
+                  child: Row(
+                    children: [
+                      Icon(Icons.healing_rounded, size: 14, color: theme.colorScheme.primary),
+                      GSpacing.hMd,
+                      Expanded(
+                        child: Text(
+                          'Treatment: ${data['treatment'] ?? "None recorded"}',
+                          style: theme.textTheme.labelSmall?.copyWith(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OHStatChip extends StatelessWidget {
+  final String label;
+  final String count;
+  final Color color;
+
+  const _OHStatChip({required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          GSpacing.hMd,
+          Text(label, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
+          GSpacing.hSm,
+          Text(count, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
 }
 
 class _WellbeingCard extends StatelessWidget {
-  final String title, subtitle; final IconData icon; final Color color;
+  final String title, subtitle;
+  final IconData icon;
+  final Color color;
   const _WellbeingCard({required this.title, required this.subtitle, required this.icon, required this.color});
+
   @override
-  Widget build(BuildContext context) => Container(margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withValues(alpha: 0.2))),
-    child: Row(children: [Icon(icon, color: color, size: 22), const SizedBox(width: 14),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-        Text(subtitle, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-      ]))
-    ]));
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GCard(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          GSpacing.hLg,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                GSpacing.vXs,
+                Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TinyBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final IconData icon;
+
+  const _TinyBadge({required this.label, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 10),
+          GSpacing.hXs,
+          Text(label, style: theme.textTheme.labelSmall?.copyWith(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+        ],
+      ),
+    );
+  }
 }

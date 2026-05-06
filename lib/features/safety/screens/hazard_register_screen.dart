@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../../../core/widgets/ds_widgets.dart';
 
 /// Hazard Register — CRUD for site hazards with severity, location, and description.
 /// Mirrors React HazardRegister: create form, severity chips, location tagging.
@@ -10,19 +12,19 @@ class HazardRegisterScreen extends ConsumerStatefulWidget {
   const HazardRegisterScreen({super.key});
 
   @override
-  ConsumerState<HazardRegisterScreen> createState() => _HazardRegisterScreenState();
+  ConsumerState<HazardRegisterScreen> createState() =>
+      _HazardRegisterScreenState();
 }
 
 class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
-  bool _showForm = false;
   bool _isSubmitting = false;
 
+  // Form Fields
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
-  String _severity = 'Medium';
-
-  static const _severities = ['Low', 'Medium', 'High', 'Critical'];
+  String _severity = 'Low';
+  final _severities = ['Low', 'Medium', 'High', 'Critical'];
 
   @override
   void dispose() {
@@ -32,50 +34,114 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  Future<void> _submitHazard(BuildContext context) async {
     if (_titleController.text.isEmpty || _descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill title and description'), backgroundColor: XMTheme.error),
-      );
+      UIUtils.showToast(context, 'Please fill all required fields', type: ToastType.error);
       return;
     }
+
     setState(() => _isSubmitting = true);
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
 
-      await ref.read(firestoreServiceProvider).createDocument(
-        collection: 'hazards',
-        data: {
-          'title': _titleController.text.trim(),
-          'description': _descriptionController.text.trim(),
-          'location': _locationController.text.trim(),
-          'severity': _severity,
-          'authorId': profile.uid,
-          'siteId': profile.siteId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      final data = {
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'location': _locationController.text.trim(),
+        'severity': _severity,
+        'status': 'Open',
+        'reportedById': profile.uid,
+        'reportedByName': profile.displayName,
+        'siteId': profile.siteId,
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      final firestoreService = ref.read(firestoreServiceProvider);
+      await firestoreService.createDocument(collection: 'hazards', data: data);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Hazard logged successfully'), backgroundColor: XMTheme.success),
-        );
+        UIUtils.showToast(context, 'Hazard reported successfully', type: ToastType.success);
+        Navigator.pop(context); // Close side sheet
         setState(() {
-          _showForm = false;
           _titleController.clear();
           _descriptionController.clear();
           _locationController.clear();
-          _severity = 'Medium';
+          _severity = 'Low';
         });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: XMTheme.error));
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  void _showHazardForm(BuildContext context) {
+    UIUtils.showSideSheet(
+      context: context,
+      title: 'Report New Hazard',
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setInternalState) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Hazard Title *',
+                    prefixIcon: Icon(Icons.warning_amber_rounded),
+                  ),
+                ),
+                GSpacing.vMd,
+                TextFormField(
+                  controller: _locationController,
+                  decoration: const InputDecoration(
+                    labelText: 'Location',
+                    prefixIcon: Icon(Icons.location_on_rounded),
+                  ),
+                ),
+                GSpacing.vMd,
+                DropdownButtonFormField<String>(
+                  value: _severity,
+                  decoration: const InputDecoration(
+                    labelText: 'Severity *',
+                    prefixIcon: Icon(Icons.priority_high_rounded),
+                  ),
+                  items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  onChanged: (v) => setInternalState(() => _severity = v!),
+                ),
+                GSpacing.vMd,
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Description *',
+                    prefixIcon: Icon(Icons.description_rounded),
+                  ),
+                ),
+                GSpacing.vLg,
+
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _isSubmitting ? null : () => _submitHazard(context),
+                    icon: _isSubmitting
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.report_problem_rounded),
+                    label: Text(_isSubmitting ? 'Reporting...' : 'Report Hazard'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -83,96 +149,27 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
     final siteId = ref.watch(currentSiteIdProvider);
     final firestore = ref.watch(firestoreProvider);
 
-    if (siteId == null) return const Center(child: Text('No site assigned'));
+    if (siteId == null) {
+      return const Center(child: Text('No site assigned'));
+    }
 
     return Column(
       children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Hazard Register', style: Theme.of(context).textTheme.titleMedium),
-              FilledButton.icon(
-                onPressed: () => setState(() => _showForm = !_showForm),
-                icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
-                label: Text(_showForm ? 'Cancel' : 'Log Hazard'),
-                style: FilledButton.styleFrom(backgroundColor: XMTheme.error),
-              ),
-            ],
+        GHeader(
+          title: 'Hazard Register',
+          subtitle: 'Track and mitigate workplace hazards',
+          trailing: FilledButton.icon(
+            onPressed: () => _showHazardForm(context),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Report Hazard'),
           ),
         ),
-
-        // Form
-        if (_showForm)
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Log New Hazard', style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Hazard Title *', prefixIcon: Icon(Icons.warning)),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Description *',
-                      hintText: 'Describe the hazard in detail',
-                      alignLabelWithHint: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _locationController,
-                          decoration: const InputDecoration(labelText: 'Location', prefixIcon: Icon(Icons.location_on)),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _severity,
-                          decoration: const InputDecoration(labelText: 'Severity'),
-                          items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                          onChanged: (v) => setState(() => _severity = v!),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _isSubmitting ? null : _submit,
-                      icon: _isSubmitting
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.save),
-                      label: Text(_isSubmitting ? 'Saving...' : 'Save Hazard'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        // Hazards list
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: firestore
                 .collection('hazards')
                 .where('siteId', isEqualTo: siteId)
                 .orderBy('createdAt', descending: true)
-                .limit(100)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -184,7 +181,11 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, size: 48, color: XMTheme.success.withValues(alpha: 0.4)),
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 48,
+                        color: XMTheme.success.withValues(alpha: 0.4),
+                      ),
                       const SizedBox(height: 12),
                       const Text('No hazards registered'),
                     ],
@@ -216,73 +217,94 @@ class _HazardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final title = data['title'] ?? 'Untitled';
     final desc = data['description'] ?? '';
-    final location = data['location'] ?? '';
+    final location = data['location'] ?? 'Unknown location';
     final severity = data['severity'] ?? 'Medium';
+    final reportedBy = data['reportedByName'] ?? 'Unknown';
 
-    return Card(
+    return GCard(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.warning, size: 20, color: _sevColor(severity)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _sevColor(severity).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _sevColor(severity).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-                    border: Border.all(color: _sevColor(severity).withValues(alpha: 0.3)),
-                  ),
-                  child: Text(severity, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _sevColor(severity))),
+                child: Icon(Icons.warning_amber_rounded, color: _sevColor(severity), size: 20),
+              ),
+              GSpacing.hMd,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(location, style: Theme.of(context).textTheme.bodySmall),
+                  ],
                 ),
-              ],
+              ),
+              GStatusTag(label: severity, color: _sevColor(severity)),
+            ],
+          ),
+          GSpacing.vMd,
+          Text(
+            desc,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.5,
             ),
-            const SizedBox(height: 8),
-            Text(desc, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 3, overflow: TextOverflow.ellipsis),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                if (location.isNotEmpty) ...[
-                  Icon(Icons.location_on, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Text(location, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  const SizedBox(width: 12),
-                ],
-                Icon(Icons.calendar_today, size: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text(_fmtDate(data['createdAt']), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ],
-            ),
-          ],
-        ),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          GSpacing.vMd,
+          Row(
+            children: [
+              _MiniInfo(icon: Icons.person_outline, label: reportedBy),
+              GSpacing.hMd,
+              _MiniInfo(icon: Icons.calendar_today_rounded, label: UIUtils.formatTimestamp(data['createdAt'])),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Color _sevColor(String severity) {
     switch (severity) {
-      case 'Critical': return XMTheme.severityCritical;
-      case 'High': return XMTheme.severityMajor;
-      case 'Medium': return XMTheme.severityModerate;
-      case 'Low': return XMTheme.severityMinor;
-      default: return XMTheme.severityNegligible;
+      case 'Critical':
+        return XMTheme.severityCritical;
+      case 'High':
+        return XMTheme.severityMajor;
+      case 'Medium':
+        return XMTheme.severityModerate;
+      case 'Low':
+        return XMTheme.severityMinor;
+      default:
+        return XMTheme.severityNegligible;
     }
   }
+}
 
-  String _fmtDate(String? iso) {
-    if (iso == null) return '';
-    try {
-      final dt = DateTime.parse(iso);
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return iso;
-    }
+class _MiniInfo extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color? color;
+  const _MiniInfo({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: c),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: c)),
+      ],
+    );
   }
 }

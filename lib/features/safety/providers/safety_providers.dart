@@ -8,7 +8,12 @@ class SafetyIncident {
   final String status;
   final DateTime date;
 
-  SafetyIncident({required this.id, required this.title, required this.status, required this.date});
+  SafetyIncident({
+    required this.id,
+    required this.title,
+    required this.status,
+    required this.date,
+  });
 
   factory SafetyIncident.fromFirestore(Map<String, dynamic> data, String id) {
     return SafetyIncident(
@@ -36,20 +41,35 @@ class WorkPermit {
   }
 }
 
-final propertyIncidentsProvider = StreamProvider.family<List<SafetyIncident>, String>((ref, propertyId) {
-  final firestore = ref.watch(firestoreProvider);
-  return firestore
-      .collection('incidents')
-      .where('propertyId', isEqualTo: propertyId)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.map((doc) => SafetyIncident.fromFirestore(doc.data(), doc.id)).toList());
-});
+final propertyIncidentsProvider =
+    StreamProvider.family<List<SafetyIncident>, String>((ref, propertyId) {
+      final firestore = ref.watch(firestoreProvider);
+      return firestore
+          .collection('incidents')
+          .where('propertyId', isEqualTo: propertyId)
+          .snapshots()
+          .map(
+            (snapshot) =>
+                snapshot.docs
+                    .map(
+                      (doc) => SafetyIncident.fromFirestore(doc.data(), doc.id),
+                    )
+                    .toList(),
+          );
+    });
 
-final propertyPermitsProvider = StreamProvider.family<List<WorkPermit>, String>((ref, propertyId) {
-  final firestore = ref.watch(firestoreProvider);
-  return firestore
-      .collection('permits')
-      .where('propertyId', isEqualTo: propertyId)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.map((doc) => WorkPermit.fromFirestore(doc.data(), doc.id)).toList());
-});
+final propertyPermitsProvider = StreamProvider.family<List<WorkPermit>, String>(
+  (ref, propertyId) {
+    final firestore = ref.watch(firestoreProvider);
+    return firestore
+        .collection('permits')
+        .where('propertyId', isEqualTo: propertyId)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => WorkPermit.fromFirestore(doc.data(), doc.id))
+                  .toList(),
+        );
+  },
+);

@@ -3,91 +3,72 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/utils/ui_utils.dart';
 
 /// Behavioral Based Safety — observations, suggestion box, and gamification leaderboard.
-/// Mirrors React BehavioralSafety: 3 observation types, points, anonymous, suggestions.
 class BBSObservationsScreen extends ConsumerStatefulWidget {
   const BBSObservationsScreen({super.key});
 
   @override
-  ConsumerState<BBSObservationsScreen> createState() => _BBSObservationsScreenState();
+  ConsumerState<BBSObservationsScreen> createState() => _BBSState();
 }
 
-class _BBSObservationsScreenState extends ConsumerState<BBSObservationsScreen> {
-  bool _showForm = false;
+class _BBSState extends ConsumerState<BBSObservationsScreen> {
+  final _observerCtrl = TextEditingController();
+  final _locCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _interventionCtrl = TextEditingController();
+  String _type = 'Safe Act';
+  bool _isAnon = false;
   bool _isSubmitting = false;
-
-  // Form
-  String _observationType = 'Safe Act';
-  final _locationController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _interventionController = TextEditingController();
-  bool _isAnonymous = false;
 
   static const _types = ['Safe Act', 'Unsafe Act', 'Unsafe Condition'];
 
   @override
   void dispose() {
-    _locationController.dispose();
-    _descriptionController.dispose();
-    _interventionController.dispose();
+    _observerCtrl.dispose();
+    _locCtrl.dispose();
+    _descCtrl.dispose();
+    _interventionCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    if (_descriptionController.text.isEmpty || _locationController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill location and description'), backgroundColor: XMTheme.error),
-      );
+    if (_locCtrl.text.isEmpty || _descCtrl.text.isEmpty) {
+      UIUtils.showToast(context, 'Location and description are required', type: ToastType.error);
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
-      if (profile == null) throw Exception('Not logged in');
+      if (profile == null) throw Exception('User profile not loaded');
 
-      // Gamification: 10pts Safe Act, 5pts for reporting unsafe
-      final points = _observationType == 'Safe Act' ? 10 : 5;
-
-      final data = <String, dynamic>{
-        'observationType': _observationType,
-        'location': _locationController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'pointsAwarded': _isAnonymous ? 0 : points,
-        'authorId': profile.uid,
+      final data = {
+        'observationType': _type,
+        'location': _locCtrl.text.trim(),
+        'description': _descCtrl.text.trim(),
+        'interventionAction': _interventionCtrl.text.trim(),
+        'observerName': _isAnon ? 'Anonymous' : _observerCtrl.text.trim(),
+        'isAnonymous': _isAnon,
         'siteId': profile.siteId,
-        'createdAt': DateTime.now().toIso8601String(),
+        'authorId': profile.uid,
+        'createdAt': FieldValue.serverTimestamp(),
+        'pointsAwarded': _type == 'Safe Act' ? 5 : 10,
       };
 
-      if (!_isAnonymous) data['observerName'] = profile.displayName;
-      if (_interventionController.text.isNotEmpty) {
-        data['interventionAction'] = _interventionController.text.trim();
-      }
-
-      final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(collection: 'bbs_observations', data: data);
+      await FirebaseFirestore.instance.collection('bbs_observations').add(data);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Observation logged! ${_isAnonymous ? "" : "+$points pts"}'),
-            backgroundColor: XMTheme.success,
-          ),
-        );
-        setState(() {
-          _showForm = false;
-          _descriptionController.clear();
-          _locationController.clear();
-          _interventionController.clear();
-          _isAnonymous = false;
-          _observationType = 'Safe Act';
-        });
+        Navigator.pop(context);
+        UIUtils.showToast(context, 'Observation recorded successfully');
+        _locCtrl.clear();
+        _descCtrl.clear();
+        _interventionCtrl.clear();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: XMTheme.error));
-      }
+      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -97,68 +78,53 @@ class _BBSObservationsScreenState extends ConsumerState<BBSObservationsScreen> {
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentSiteIdProvider);
     final firestore = ref.watch(firestoreProvider);
+    final theme = Theme.of(context);
 
     if (siteId == null) return const Center(child: Text('No site assigned'));
 
     return Column(
       children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('BBS Observations', style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    Text('Peer observations & safety culture', style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: () => setState(() => _showForm = !_showForm),
-                icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
-                label: Text(_showForm ? 'Cancel' : 'Log'),
-              ),
-            ],
+        GHeader(
+          title: 'BBS Observations',
+          subtitle: 'Behavioral safety and interventions',
+          trailing: FilledButton.icon(
+            onPressed: () => UIUtils.showSideSheet(
+              context: context,
+              title: 'New Observation',
+              builder: (ctx) => _buildForm(context),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('New Observation'),
           ),
         ),
-
-        // Form
-        if (_showForm) _buildForm(),
-
-        // Observations list
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: firestore
                 .collection('bbs_observations')
                 .where('siteId', isEqualTo: siteId)
                 .orderBy('createdAt', descending: true)
-                .limit(100)
+                .limit(50)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-
               final docs = snapshot.data?.docs ?? [];
               if (docs.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.visibility, size: 48, color: XMTheme.primary.withValues(alpha: 0.3)),
-                      const SizedBox(height: 12),
-                      const Text('No observations logged yet'),
+                      Icon(Icons.visibility_outlined, size: 48, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                      GSpacing.vMd,
+                      Text('No observations found', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 );
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.only(top: 8),
                 itemCount: docs.length,
                 itemBuilder: (context, index) {
                   final data = docs[index].data() as Map<String, dynamic>;
@@ -172,84 +138,66 @@ class _BBSObservationsScreenState extends ConsumerState<BBSObservationsScreen> {
     );
   }
 
-  Widget _buildForm() {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Log BBS Observation', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 12),
-
-            // Anonymous toggle
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _isAnonymous,
-              onChanged: (v) => setState(() => _isAnonymous = v),
-              title: const Text('Submit Anonymously', style: TextStyle(fontSize: 14)),
-              subtitle: const Text('No points awarded', style: TextStyle(fontSize: 12)),
-              secondary: const Icon(Icons.visibility_off, size: 20),
-            ),
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _observationType,
-                    decoration: const InputDecoration(labelText: 'Type', isDense: true),
-                    items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
-                    onChanged: (v) => setState(() => _observationType = v!),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextFormField(
-                    controller: _locationController,
-                    decoration: const InputDecoration(labelText: 'Location', isDense: true),
-                  ),
+  Widget _buildForm(BuildContext context) {
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Observer Info', style: Theme.of(context).textTheme.titleSmall),
+              GSpacing.vSm,
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isAnon,
+                onChanged: (v) => setLocalState(() => _isAnon = v),
+                title: const Text('Submit Anonymously', style: TextStyle(fontSize: 14)),
+                secondary: const Icon(Icons.visibility_off_rounded),
+              ),
+              if (!_isAnon) ...[
+                GSpacing.vSm,
+                TextFormField(
+                  controller: _observerCtrl,
+                  decoration: const InputDecoration(labelText: 'Observer Name', prefixIcon: Icon(Icons.person_outline)),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _descriptionController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'What did you observe?',
-                alignLabelWithHint: true,
+              GSpacing.vLg,
+              Text('Observation Details', style: Theme.of(context).textTheme.titleSmall),
+              GSpacing.vSm,
+              DropdownButtonFormField<String>(
+                value: _type,
+                decoration: const InputDecoration(labelText: 'Type'),
+                items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                onChanged: (v) => setLocalState(() => _type = v!),
               ),
-            ),
-            const SizedBox(height: 12),
-
-            if (_observationType != 'Safe Act')
+              GSpacing.vMd,
               TextFormField(
-                controller: _interventionController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Intervention Action Taken',
-                  hintText: 'What did you do to correct it?',
-                  alignLabelWithHint: true,
+                controller: _locCtrl,
+                decoration: const InputDecoration(labelText: 'Location / Area *', prefixIcon: Icon(Icons.place_outlined)),
+              ),
+              GSpacing.vMd,
+              TextFormField(
+                controller: _descCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'What did you observe? *', alignLabelWithHint: true),
+              ),
+              GSpacing.vMd,
+              if (_type != 'Safe Act')
+                TextFormField(
+                  controller: _interventionCtrl,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Intervention Action Taken', hintText: 'What did you do to correct it?', alignLabelWithHint: true),
                 ),
+              UIUtils.buildFormButtons(
+                context: context,
+                onSave: _submit,
+                isSubmitting: _isSubmitting,
               ),
-            const SizedBox(height: 12),
-
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _isSubmitting ? null : _submit,
-                icon: _isSubmitting
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.save),
-                label: Text(_isSubmitting ? 'Saving...' : 'Save Observation'),
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -260,89 +208,86 @@ class _ObservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = data['observationType'] ?? 'Unknown';
+    final theme = Theme.of(context);
+    final type = data['observationType'] ?? 'Safe Act';
     final desc = data['description'] ?? '';
     final observer = data['observerName'] ?? 'Anonymous';
     final points = data['pointsAwarded'] ?? 0;
     final intervention = data['interventionAction'];
     final location = data['location'] ?? '';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: _typeColor(type).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(_typeIcon(type), color: _typeColor(type), size: 18),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(type, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: _typeColor(type)), maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(location, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-                if (points > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: XMTheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.emoji_events, size: 14, color: XMTheme.primary),
-                        const SizedBox(width: 4),
-                        Text('+$points', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: XMTheme.primary)),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text('"$desc"', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic), maxLines: 3, overflow: TextOverflow.ellipsis),
-            if (intervention != null && intervention.toString().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Action Taken:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 2),
-                    Text(intervention, style: const TextStyle(fontSize: 12)),
-                  ],
-                ),
+    return GCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GStatusTag(
+                label: type,
+                color: _typeColor(type),
+                icon: _typeIcon(type),
               ),
+              const Spacer(),
+              if (points > 0)
+                GStatusTag(
+                  label: '+$points pts',
+                  color: theme.colorScheme.primary,
+                  icon: Icons.auto_awesome,
+                ),
             ],
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(observer, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 8),
-                Text(_formatDate(data['createdAt']), style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ],
+          ),
+          GSpacing.vMd,
+          Text(
+            location,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            desc,
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+          ),
+          if (intervention != null && intervention.toString().isNotEmpty) ...[
+            GSpacing.vMd,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(XMTheme.radiusMd),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Intervention',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(intervention.toString(), style: theme.textTheme.bodySmall),
+                ],
+              ),
             ),
           ],
-        ),
+          GSpacing.vMd,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                observer,
+                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              Text(
+                UIUtils.formatTimestamp(data['createdAt']),
+                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -358,20 +303,10 @@ class _ObservationCard extends StatelessWidget {
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'Safe Act': return Icons.check_circle;
-      case 'Unsafe Act': return Icons.cancel;
-      case 'Unsafe Condition': return Icons.warning_amber;
-      default: return Icons.visibility;
-    }
-  }
-
-  String _formatDate(String? iso) {
-    if (iso == null) return '';
-    try {
-      final dt = DateTime.parse(iso);
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return iso;
+      case 'Safe Act': return Icons.verified;
+      case 'Unsafe Act': return Icons.report_problem;
+      case 'Unsafe Condition': return Icons.warning;
+      default: return Icons.info_outline;
     }
   }
 }

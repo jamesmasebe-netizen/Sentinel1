@@ -25,6 +25,11 @@ The app follows a **4-Hub Command Center** architecture:
 
 All module drill-downs use **in-place side-sheets** (Google Workspace pattern) to maintain context while exploring data.
 
+## Design System & Consistency
+
+The project follows a strict **Material Design 3 Expressive** design system. For guidelines on spacing, components, and layout consistency, please refer to:
+👉 [**DESIGN_SYSTEM.md**](./DESIGN_SYSTEM.md)
+
 ## Getting Started
 
 ### Prerequisites

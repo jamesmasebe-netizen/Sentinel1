@@ -97,9 +97,10 @@ class OfflineSyncService {
         // Update retry count
         final updated = item.copyWith(
           retryCount: item.retryCount + 1,
-          status: item.retryCount >= 5
-              ? QueueItemStatus.failed
-              : QueueItemStatus.pending,
+          status:
+              item.retryCount >= 5
+                  ? QueueItemStatus.failed
+                  : QueueItemStatus.pending,
           lastError: e.toString(),
         );
         await _queueBox.put(key, jsonEncode(updated.toJson()));
@@ -129,14 +130,18 @@ class OfflineSyncService {
         }
         break;
       case OfflineOperation.update:
-        if (item.documentId == null) throw Exception('Document ID required for update');
+        if (item.documentId == null) {
+          throw Exception('Document ID required for update');
+        }
         await _firestore
             .collection(item.collection)
             .doc(item.documentId)
             .update(item.data);
         break;
       case OfflineOperation.delete:
-        if (item.documentId == null) throw Exception('Document ID required for delete');
+        if (item.documentId == null) {
+          throw Exception('Document ID required for delete');
+        }
         await _firestore
             .collection(item.collection)
             .doc(item.documentId)
@@ -187,8 +192,10 @@ class OfflineSyncService {
 
   void _updateStatus() {
     final pending = getPendingOperations();
-    final pendingCount = pending.where((op) => op.status == QueueItemStatus.pending).length;
-    final failedCount = pending.where((op) => op.status == QueueItemStatus.failed).length;
+    final pendingCount =
+        pending.where((op) => op.status == QueueItemStatus.pending).length;
+    final failedCount =
+        pending.where((op) => op.status == QueueItemStatus.failed).length;
 
     _pendingCountController.add(pendingCount + failedCount);
 
@@ -211,7 +218,9 @@ class OfflineSyncService {
 // ─── Enums & Data Classes ───
 
 enum OfflineOperation { create, update, delete }
+
 enum QueueItemStatus { pending, syncing, completed, failed }
+
 enum SyncStatus { synced, syncing, pending, error }
 
 class QueuedOperation {
@@ -237,17 +246,22 @@ class QueuedOperation {
     this.lastError,
   });
 
-  factory QueuedOperation.fromJson(Map<String, dynamic> json) => QueuedOperation(
-    id: json['id'],
-    operation: OfflineOperation.values.firstWhere((e) => e.name == json['operation']),
-    collection: json['collection'],
-    documentId: json['documentId'],
-    data: Map<String, dynamic>.from(json['data']),
-    timestamp: DateTime.parse(json['timestamp']),
-    status: QueueItemStatus.values.firstWhere((e) => e.name == json['status']),
-    retryCount: json['retryCount'] ?? 0,
-    lastError: json['lastError'],
-  );
+  factory QueuedOperation.fromJson(Map<String, dynamic> json) =>
+      QueuedOperation(
+        id: json['id'],
+        operation: OfflineOperation.values.firstWhere(
+          (e) => e.name == json['operation'],
+        ),
+        collection: json['collection'],
+        documentId: json['documentId'],
+        data: Map<String, dynamic>.from(json['data']),
+        timestamp: DateTime.parse(json['timestamp']),
+        status: QueueItemStatus.values.firstWhere(
+          (e) => e.name == json['status'],
+        ),
+        retryCount: json['retryCount'] ?? 0,
+        lastError: json['lastError'],
+      );
 
   Map<String, dynamic> toJson() => {
     'id': id,

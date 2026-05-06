@@ -49,7 +49,9 @@ class Property {
       occupancy: data['occupancy'] ?? 0,
       capacity: data['capacity'] ?? 0,
       status: data['status'] ?? 'Unknown',
-      constructionDate: DateTime.parse(data['constructionDate'] ?? DateTime.now().toIso8601String()),
+      constructionDate: DateTime.parse(
+        data['constructionDate'] ?? DateTime.now().toIso8601String(),
+      ),
       manager: data['manager'] ?? '',
       complianceScore: (data['complianceScore'] as num?)?.toDouble() ?? 0.0,
       totalAssets: data['totalAssets'] ?? 0,
@@ -90,7 +92,9 @@ class PropertyProject {
       description: data['description'] ?? '',
       status: data['status'] ?? '',
       assignedTo: data['assignedTo'] ?? '',
-      dueDate: DateTime.parse(data['dueDate'] ?? DateTime.now().toIso8601String()),
+      dueDate: DateTime.parse(
+        data['dueDate'] ?? DateTime.now().toIso8601String(),
+      ),
       progress: data['progress'] ?? 0,
     );
   }
@@ -185,8 +189,12 @@ class LeaseInfo {
       propertyId: data['propertyId'] ?? '',
       tenantName: data['tenantName'] ?? '',
       monthlyRent: (data['monthlyRent'] as num?)?.toDouble() ?? 0.0,
-      startDate: DateTime.parse(data['startDate'] ?? DateTime.now().toIso8601String()),
-      endDate: DateTime.parse(data['endDate'] ?? DateTime.now().toIso8601String()),
+      startDate: DateTime.parse(
+        data['startDate'] ?? DateTime.now().toIso8601String(),
+      ),
+      endDate: DateTime.parse(
+        data['endDate'] ?? DateTime.now().toIso8601String(),
+      ),
       status: data['status'] ?? 'Active',
     );
   }
@@ -217,8 +225,9 @@ class AssetInfo {
       name: data['name'] ?? '',
       category: data['category'] ?? '',
       condition: data['condition'] ?? 'Good',
-      lastInspected: DateTime.parse(data['lastInspected'] ?? DateTime.now().toIso8601String()),
+      lastInspected: DateTime.parse(
+        data['lastInspected'] ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 }
-

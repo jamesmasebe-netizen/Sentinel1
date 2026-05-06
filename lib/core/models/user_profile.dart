@@ -57,7 +57,10 @@ class UserProfile {
     'department': department,
     'jobTitle': jobTitle,
     'phone': phone,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
     'lastLogin': FieldValue.serverTimestamp(),
     'preferences': preferences,
   };

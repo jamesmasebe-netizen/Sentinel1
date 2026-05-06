@@ -6,7 +6,8 @@ class Incident {
   final String siteId;
   final String title;
   final String description;
-  final String type; // injury, near_miss, property_damage, environmental, fire, chemical
+  final String
+  type; // injury, near_miss, property_damage, environmental, fire, chemical
   final String severity; // critical, major, moderate, minor, negligible
   final String status; // open, investigating, resolved, closed
   final String? location;
@@ -90,7 +91,8 @@ class Incident {
     'status': status,
     'location': location,
     'area': area,
-    'dateOfIncident': dateOfIncident != null ? Timestamp.fromDate(dateOfIncident!) : null,
+    'dateOfIncident':
+        dateOfIncident != null ? Timestamp.fromDate(dateOfIncident!) : null,
     'reportedBy': reportedBy,
     'reportedByName': reportedByName,
     'assignedTo': assignedTo,
@@ -102,7 +104,10 @@ class Incident {
     'correctiveAction': correctiveAction,
     'lostTimeInjury': lostTimeInjury,
     'daysLost': daysLost,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
     'updatedAt': FieldValue.serverTimestamp(),
   };
 
@@ -219,9 +224,13 @@ class CAPA {
     'assignedTo': assignedTo,
     'assignedToName': assignedToName,
     'dueDate': dueDate != null ? Timestamp.fromDate(dueDate!) : null,
-    'completedDate': completedDate != null ? Timestamp.fromDate(completedDate!) : null,
+    'completedDate':
+        completedDate != null ? Timestamp.fromDate(completedDate!) : null,
     'completionNotes': completionNotes,
     'createdBy': createdBy,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
   };
 }

@@ -9,8 +9,12 @@ import '../models/user_profile.dart';
 // ─── Core Service Providers ───
 
 /// Firebase instances
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
-final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final firebaseAuthProvider = Provider<FirebaseAuth>(
+  (ref) => FirebaseAuth.instance,
+);
+final firestoreProvider = Provider<FirebaseFirestore>(
+  (ref) => FirebaseFirestore.instance,
+);
 
 /// Offline sync service (initialized in main.dart)
 final offlineSyncServiceProvider = Provider<OfflineSyncService>((ref) {

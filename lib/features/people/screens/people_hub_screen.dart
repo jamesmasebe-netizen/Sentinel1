@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import 'employee_profiles_screen.dart';
 import '../../training/screens/training_screen.dart';
 import 'skills_matrix_screen.dart';
@@ -27,7 +28,6 @@ class PeopleHubScreen extends StatelessWidget {
       ),
       body: CustomScrollView(
         slivers: [
-          // Dashboard Header
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
@@ -38,13 +38,12 @@ class PeopleHubScreen extends StatelessWidget {
                     'People & Health Hub',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  GSpacing.vSm,
                   Text(
                     'Manage workforce competency, training compliance, and occupational health.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -64,16 +63,44 @@ class PeopleHubScreen extends StatelessWidget {
                     direction: isWide ? Axis.horizontal : Axis.vertical,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMetricCard(context, 'Active Employees', '142', Icons.people_rounded, XMTheme.primary, isWide),
-                      if (isWide) const SizedBox(width: 16),
-                      if (!isWide) const SizedBox(height: 16),
-                      _buildMetricCard(context, 'Training Compliance', '94%', Icons.school_rounded, XMTheme.success, isWide),
-                      if (isWide) const SizedBox(width: 16),
-                      if (!isWide) const SizedBox(height: 16),
-                      _buildMetricCard(context, 'Health Assessments', '12 Due', Icons.medical_services_rounded, XMTheme.warning, isWide),
-                      if (isWide) const SizedBox(width: 16),
-                      if (!isWide) const SizedBox(height: 16),
-                      _buildMetricCard(context, 'Workers Comp', '2 Open', Icons.healing_rounded, XMTheme.error, isWide),
+                      _buildMetricCard(
+                        context,
+                        'Active Employees',
+                        '142',
+                        Icons.people_rounded,
+                        XMTheme.primary,
+                        isWide,
+                      ),
+                      if (isWide) GSpacing.hMd,
+                      if (!isWide) GSpacing.vMd,
+                      _buildMetricCard(
+                        context,
+                        'Training Compliance',
+                        '94%',
+                        Icons.school_rounded,
+                        XMTheme.success,
+                        isWide,
+                      ),
+                      if (isWide) GSpacing.hMd,
+                      if (!isWide) GSpacing.vMd,
+                      _buildMetricCard(
+                        context,
+                        'Health Assessments',
+                        '12 Due',
+                        Icons.medical_services_rounded,
+                        XMTheme.warning,
+                        isWide,
+                      ),
+                      if (isWide) GSpacing.hMd,
+                      if (!isWide) GSpacing.vMd,
+                      _buildMetricCard(
+                        context,
+                        'Workers Comp',
+                        '2 Open',
+                        Icons.healing_rounded,
+                        XMTheme.error,
+                        isWide,
+                      ),
                     ],
                   );
                 },
@@ -98,7 +125,12 @@ class PeopleHubScreen extends StatelessWidget {
                   subtitle: 'Directory, roles, and employment history.',
                   icon: Icons.badge_rounded,
                   color: XMTheme.primary,
-                  onTap: () => _openModule(context, 'Employee Profiles', const EmployeeProfilesScreen()),
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Employee Profiles',
+                        const EmployeeProfilesScreen(),
+                      ),
                 ),
                 _buildModuleCard(
                   context,
@@ -106,7 +138,12 @@ class PeopleHubScreen extends StatelessWidget {
                   subtitle: 'Manage courses, certificates, and expirations.',
                   icon: Icons.school_rounded,
                   color: XMTheme.success,
-                  onTap: () => _openModule(context, 'Training & Inductions', const TrainingScreen()),
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Training & Inductions',
+                        const TrainingScreen(),
+                      ),
                 ),
                 _buildModuleCard(
                   context,
@@ -114,7 +151,12 @@ class PeopleHubScreen extends StatelessWidget {
                   subtitle: 'Gap analysis and organizational capability.',
                   icon: Icons.grid_view_rounded,
                   color: XMTheme.info,
-                  onTap: () => _openModule(context, 'Skills Matrix', const SkillsMatrixScreen()),
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Skills Matrix',
+                        const SkillsMatrixScreen(),
+                      ),
                 ),
                 _buildModuleCard(
                   context,
@@ -122,7 +164,12 @@ class PeopleHubScreen extends StatelessWidget {
                   subtitle: 'Digital worker verification.',
                   icon: Icons.card_membership_rounded,
                   color: const Color(0xFF8B5CF6), // Purple
-                  onTap: () => _openModule(context, 'Competency Passport', const CompetencyPassportScreen()),
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Competency Passport',
+                        const CompetencyPassportScreen(),
+                      ),
                 ),
                 _buildModuleCard(
                   context,
@@ -130,7 +177,12 @@ class PeopleHubScreen extends StatelessWidget {
                   subtitle: 'Medical surveillance and exposure tracking.',
                   icon: Icons.medical_services_rounded,
                   color: XMTheme.secondary,
-                  onTap: () => _openModule(context, 'Occupational Health', const OccupationalHealthScreen()),
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Occupational Health',
+                        const OccupationalHealthScreen(),
+                      ),
                 ),
                 _buildModuleCard(
                   context,
@@ -138,14 +190,19 @@ class PeopleHubScreen extends StatelessWidget {
                   subtitle: 'Injury claims and return-to-work programs.',
                   icon: Icons.healing_rounded,
                   color: XMTheme.error,
-                  onTap: () => _openModule(context, "Worker's Comp", const WorkersCompScreen()),
+                  onTap:
+                      () => _openModule(
+                        context,
+                        "Worker's Comp",
+                        const WorkersCompScreen(),
+                      ),
                 ),
               ]),
             ),
           ),
-          
+
           // Bottom padding
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(child: GSpacing.vLg),
         ],
       ),
     );
@@ -153,8 +210,8 @@ class PeopleHubScreen extends StatelessWidget {
 
   // Opens a module inside a massive side-sheet rather than routing away
   void _openModule(BuildContext context, String title, Widget child) {
-    final width = MediaQuery.sizeOf(context).width * 0.85; 
-    
+    final width = MediaQuery.sizeOf(context).width * 0.85;
+
     UIUtils.showSideSheet(
       context: context,
       title: title,
@@ -163,21 +220,18 @@ class PeopleHubScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(BuildContext context, String title, String value, IconData icon, Color color, bool isWide) {
-    final card = Container(
+  Widget _buildMetricCard(
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+    bool isWide,
+  ) {
+    final theme = Theme.of(context);
+    final card = GCard(
+      margin: EdgeInsets.zero,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(XMTheme.radiusLg), // 24px squircle
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
       child: Row(
         children: [
           Container(
@@ -188,7 +242,7 @@ class PeopleHubScreen extends StatelessWidget {
             ),
             child: Icon(icon, color: color, size: 28),
           ),
-          const SizedBox(width: 16),
+          GSpacing.hMd,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,16 +250,15 @@ class PeopleHubScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                GSpacing.vSm,
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -222,79 +275,71 @@ class PeopleHubScreen extends StatelessWidget {
     return card;
   }
 
-  Widget _buildModuleCard(BuildContext context, {
+  Widget _buildModuleCard(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        splashColor: color.withValues(alpha: 0.1),
-        highlightColor: color.withValues(alpha: 0.05),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
+    final theme = Theme.of(context);
+    return GCard(
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.zero,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            GSpacing.hMd,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  ),
+                  GSpacing.vSm,
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
                     ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Text(
-                          'Open Module',
-                          style: TextStyle(
-                            color: color,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Text(
+                        'Open Module',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.arrow_forward_rounded, size: 14, color: color),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      GSpacing.hSm,
+                      Icon(Icons.arrow_forward_rounded, size: 14, color: color),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

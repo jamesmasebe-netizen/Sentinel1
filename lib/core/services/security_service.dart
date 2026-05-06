@@ -18,7 +18,7 @@ class SecurityService {
   Stream<bool> get onSessionExpired => _sessionExpiredController.stream;
 
   SecurityService({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   // ─── Session Timeout ──────────────────────────────────────────────────────
 
@@ -29,7 +29,9 @@ class SecurityService {
     _sessionTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       final elapsed = DateTime.now().difference(_lastActivity).inMinutes;
       if (elapsed >= _sessionTimeoutMinutes) {
-        debugPrint('🔒 Session timeout after $_sessionTimeoutMinutes min inactivity');
+        debugPrint(
+          '🔒 Session timeout after $_sessionTimeoutMinutes min inactivity',
+        );
         _sessionExpiredController.add(true);
         _sessionTimer?.cancel();
       }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../providers/property_providers.dart';
 import '../models/property_models.dart';
+import '../../../core/widgets/ds_widgets.dart';
 
 class PropertyHubScreen extends ConsumerStatefulWidget {
   const PropertyHubScreen({super.key});
@@ -27,40 +28,16 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Property & Facility Hub',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: XMTheme.primary,
-                      ),
-                    ),
-                    Text(
-                      'Manage and track real-estate assets across the enterprise',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Property'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: XMTheme.secondary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  ),
-                ),
-              ],
+            GHeader(
+              title: 'Property & Facility Hub',
+              subtitle: 'Manage and track real-estate assets across the enterprise',
+              trailing: ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add Property'),
+              ),
             ),
-            const SizedBox(height: 24),
+            GSpacing.vLg,
 
             // Top Stats Row
             propertiesAsync.when(
@@ -68,11 +45,11 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
               loading: () => const SizedBox(height: 100, child: Center(child: CircularProgressIndicator())),
               error: (_, __) => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 24),
+            GSpacing.vLg,
 
             // Map View Card
             _buildMapCard(propertiesAsync),
-            const SizedBox(height: 24),
+            GSpacing.vLg,
 
             // Property List Title
             Row(
@@ -88,22 +65,28 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            GSpacing.vMd,
 
             // Property Grid/List
             propertiesAsync.when(
-              data: (properties) => GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.4,
-                ),
-                itemCount: properties.length,
-                itemBuilder: (context, index) => _buildPropertyCard(properties[index]),
-              ),
+              data: (properties) {
+                final width = MediaQuery.of(context).size.width;
+                final crossAxisCount = width > 1200 ? 3 : (width > 800 ? 2 : 1);
+                final childAspectRatio = width > 800 ? 1.4 : 1.1;
+                
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: childAspectRatio,
+                  ),
+                  itemCount: properties.length,
+                  itemBuilder: (context, index) => _buildPropertyCard(properties[index]),
+                );
+              },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Error: $err')),
             ),
@@ -124,12 +107,12 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
 
     return Row(
       children: [
-        _buildStatItem('Total Assets', properties.length.toString(), Icons.domain, XMTheme.secondary),
-        const SizedBox(width: 16),
-        _buildStatItem('Avg. Compliance', '${avgCompliance.toStringAsFixed(1)}%', Icons.fact_check_outlined, XMTheme.secondary),
-        const SizedBox(width: 16),
+        _buildStatItem('Total Assets', properties.length.toString(), Icons.domain, XMTheme.primary),
+        GSpacing.hMd,
+        _buildStatItem('Avg. Compliance', '${avgCompliance.toStringAsFixed(1)}%', Icons.fact_check_outlined, XMTheme.primary),
+        GSpacing.hMd,
         _buildStatItem('Avg. Occupancy', '${avgOccupancy.toStringAsFixed(1)}%', Icons.people_outline, XMTheme.success),
-        const SizedBox(width: 16),
+        GSpacing.hMd,
         _buildStatItem('Critical Alerts', criticalCount.toString(), Icons.warning_amber_rounded, XMTheme.error),
       ],
     );
@@ -138,46 +121,32 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
 
   Widget _buildStatItem(String label, String value, IconData icon, Color color) {
     return Expanded(
-      child: Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-          side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500)),
-                  Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-                ],
-              ),
-            ],
-          ),
+      child: GCard(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            GSpacing.hMd,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildMapCard(AsyncValue<List<Property>> propertiesAsync) {
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
-      ),
-      clipBehavior: Clip.antiAlias,
+    return GCard(
+      padding: EdgeInsets.zero,
       child: Container(
         height: 400,
         decoration: BoxDecoration(
@@ -217,19 +186,12 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
         ? XMTheme.success 
         : (property.status.contains('Critical') ? XMTheme.error : XMTheme.warning);
 
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => context.push('/property/${property.id}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return GCard(
+      padding: EdgeInsets.zero,
+      onTap: () => context.push('/property/${property.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
             // Thumbnail
             Container(
               height: 120,
@@ -244,17 +206,7 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                   Positioned(
                     top: 12,
                     right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-                      ),
-                      child: Text(
-                        property.status.toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                      ),
-                    ),
+                    child: GStatusTag(label: property.status.toUpperCase(), color: statusColor),
                   ),
                 ],
               ),
@@ -276,7 +228,7 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 16),
+                  GSpacing.vMd,
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -285,13 +237,13 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                       _buildMiniStat('OCCUPANCY', '${(occupancyPercent * 100).toInt()}%', Icons.people_outline),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  GSpacing.vMd,
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: property.complianceScore / 100,
                       minHeight: 4,
-                      backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                      backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         property.complianceScore > 80 ? XMTheme.success : (property.complianceScore > 60 ? XMTheme.warning : XMTheme.error)
                       ),
@@ -302,8 +254,7 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildMiniStat(String label, String value, IconData icon) {
@@ -313,11 +264,11 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
         Row(
           children: [
             Icon(icon, size: 10, color: Colors.grey),
-            const SizedBox(width: 4),
+            GSpacing.hXs,
             Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
           ],
         ),
-        const SizedBox(height: 2),
+        GSpacing.vXs,
         Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: XMTheme.primary)),
       ],
     );

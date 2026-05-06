@@ -5,10 +5,12 @@ class Permit {
   final String? id;
   final String siteId;
   final String permitNumber;
-  final String type; // hot_work, confined_space, excavation, electrical, working_at_height, general
+  final String
+  type; // hot_work, confined_space, excavation, electrical, working_at_height, general
   final String title;
   final String description;
-  final String status; // draft, pending_approval, approved, active, completed, cancelled, expired
+  final String
+  status; // draft, pending_approval, approved, active, completed, cancelled, expired
   final String? location;
   final String? area;
   final DateTime? startDate;
@@ -110,7 +112,10 @@ class Permit {
     'riskAssessmentId': riskAssessmentId,
     'attachments': attachments,
     'closureNotes': closureNotes,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
     'updatedAt': FieldValue.serverTimestamp(),
   };
 }
@@ -199,10 +204,14 @@ class RiskAssessment {
     'assessedBy': assessedBy,
     'reviewedBy': reviewedBy,
     'approvedBy': approvedBy,
-    'assessmentDate': assessmentDate != null ? Timestamp.fromDate(assessmentDate!) : null,
+    'assessmentDate':
+        assessmentDate != null ? Timestamp.fromDate(assessmentDate!) : null,
     'reviewDate': reviewDate != null ? Timestamp.fromDate(reviewDate!) : null,
     'expiryDate': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
   };
 }
 
@@ -268,12 +277,17 @@ class Contractor {
     'phone': phone,
     'status': status,
     'complianceStatus': complianceStatus,
-    'contractStart': contractStart != null ? Timestamp.fromDate(contractStart!) : null,
-    'contractEnd': contractEnd != null ? Timestamp.fromDate(contractEnd!) : null,
+    'contractStart':
+        contractStart != null ? Timestamp.fromDate(contractStart!) : null,
+    'contractEnd':
+        contractEnd != null ? Timestamp.fromDate(contractEnd!) : null,
     'certifications': certifications,
     'workers': workers,
     'safetyRating': safetyRating,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
   };
 }
 
@@ -349,9 +363,13 @@ class ActionItem {
     'assignedToName': assignedToName,
     'createdBy': createdBy,
     'dueDate': dueDate != null ? Timestamp.fromDate(dueDate!) : null,
-    'completedDate': completedDate != null ? Timestamp.fromDate(completedDate!) : null,
+    'completedDate':
+        completedDate != null ? Timestamp.fromDate(completedDate!) : null,
     'completionNotes': completionNotes,
     'attachments': attachments,
-    'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+    'createdAt':
+        createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
   };
 }

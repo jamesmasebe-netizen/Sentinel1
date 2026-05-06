@@ -31,12 +31,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final loggingIn = state.matchedLocation == '/login';
       final locking = state.matchedLocation == '/lock';
-      
+
       if (!isAuthenticated && !loggingIn) return '/login';
       if (isAuthenticated && loggingIn) return '/dashboard';
       if (isAuthenticated && isLocked && !locking) return '/lock';
       if (isAuthenticated && !isLocked && locking) return '/dashboard';
-      
+
       return null;
     },
     routes: [
@@ -45,21 +45,85 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
-          GoRoute(path: '/dashboard', pageBuilder: (c, s) => const NoTransitionPage(child: DashboardScreen())),
-          GoRoute(path: '/safety', pageBuilder: (c, s) => const NoTransitionPage(child: SafetyHubScreen())),
-          GoRoute(path: '/risk', pageBuilder: (c, s) => const NoTransitionPage(child: RiskHubScreen())),
-          GoRoute(path: '/people', pageBuilder: (c, s) => const NoTransitionPage(child: PeopleHubScreen())),
-          GoRoute(path: '/operations', pageBuilder: (c, s) => const NoTransitionPage(child: OperationsHubScreen())),
-          GoRoute(path: '/actions', pageBuilder: (c, s) => const NoTransitionPage(child: ActionTrackerScreen())),
-          GoRoute(path: '/environment', pageBuilder: (c, s) => const NoTransitionPage(child: EnvironmentalScreen())),
-          GoRoute(path: '/emergency', pageBuilder: (c, s) => const NoTransitionPage(child: EmergencyResponseScreen())),
-          GoRoute(path: '/ai', pageBuilder: (c, s) => const NoTransitionPage(child: AIChatScreen())),
-          GoRoute(path: '/health', pageBuilder: (c, s) => const NoTransitionPage(child: OccupationalHealthScreen())),
-          GoRoute(path: '/workers-comp', pageBuilder: (c, s) => const NoTransitionPage(child: WorkersCompScreen())),
-          GoRoute(path: '/settings', pageBuilder: (c, s) => const NoTransitionPage(child: SettingsScreen())),
-          GoRoute(path: '/offline-queue', pageBuilder: (c, s) => const NoTransitionPage(child: OfflineQueueScreen())),
-          GoRoute(path: '/properties', pageBuilder: (c, s) => const NoTransitionPage(child: PropertyHubScreen())),
-          GoRoute(path: '/property/:id', builder: (context, state) => PropertyDetailsScreen(propertyId: state.pathParameters['id']!)),
+          GoRoute(
+            path: '/dashboard',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: DashboardScreen()),
+          ),
+          GoRoute(
+            path: '/safety',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: SafetyHubScreen()),
+          ),
+          GoRoute(
+            path: '/risk',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: RiskHubScreen()),
+          ),
+          GoRoute(
+            path: '/people',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: PeopleHubScreen()),
+          ),
+          GoRoute(
+            path: '/operations',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: OperationsHubScreen()),
+          ),
+          GoRoute(
+            path: '/actions',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: ActionTrackerScreen()),
+          ),
+          GoRoute(
+            path: '/environment',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: EnvironmentalScreen()),
+          ),
+          GoRoute(
+            path: '/emergency',
+            pageBuilder:
+                (c, s) =>
+                    const NoTransitionPage(child: EmergencyResponseScreen()),
+          ),
+          GoRoute(
+            path: '/ai',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: AIChatScreen()),
+          ),
+          GoRoute(
+            path: '/health',
+            pageBuilder:
+                (c, s) =>
+                    const NoTransitionPage(child: OccupationalHealthScreen()),
+          ),
+          GoRoute(
+            path: '/workers-comp',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: WorkersCompScreen()),
+          ),
+          GoRoute(
+            path: '/settings',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: SettingsScreen()),
+          ),
+          GoRoute(
+            path: '/offline-queue',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: OfflineQueueScreen()),
+          ),
+          GoRoute(
+            path: '/properties',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: PropertyHubScreen()),
+          ),
+          GoRoute(
+            path: '/property/:id',
+            builder:
+                (context, state) => PropertyDetailsScreen(
+                  propertyId: state.pathParameters['id']!,
+                ),
+          ),
         ],
       ),
     ],
