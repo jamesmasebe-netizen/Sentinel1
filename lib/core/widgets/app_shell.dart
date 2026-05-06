@@ -8,6 +8,8 @@ import '../services/session_manager.dart';
 import '../../config/theme.dart';
 import '../utils/ui_utils.dart';
 
+import '../feedback/feedback_overlay.dart';
+
 /// AppShell: Material 3 Expressive Workspace Shell
 /// Features a Google-workspace style top app bar with global search,
 /// and a simplified 4-hub navigation rail/bar.
@@ -41,7 +43,8 @@ class _AppShellState extends ConsumerState<AppShell> {
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => ref.read(sessionManagerProvider).userInteracted(),
       onPointerMove: (_) => ref.read(sessionManagerProvider).userInteracted(),
-      child: Scaffold(
+      child: FeedbackOverlay(
+        child: Scaffold(
         appBar: _buildWorkspaceAppBar(
           context,
           profile,
@@ -143,8 +146,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                   child: const Icon(Icons.add_rounded),
                 ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   PreferredSizeWidget _buildWorkspaceAppBar(
     BuildContext context,
