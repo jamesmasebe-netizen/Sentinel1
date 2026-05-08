@@ -59,7 +59,7 @@ class UIIndexer {
     final widget = element.widget;
     final children = <Map<String, dynamic>>[];
 
-    final elementData = {
+    final Map<String, dynamic> elementData = {
       'id': id,
       'parent_id': parentId,
       'type': widget.runtimeType.toString(),

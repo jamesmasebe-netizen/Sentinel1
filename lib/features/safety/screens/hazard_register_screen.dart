@@ -293,7 +293,7 @@ class _MiniInfo extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
-  const _MiniInfo({required this.icon, required this.label});
+  const _MiniInfo({required this.icon, required this.label, this.color});
 
   @override
   Widget build(BuildContext context) {

@@ -847,42 +847,13 @@ class _StatusRingPainter extends CustomPainter {
     paint.color = const Color(0xFFE2E8F0);
     canvas.drawArc(rect, math.pi * 0.7, math.pi * 0.8, true, paint);
 
+    final clearPaint = Paint()..blendMode = BlendMode.clear;
     canvas.drawCircle(
       Offset(size.width / 2, size.height / 2),
       size.width / 2.5,
       clearPaint,
     );
     canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(0, size.height * 0.3),
-      Offset(size.width, size.height * 0.4),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.3, 0),
-      Offset(size.width * 0.4, size.height),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.6, 0),
-      Offset(size.width * 0.8, size.height),
-      paint,
-    );
-
-    final dot =
-        Paint()
-          ..color = XMTheme.error.withValues(alpha: 0.5)
-          ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.width * 0.35, size.height * 0.35), 8, dot);
-    canvas.drawCircle(Offset(size.width * 0.65, size.height * 0.7), 6, dot);
   }
 
   @override
