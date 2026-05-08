@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../widgets/safety_file_submission_view.dart';
 
 /// Contractor Management — contractor register, compliance status, permit linkage.
 class ContractorManagementScreen extends ConsumerStatefulWidget {
@@ -300,59 +301,65 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
                   final d = docs[i].data() as Map<String, dynamic>;
                   final riskRating = d['riskRating'] ?? 'Medium';
                   final status = d['status'] ?? 'Active';
+                  final contractorId = docs[i].id;
 
-                  return GCard(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  return GestureDetector(
+                    onTap: () {
+                      _showContractorProjects(context, contractorId, d['companyName'] ?? 'Contractor');
+                    },
+                    child: GCard(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  d['companyName'] ?? '',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  '${d['contactPerson'] ?? ''} • ${d['scopeOfWork'] ?? ''}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                d['companyName'] ?? '',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                ),
+                              GStatusTag(
+                                label: riskRating,
+                                color:
+                                    riskRating == 'Critical' ||
+                                            riskRating == 'High'
+                                        ? XMTheme.error
+                                        : riskRating == 'Medium'
+                                        ? XMTheme.warning
+                                        : XMTheme.success,
                               ),
-                              Text(
-                                '${d['contactPerson'] ?? ''} • ${d['scopeOfWork'] ?? ''}',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              GSpacing.vSm,
+                              GStatusTag(
+                                label: status,
+                                color: status == 'Active' ? XMTheme.success : XMTheme.error,
                               ),
                             ],
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            GStatusTag(
-                              label: riskRating,
-                              color:
-                                  riskRating == 'Critical' ||
-                                          riskRating == 'High'
-                                      ? XMTheme.error
-                                      : riskRating == 'Medium'
-                                      ? XMTheme.warning
-                                      : XMTheme.success,
-                            ),
-                            GSpacing.vSm,
-                            GStatusTag(
-                              label: status,
-                              color: status == 'Active' ? XMTheme.success : XMTheme.error,
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -361,6 +368,90 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
           ),
         ),
       ],
+    );
+  }
+
+  void _showContractorProjects(BuildContext context, String contractorId, String contractorName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => FractionallySizedBox(
+        heightFactor: 0.8,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Projects for $contractorName', style: Theme.of(context).textTheme.titleLarge),
+              GSpacing.vMd,
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('property_projects')
+                      .where('assignedTo', isEqualTo: contractorName)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+                    final projects = snapshot.data!.docs;
+
+                    if (projects.isEmpty) {
+                      return const Center(child: Text('No projects assigned to this contractor.'));
+                    }
+
+                    return ListView.builder(
+                      itemCount: projects.length,
+                      itemBuilder: (context, index) {
+                        final p = projects[index].data() as Map<String, dynamic>;
+                        final projectId = projects[index].id;
+
+                        return GCard(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ListTile(
+                            title: Text(p['title'] ?? 'Unknown Project'),
+                            subtitle: Text('Status: ${p['status'] ?? 'N/A'}'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _showSafetyFile(context, contractorId, projectId, p['title'] ?? 'Unknown Project');
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSafetyFile(BuildContext context, String contractorId, String projectId, String projectName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => FractionallySizedBox(
+        heightFactor: 0.8,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Safety File: $projectName', style: Theme.of(context).textTheme.titleLarge),
+              GSpacing.vMd,
+              Expanded(
+                child: SafetyFileSubmissionView(
+                  contractorId: contractorId,
+                  projectId: projectId,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
