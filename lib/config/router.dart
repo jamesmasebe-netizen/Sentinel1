@@ -19,6 +19,8 @@ import '../features/settings/screens/settings_screen.dart';
 import '../features/settings/screens/offline_queue_screen.dart';
 import '../features/property/screens/property_hub_screen.dart';
 import '../features/property/screens/property_details_screen.dart';
+import '../features/projects/screens/project_dashboard_screen.dart';
+import '../features/projects/screens/project_details_screen.dart';
 import '../core/widgets/app_shell.dart';
 
 /// GoRouter configuration with auth guards and shell routes
@@ -123,6 +125,16 @@ final routerProvider = Provider<GoRouter>((ref) {
                 (context, state) => PropertyDetailsScreen(
                   propertyId: state.pathParameters['id']!,
                 ),
+          ),
+          GoRoute(
+            path: '/projects',
+            pageBuilder: (c, s) => const NoTransitionPage(child: ProjectDashboardScreen()),
+          ),
+          GoRoute(
+            path: '/projects/:id',
+            builder: (context, state) => ProjectDetailsScreen(
+              projectId: state.pathParameters['id']!,
+            ),
           ),
         ],
       ),
