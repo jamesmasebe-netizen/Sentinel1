@@ -6,6 +6,7 @@ import 'action_tracker_screen.dart';
 import '../../property/screens/property_hub_screen.dart';
 import '../../environment/screens/environmental_screen.dart';
 import '../../contractors/screens/contractor_management_screen.dart';
+import '../../projects/screens/project_dashboard_screen.dart';
 
 /// Operations & Assets Hub Dashboard — Material 3 Expressive
 class OperationsHubScreen extends StatelessWidget {
@@ -100,10 +101,23 @@ class OperationsHubScreen extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 _buildModuleCard(
                   context,
+                  title: 'Projects',
+                  subtitle: 'PRINCE2 management, SHEQ metrics, and Gantt charts.',
+                  icon: Icons.account_tree_rounded,
+                  color: XMTheme.primary,
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Project Management',
+                        const ProjectDashboardScreen(),
+                      ),
+                ),
+                _buildModuleCard(
+                  context,
                   title: 'Action Tracker',
                   subtitle: 'Manage CAPA, tasks, and operational items.',
                   icon: Icons.checklist_rounded,
-                  color: XMTheme.primary,
+                  color: XMTheme.info,
                   onTap:
                       () => _openModule(
                         context,
@@ -116,7 +130,7 @@ class OperationsHubScreen extends StatelessWidget {
                   title: 'Property Portfolio',
                   subtitle: 'Manage facilities and real-estate assets.',
                   icon: Icons.domain_rounded,
-                  color: XMTheme.info,
+                  color: XMTheme.secondary,
                   onTap:
                       () => _openModule(
                         context,
