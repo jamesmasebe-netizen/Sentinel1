@@ -225,7 +225,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> wit
                   Text('Select an approver for ${stage.stageName}:'),
                   GSpacing.vMd,
                   DropdownButtonFormField<String>(
-                    initialValue: selectedApprover,
+                    value: selectedApprover,
                     decoration: const InputDecoration(labelText: 'Approver'),
                     items: ['System Default', 'John Doe (PM)', 'Jane Smith (Exec)', 'Safety Officer']
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))

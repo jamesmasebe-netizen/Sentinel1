@@ -335,7 +335,7 @@ class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen>
         Expanded(
           flex: 1,
           child: DropdownButtonFormField<String>(
-            initialValue: _statusFilter,
+            value: _statusFilter,
             decoration: const InputDecoration(
               isDense: true,
               labelText: 'Status',

@@ -50,6 +50,7 @@ dependencies:
   share_plus: any
   url_launcher: any
   pdf: any
+  printing: any
   uuid: any
   cached_network_image: any
   flutter_svg: any
