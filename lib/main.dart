@@ -9,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:screen_protector/screen_protector.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/theme.dart';
 import 'config/router.dart';
 import 'core/providers/app_providers.dart';
@@ -18,14 +19,16 @@ import 'scripts/seed_dummy_data.dart';
 /// Top-level background message handler — must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'AIzaSyCqAZ_Vkmbqqp6z_JlsCVnVGEskNDWLI7Q',
-      appId: '1:458780078401:web:725f6b7eafdab38f50b1c0',
-      messagingSenderId: '458780078401',
-      projectId: 'project1-62742',
-      storageBucket: 'project1-62742.firebasestorage.app',
-      authDomain: 'project1-62742.firebaseapp.com',
+    options: FirebaseOptions(
+      apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
+      appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
+      messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
+      projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? '',
+      storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '',
+      authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN'] ?? '',
     ),
   );
   debugPrint('📩 Background FCM: ${message.notification?.title}');
@@ -33,16 +36,17 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // ─── Firebase Initialization ───
   await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'AIzaSyCqAZ_Vkmbqqp6z_JlsCVnVGEskNDWLI7Q',
-      appId: '1:458780078401:web:725f6b7eafdab38f50b1c0',
-      messagingSenderId: '458780078401',
-      projectId: 'project1-62742',
-      storageBucket: 'project1-62742.firebasestorage.app',
-      authDomain: 'project1-62742.firebaseapp.com',
+    options: FirebaseOptions(
+      apiKey: dotenv.env['FIREBASE_API_KEY'] ?? '',
+      appId: dotenv.env['FIREBASE_APP_ID'] ?? '',
+      messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '',
+      projectId: dotenv.env['FIREBASE_PROJECT_ID'] ?? '',
+      storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET'] ?? '',
+      authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN'] ?? '',
     ),
   );
 
@@ -65,12 +69,14 @@ void main() async {
   );
 
   // --- DEV ONLY: SEED DUMMY DATA ON STARTUP ---
-  try {
-    debugPrint('Seeding dummy data...');
-    await seedAllDummyData(firestore);
-    debugPrint('Successfully seeded dummy data.');
-  } catch (e) {
-    debugPrint('Error seeding dummy data: $e');
+  if (kDebugMode) {
+    try {
+      debugPrint('Seeding dummy data...');
+      await seedAllDummyData(firestore);
+      debugPrint('Successfully seeded dummy data.');
+    } catch (e) {
+      debugPrint('Error seeding dummy data: $e');
+    }
   }
 
   // ─── Initialize Hive for offline queue ───

@@ -54,3 +54,4 @@ firebase/functions/lib/
 
 # OS files
 Thumbs.db
+.env
