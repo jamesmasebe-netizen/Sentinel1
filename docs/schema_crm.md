@@ -15,6 +15,7 @@ Represents B2B companies or organizations.
 - **`billingAddress`** (Map): `{ street, city, state, postalCode, country }`
 - **`shippingAddress`** (Map): `{ street, city, state, postalCode, country }`
 - **`ownerId`** (String): Reference to `users` (Account Manager)
+- **`territoryId`** (String, optional): Reference to `territories`
 - **`parentAccountId`** (String, optional): For enterprise hierarchies
 - **`status`** (String): `Active`, `Inactive`, `Prospect`
 - **`relationshipHealth`** (String): `Green`, `Yellow`, `Red` (AI-derived)
@@ -65,6 +66,7 @@ Unqualified prospects before they are converted into Accounts/Contacts/Opportuni
 - **`status`** (String): `New`, `Attempted Contact`, `Engaged`, `Qualified`, `Unqualified`
 - **`rating`** (String): `Hot`, `Warm`, `Cold`
 - **`aiLeadScore`** (Number): 0-100 probability of conversion
+- **`sequenceId`** (String, optional): Reference to `sequence_trackers` (Active sales cadence)
 - **`ownerId`** (String): Reference to `users`
 - **`isConverted`** (Boolean): Flag for conversion state
 - **`convertedAccountId`** (String, optional)
@@ -101,6 +103,7 @@ Line items for the deal.
 
 #### Sub-collection: `opportunities/{opportunityId}/competitors`
 Tracking competing vendors.
+- **`competitorId`** (String, optional): Reference to global `competitors` collection
 - **`competitorName`** (String)
 - **`strengths`** (String)
 - **`weaknesses`** (String)
@@ -163,6 +166,7 @@ Interactions mapped to CRM records (polymorphic).
 - **`relatedTo`** (Map): `{ entityType: "accounts"|"opportunities"|"quotes", entityId: String }` (What this is about)
 - **`whoId`** (Map): `{ entityType: "contacts"|"leads", entityId: String }` (Who this is with)
 - **`aiSentimentScore`** (Number): Derived from email/call transcripts (-1.0 to 1.0)
+- **`conversationIntelligenceId`** (String, optional): Reference to `conversation_intelligence` for advanced call analytics
 - **`createdAt`** (Timestamp)
 - **`updatedAt`** (Timestamp)
 
@@ -181,5 +185,111 @@ Snapshot data for quarterly/monthly projections.
 - **`bestCaseForecast`** (Number): Sum of Commit + Best Case + Pipeline
 - **`pipelineCoverage`** (Number): Ratio of pipeline to quota
 - **`managerAdjustedCommit`** (Number): Manager's override
+- **`createdAt`** (Timestamp)
+- **`updatedAt`** (Timestamp)
+
+## 6. Advanced Sales Capabilities
+
+### Collection: `territories`
+Represents geographic or industry-based sales territories for advanced territory management.
+- **`id`** (String)
+- **`name`** (String): e.g., "North America - Enterprise"
+- **`managerId`** (String): Reference to `users`
+- **`parentTerritoryId`** (String, optional): For hierarchical rollups
+- **`description`** (String)
+- **`createdAt`** (Timestamp)
+- **`updatedAt`** (Timestamp)
+
+#### Sub-collection: `territories/{territoryId}/postal_codes`
+Zip/Postal codes mapped to this territory.
+- **`code`** (String)
+
+### Collection: `competitors`
+Master repository of competitor profiles to enable battlecards and win/loss analysis.
+- **`id`** (String)
+- **`name`** (String)
+- **`website`** (String)
+- **`strengths`** (String)
+- **`weaknesses`** (String)
+- **`threatLevel`** (String): `Low`, `Medium`, `High`
+- **`winLossRatio`** (Number): Historical win rate against this competitor
+- **`createdAt`** (Timestamp)
+- **`updatedAt`** (Timestamp)
+
+### Collection: `sales_literature`
+Centralized repository for sales collateral, battlecards, and brochures.
+- **`id`** (String)
+- **`title`** (String)
+- **`subject`** (String)
+- **`type`** (String): `Presentation`, `Whitepaper`, `Battlecard`, `Brochure`
+- **`fileUrl`** (String): Link to cloud storage
+- **`productId`** (String, optional): Reference to `products`
+- **`competitorId`** (String, optional): Reference to `competitors` (for battlecards)
+- **`expirationDate`** (Timestamp)
+- **`createdAt`** (Timestamp)
+- **`updatedAt`** (Timestamp)
+
+## 7. Sales Engagement & Automated Sequences
+
+### Collection: `sales_sequences`
+Automated outreach cadences (sequences of emails, calls, and tasks) for high-velocity sales.
+- **`id`** (String)
+- **`name`** (String)
+- **`description`** (String)
+- **`ownerId`** (String): Reference to `users`
+- **`isActive`** (Boolean)
+- **`totalSteps`** (Number)
+- **`createdAt`** (Timestamp)
+- **`updatedAt`** (Timestamp)
+
+#### Sub-collection: `sales_sequences/{sequenceId}/steps`
+- **`stepNumber`** (Number)
+- **`type`** (String): `AutoEmail`, `ManualEmail`, `PhoneCall`, `LinkedInMessage`, `Task`
+- **`waitDays`** (Number): Days to wait before executing this step
+- **`templateId`** (String, optional): Email or script template reference
+
+### Collection: `sequence_trackers`
+Tracks a Lead or Contact's progress through a sales sequence.
+- **`id`** (String)
+- **`sequenceId`** (String): Reference to `sales_sequences`
+- **`targetId`** (Map): `{ entityType: "leads"|"contacts", entityId: String }`
+- **`currentStep`** (Number)
+- **`status`** (String): `Active`, `Paused`, `Completed`, `OptedOut`, `Bounced`, `Replied`
+- **`enrolledBy`** (String): Reference to `users`
+- **`enrolledAt`** (Timestamp)
+- **`lastActionAt`** (Timestamp)
+- **`updatedAt`** (Timestamp)
+
+## 8. Sales Copilot & Conversation Intelligence
+
+### Collection: `conversation_intelligence`
+AI-generated analysis of calls and meetings.
+- **`id`** (String)
+- **`activityId`** (String): Reference to `activities`
+- **`transcriptUrl`** (String): Link to full transcript
+- **`summary`** (String): AI-generated summary of the meeting
+- **`talkToListenRatio`** (Number): e.g., 0.45 (45% talking)
+- **`longestMonologue`** (Number): In seconds
+- **`competitorsMentioned`** (Array of Strings)
+- **`keywordsMentioned`** (Array of Strings)
+- **`customerSentiment`** (String): `Positive`, `Neutral`, `Negative`
+- **`createdAt`** (Timestamp)
+
+#### Sub-collection: `conversation_intelligence/{ciId}/action_items`
+Extracted next steps from the call.
+- **`description`** (String)
+- **`assigneeId`** (String, optional): Reference to `users`
+- **`dueDate`** (Timestamp, optional)
+- **`isCompleted`** (Boolean)
+
+### Collection: `ai_insights`
+Contextual Sales Copilot recommendations surfaced on Accounts or Opportunities.
+- **`id`** (String)
+- **`relatedTo`** (Map): `{ entityType: "accounts"|"opportunities"|"leads", entityId: String }`
+- **`insightType`** (String): `CrossSell`, `AtRisk`, `NextBestAction`, `AnomalyDetection`
+- **`title`** (String): e.g., "Account at risk of churn" or "Suggest pitching Premium Support"
+- **`description`** (String): Detailed AI reasoning
+- **`confidenceScore`** (Number): 0-100%
+- **`status`** (String): `New`, `Accepted`, `Dismissed`
 - **`createdAt`** (Timestamp)
 - **`updatedAt`** (Timestamp)

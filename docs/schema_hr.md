@@ -155,6 +155,17 @@ Family members linked for benefit purposes.
     *   `dateOfBirth` (Timestamp)
     *   `isStudent` (Boolean)
 
+#### Sub-collection: `employees/{employeeId}/life_events`
+Tracks qualifying life events (QLEs) that allow mid-year benefit enrollment changes (e.g., marriage, birth, loss of coverage).
+*   **Document ID:** `eventId`
+*   **Fields:**
+    *   `eventType` (String): "Marriage", "Birth/Adoption", "Divorce", "Loss of Other Coverage".
+    *   `eventDate` (Timestamp)
+    *   `reportedDate` (Timestamp)
+    *   `status` (String): "Pending Proof", "Approved", "Denied".
+    *   `supportingDocumentUrl` (String, nullable)
+    *   `enrollmentWindowEnd` (Timestamp)
+
 ---
 
 ## 5. Continuous Performance & OKR Tracking
@@ -196,6 +207,19 @@ Formal evaluations.
     *   `peerFeedback` (Array of Objects): 360-degree feedback references.
     *   `overallRating` (Number/String): e.g., 4.5 out of 5, or "Exceeds Expectations".
     *   `status` (String): "Draft", "Pending Approval", "Completed".
+
+#### Sub-collection: `employees/{employeeId}/360_feedback`
+Granular tracking of multi-rater (360-degree) feedback from peers, subordinates, and external stakeholders.
+*   **Document ID:** `feedbackId`
+*   **Fields:**
+    *   `reviewId` (String): Reference to `performance_reviews` if tied to a formal cycle.
+    *   `providerId` (String, nullable): Employee ID of the reviewer (null if anonymous).
+    *   `relationship` (String): "Peer", "Subordinate", "Manager", "External Client".
+    *   `isAnonymous` (Boolean)
+    *   `questionnaireResponses` (Map): Key-value pairs of questions and ratings/comments.
+    *   `strengths` (Array of Strings)
+    *   `areasForImprovement` (Array of Strings)
+    *   `submittedDate` (Timestamp)
 
 ---
 
@@ -244,3 +268,132 @@ Employee's progress through the LMS.
     *   `completionDate` (Timestamp, nullable)
     *   `score` (Number, nullable): Quiz/Test score.
     *   `certificateUrl` (String, nullable)
+
+---
+
+## 7. Advanced Compensation & Variable Pay
+
+### Collection: `compensation_plans`
+Defines enterprise-wide rules for fixed, variable, and equity-based compensation.
+*   **Document ID:** `planId`
+*   **Fields:**
+    *   `name` (String): e.g., "Executive Bonus Plan 2026", "Engineering RSU Grant".
+    *   `type` (String): "Short-Term Incentive", "Long-Term Incentive", "Commission", "Merit Matrix".
+    *   `eligibilityRules` (Map): Criteria based on job code, grade, or department.
+    *   `targetPercentage` (Number): Default target % of base salary.
+    *   `vestingScheduleId` (String, nullable): For equity/RSU plans.
+
+#### Sub-collection: `employees/{employeeId}/variable_awards`
+Individual instances of bonuses, commissions, or stock grants awarded to the employee.
+*   **Document ID:** `awardId`
+*   **Fields:**
+    *   `planId` (String)
+    *   `awardType` (String): "Cash Bonus", "RSU", "Stock Options".
+    *   `grantDate` (Timestamp)
+    *   `targetAmount` (Number)
+    *   `achievedAmount` (Number, nullable): Final amount based on performance multipliers.
+    *   `currency` (String)
+    *   `vestingCommencementDate` (Timestamp, nullable)
+    *   `status` (String): "Granted", "Partially Vested", "Fully Vested", "Forfeited".
+
+---
+
+## 8. Succession Planning & Talent Readiness
+
+### Collection: `succession_plans`
+Identifies critical roles and tracks the pipeline of internal candidates to fill them.
+*   **Document ID:** `planId`
+*   **Fields:**
+    *   `targetPositionId` (String): Reference to `positions`.
+    *   `criticality` (String): "High", "Medium", "Low".
+    *   `lastReviewedDate` (Timestamp)
+    *   `candidates` (Array of Objects):
+        *   `employeeId` (String)
+        *   `readinessLevel` (String): "Ready Now", "Ready in 1-2 Years", "Ready in 3-5 Years".
+        *   `flightRisk` (String): "Low", "Medium", "High".
+        *   `lossImpact` (String): "Low", "Medium", "High".
+        *   `strengthsForRole` (String)
+        *   `developmentGaps` (String)
+
+---
+
+## 9. Time & Attendance / Workforce Management
+
+#### Sub-collection: `employees/{employeeId}/timesheets`
+Granular time tracking for hourly or non-exempt workers, compliant with global labor laws.
+*   **Document ID:** `timesheetId`
+*   **Fields:**
+    *   `periodStartDate` (Timestamp)
+    *   `periodEndDate` (Timestamp)
+    *   `status` (String): "Draft", "Submitted", "Approved", "Rejected".
+    *   `totalRegularHours` (Number)
+    *   `totalOvertimeHours` (Number)
+    *   `totalDoubleTimeHours` (Number)
+    *   `timeEntries` (Array of Objects):
+        *   `date` (Timestamp)
+        *   `clockIn` (Timestamp)
+        *   `clockOut` (Timestamp)
+        *   `breakDurationMinutes` (Number)
+        *   `costCenterCode` (String, nullable): For project/cost allocation.
+    *   `approverId` (String)
+    *   `approvedDate` (Timestamp, nullable)
+
+---
+
+## 10. Loan & Advance Management
+
+#### Sub-collection: `employees/{employeeId}/loans_advances`
+Manages financial assistance provided to employees, integrating directly with payroll deductions.
+*   **Document ID:** `loanId`
+*   **Fields:**
+    *   `type` (String): "Salary Advance", "Equipment Loan", "Relocation Assistance".
+    *   `principalAmount` (Number)
+    *   `currency` (String)
+    *   `interestRate` (Number): Annual percentage rate, often 0% for advances.
+    *   `issueDate` (Timestamp)
+    *   `repaymentStartDate` (Timestamp)
+    *   `installmentAmount` (Number): Amount to deduct per payroll cycle.
+    *   `outstandingBalance` (Number)
+    *   `status` (String): "Active", "Paid in Full", "Defaulted", "Forgiven".
+
+---
+
+## 11. Employee Relations, Grievances & Disciplinary Actions
+
+### Collection: `employee_relations`
+Secure, highly restricted collection for tracking sensitive HR cases.
+*   **Document ID:** `caseId`
+*   **Fields:**
+    *   `caseType` (String): "Grievance", "Disciplinary", "Harassment", "Performance Plan (PIP)".
+    *   `primaryEmployeeId` (String): The subject of the case.
+    *   `reporterId` (String, nullable): Who reported the issue (if applicable).
+    *   `hrInvestigatorId` (String)
+    *   `openedDate` (Timestamp)
+    *   `closedDate` (Timestamp, nullable)
+    *   `severity` (String): "Low", "Medium", "High", "Critical".
+    *   `status` (String): "Under Investigation", "Mediation", "Action Taken", "Closed".
+    *   `actionsTaken` (Array of Objects):
+        *   `actionType` (String): "Verbal Warning", "Written Warning", "Suspension", "Termination".
+        *   `actionDate` (Timestamp)
+        *   `notes` (String)
+
+---
+
+## 12. Workplace Safety & Incident Management (OSHA/HSE)
+
+### Collection: `workplace_incidents`
+Tracks health, safety, and environmental incidents for compliance reporting (e.g., OSHA 300 logs).
+*   **Document ID:** `incidentId`
+*   **Fields:**
+    *   `incidentDate` (Timestamp)
+    *   `locationId` (String)
+    *   `incidentType` (String): "Injury", "Illness", "Near Miss", "Property Damage".
+    *   `description` (String)
+    *   `affectedEmployees` (Array of Strings): References to `employees`.
+    *   `requiresHospitalization` (Boolean)
+    *   `daysAwayFromWork` (Number)
+    *   `daysOnRestrictedDuty` (Number)
+    *   `rootCauseAnalysis` (String)
+    *   `preventativeActions` (String)
+    *   `isOshaReportable` (Boolean)
+

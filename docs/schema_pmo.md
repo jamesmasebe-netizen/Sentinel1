@@ -1,6 +1,6 @@
 # Project Operations (PMO) Database Schema
 
-This document outlines the Firestore database schema designed for an enterprise-grade Project Operations (PMO) pillar. The schema supports Work Breakdown Structure (WBS), Resource Skills-matching, Revenue Recognition, and Time & Expense integration, rivalling platforms like Dynamics 365 Project Operations.
+This document outlines the Firestore database schema designed for an enterprise-grade Project Operations (PMO) pillar. The schema supports Work Breakdown Structure (WBS), Resource Skills-matching, Revenue Recognition, Time & Expense integration, Material Usage, Subcontracting, and Proforma Invoicing, rivalling platforms like Dynamics 365 Project Operations.
 
 ## Root Collections Overview
 
@@ -11,7 +11,12 @@ This document outlines the Firestore database schema designed for an enterprise-
 * `skills`: A master taxonomy of skills and proficiencies.
 * `time_entries`: Records of effort expended by resources on project tasks.
 * `expenses`: Project-related costs incurred by resources.
+* `material_usage_logs`: Records of materials consumed on projects.
 * `resource_requests`: Requisitions for specific roles or skills for upcoming project work.
+* `actuals`: Financial ledger of work performed (cost, unbilled sales, billed sales).
+* `subcontracts`: External vendor agreements for project work.
+* `vendor_invoices`: Invoices received from subcontractors for verification and payment.
+* `proforma_invoices`: Draft invoices consolidating unbilled actuals for project manager review.
 
 ---
 
@@ -90,6 +95,23 @@ Forecasted and actual revenue recognition events.
 * `basis` (String): e.g., `MilestoneCompletion`, `CostsIncurred`, `HoursDelivered`
 * `journalEntryId` (String, nullable): Link to ERP/GL posting.
 
+### 1.4 `project_estimates` (Sub-collection)
+Forecasted effort, expense, and materials for project actuals vs estimates tracking.
+
+**Path:** `/projects/{projectId}/project_estimates/{estimateId}`
+
+**Fields:**
+* `estimateId` (String)
+* `taskId` (Reference: `/projects/{projectId}/wbs/{taskId}`, nullable)
+* `estimateType` (String): e.g., `Time`, `Expense`, `Material`
+* `description` (String)
+* `quantity` (Number)
+* `unitPrice` (Map)
+* `estimatedCost` (Map)
+* `estimatedSales` (Map)
+* `startDate` (Timestamp)
+* `endDate` (Timestamp)
+
 ---
 
 ## 2. `resources` Collection
@@ -125,6 +147,20 @@ For complex resource skills-matching and capacity planning.
 * `dateAssessed` (Timestamp)
 * `lastUsedOnProject` (Timestamp)
 * `isVerified` (Boolean)
+
+### 2.2 `utilization_metrics` (Sub-collection)
+Aggregated metrics to power Resource Utilization Dashboards.
+
+**Path:** `/resources/{resourceId}/utilization_metrics/{metricId}`
+
+**Fields:**
+* `metricId` (String)
+* `period` (String): e.g., `2026-07`
+* `targetBillableHours` (Number)
+* `actualBillableHours` (Number)
+* `actualNonBillableHours` (Number)
+* `utilizationPercentage` (Number)
+* `variance` (Number)
 
 ---
 
@@ -199,7 +235,55 @@ Tracking project-related out-of-pocket or corporate card expenses.
 
 ---
 
-## 6. `contracts` Collection
+## 6. `material_usage_logs` Collection
+
+Records consumption of materials (stocked or non-stocked) on projects.
+
+**Path:** `/material_usage_logs/{logId}`
+
+**Fields:**
+* `logId` (String)
+* `projectId` (Reference: `/projects/{projectId}`)
+* `taskId` (Reference: `/projects/{projectId}/wbs/{taskId}`, nullable)
+* `resourceId` (Reference: `/resources/{resourceId}`)
+* `materialId` (String): Catalog ID of the item.
+* `description` (String)
+* `quantity` (Number)
+* `unitCost` (Map)
+* `totalCost` (Map)
+* `isStocked` (Boolean)
+* `usageDate` (Timestamp)
+* `approvalStatus` (String): e.g., `Draft`, `Submitted`, `Approved`.
+* `billingStatus` (String): e.g., `Unbilled`, `Billed`.
+
+---
+
+## 7. `actuals` Collection
+
+The core financial ledger for the project operations data model. Traces all approved time, expense, material, and vendor invoice data into financial records.
+
+**Path:** `/actuals/{actualId}`
+
+**Fields:**
+* `actualId` (String)
+* `projectId` (Reference: `/projects/{projectId}`)
+* `transactionClass` (String): e.g., `Time`, `Expense`, `Material`, `Tax`.
+* `transactionType` (String): e.g., `Cost`, `UnbilledSales`, `BilledSales`, `ResourcingUnitCost`.
+* `documentDate` (Timestamp)
+* `amount` (Map):
+  * `value` (Number)
+  * `currency` (String)
+* `quantity` (Number)
+* `unitPrice` (Map)
+* `resourceId` (Reference: `/resources/{resourceId}`, nullable)
+* `taskId` (Reference: `/projects/{projectId}/wbs/{taskId}`, nullable)
+* `sourceDocumentType` (String): e.g., `TimeEntry`, `Expense`, `MaterialUsageLog`, `VendorInvoice`.
+* `sourceDocumentId` (String): Polymorphic lookup to the original source.
+* `billingStatus` (String): e.g., `ReadyToInvoice`, `CustomerInvoiced`.
+
+---
+
+## 8. `contracts` Collection
 
 Financial agreements controlling billing rules and revenue recognition.
 
@@ -216,7 +300,7 @@ Financial agreements controlling billing rules and revenue recognition.
 * `status` (String): e.g., `Draft`, `Signed`, `Active`, `Closed`.
 * `effectiveDate` (Timestamp)
 
-### 6.1 `billing_milestones` (Sub-collection)
+### 8.1 `billing_milestones` (Sub-collection)
 For Fixed Price contracts.
 
 **Path:** `/contracts/{contractId}/billing_milestones/{milestoneId}`
@@ -227,11 +311,107 @@ For Fixed Price contracts.
 * `amount` (Number)
 * `targetDate` (Timestamp)
 * `status` (String): e.g., `Pending`, `Met`, `Invoiced`, `Paid`.
-* `linkedTaskId` (Reference: `/projects/{projectId}/wbs/{taskId}`): Triggers milestone completion when the WBS task is marked 100% complete.
+* `linkedTaskId` (Reference: `/projects/{projectId}/wbs/{taskId}`): Triggers milestone completion.
+
+### 8.2 `contract_lines` (Sub-collection)
+Allows hybrid contracts by defining rules per line (e.g., T&M for travel, FP for delivery).
+
+**Path:** `/contracts/{contractId}/contract_lines/{lineId}`
+
+**Fields:**
+* `lineId` (String)
+* `name` (String)
+* `billingMethod` (String): e.g., `TimeAndMaterial`, `FixedPrice`.
+* `amount` (Number)
+* `includedTransactionClasses` (Array of Strings): e.g., `['Time', 'Expense']`.
 
 ---
 
-## 7. `skills` Collection (Master Data)
+## 9. `subcontracts` Collection
+
+Agreements with external vendors for project work.
+
+**Path:** `/subcontracts/{subcontractId}`
+
+**Fields:**
+* `subcontractId` (String)
+* `vendorId` (String)
+* `projectId` (Reference: `/projects/{projectId}`)
+* `description` (String)
+* `status` (String): e.g., `Draft`, `Active`, `Closed`.
+* `totalAmount` (Map)
+* `currency` (String)
+* `startDate` (Timestamp)
+* `endDate` (Timestamp)
+
+### 9.1 `subcontract_lines` (Sub-collection)
+Itemizes purchases.
+
+**Path:** `/subcontracts/{subcontractId}/subcontract_lines/{lineId}`
+
+**Fields:**
+* `lineId` (String)
+* `transactionClass` (String): e.g., `Time`, `Expense`, `Material`.
+* `roleOrItem` (String)
+* `quantity` (Number)
+* `unitPrice` (Map)
+
+---
+
+## 10. `vendor_invoices` Collection
+
+Invoices from subcontractors, verified via three-way match against subcontracts and approved actuals.
+
+**Path:** `/vendor_invoices/{invoiceId}`
+
+**Fields:**
+* `invoiceId` (String)
+* `subcontractId` (Reference: `/subcontracts/{subcontractId}`)
+* `vendorId` (String)
+* `invoiceDate` (Timestamp)
+* `totalAmount` (Map)
+* `status` (String): e.g., `Draft`, `Matched`, `Approved`, `Paid`.
+
+### 10.1 `vendor_invoice_lines` (Sub-collection)
+**Path:** `/vendor_invoices/{invoiceId}/vendor_invoice_lines/{lineId}`
+
+**Fields:**
+* `lineId` (String)
+* `subcontractLineId` (Reference: `/subcontracts/{subcontractId}/subcontract_lines/{lineId}`)
+* `matchedActualIds` (Array of Strings): References to `actuals` representing approved time/materials.
+* `amount` (Map)
+* `isVerified` (Boolean)
+
+---
+
+## 11. `proforma_invoices` Collection
+
+Draft invoices ("Billing Hub") consolidating 'Ready to Invoice' actuals for review before confirming final customer invoices.
+
+**Path:** `/proforma_invoices/{invoiceId}`
+
+**Fields:**
+* `invoiceId` (String)
+* `projectId` (Reference: `/projects/{projectId}`)
+* `contractId` (Reference: `/contracts/{contractId}`)
+* `invoiceDate` (Timestamp)
+* `totalAmount` (Map)
+* `status` (String): e.g., `Draft`, `UnderReview`, `Confirmed`, `Cancelled`.
+* `confirmedDate` (Timestamp, nullable)
+
+### 11.1 `proforma_invoice_lines` (Sub-collection)
+**Path:** `/proforma_invoices/{invoiceId}/proforma_invoice_lines/{lineId}`
+
+**Fields:**
+* `lineId` (String)
+* `contractLineId` (Reference: `/contracts/{contractId}/contract_lines/{lineId}`)
+* `description` (String)
+* `amount` (Map)
+* `includedActualIds` (Array of Strings): Actuals currently in the billing backlog attached to this line.
+
+---
+
+## 12. `skills` Collection (Master Data)
 
 Taxonomy of skills for standardization across the organization.
 
