@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Incident model — mirrors the Firestore `incidents` collection
 class Incident {
   final String? id;
-  final String siteId;
+  final String tenantId;
   final String title;
   final String description;
   final String
@@ -13,12 +13,8 @@ class Incident {
   final String? location;
   final String? area;
   final DateTime? dateOfIncident;
-  final String? reportedBy;
-  final String? reportedByName;
-  final String? assignedTo;
-  final String? assignedToName;
-  final List<String> attachments;
-  final List<String> witnesses;
+  final String? reporterId;
+  final String? assigneeId;
   final String? rootCause;
   final String? immediateAction;
   final String? correctiveAction;
@@ -29,7 +25,7 @@ class Incident {
 
   const Incident({
     this.id,
-    required this.siteId,
+    required this.tenantId,
     required this.title,
     required this.description,
     required this.type,
@@ -38,12 +34,8 @@ class Incident {
     this.location,
     this.area,
     this.dateOfIncident,
-    this.reportedBy,
-    this.reportedByName,
-    this.assignedTo,
-    this.assignedToName,
-    this.attachments = const [],
-    this.witnesses = const [],
+    this.reporterId,
+    this.assigneeId,
     this.rootCause,
     this.immediateAction,
     this.correctiveAction,
@@ -57,7 +49,7 @@ class Incident {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return Incident(
       id: doc.id,
-      siteId: data['siteId'] ?? '',
+      tenantId: data['tenantId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       type: data['type'] ?? 'near_miss',
@@ -66,12 +58,8 @@ class Incident {
       location: data['location'],
       area: data['area'],
       dateOfIncident: (data['dateOfIncident'] as Timestamp?)?.toDate(),
-      reportedBy: data['reportedBy'],
-      reportedByName: data['reportedByName'],
-      assignedTo: data['assignedTo'],
-      assignedToName: data['assignedToName'],
-      attachments: List<String>.from(data['attachments'] ?? []),
-      witnesses: List<String>.from(data['witnesses'] ?? []),
+      reporterId: data['reportedBy'],
+      assigneeId: data['assignedTo'],
       rootCause: data['rootCause'],
       immediateAction: data['immediateAction'],
       correctiveAction: data['correctiveAction'],
@@ -83,7 +71,7 @@ class Incident {
   }
 
   Map<String, dynamic> toFirestore() => {
-    'siteId': siteId,
+    'tenantId': tenantId,
     'title': title,
     'description': description,
     'type': type,
@@ -93,12 +81,8 @@ class Incident {
     'area': area,
     'dateOfIncident':
         dateOfIncident != null ? Timestamp.fromDate(dateOfIncident!) : null,
-    'reportedBy': reportedBy,
-    'reportedByName': reportedByName,
-    'assignedTo': assignedTo,
-    'assignedToName': assignedToName,
-    'attachments': attachments,
-    'witnesses': witnesses,
+    'reporterId': reporterId,
+    'assigneeId': assigneeId,
     'rootCause': rootCause,
     'immediateAction': immediateAction,
     'correctiveAction': correctiveAction,
@@ -120,10 +104,7 @@ class Incident {
     String? location,
     String? area,
     DateTime? dateOfIncident,
-    String? assignedTo,
-    String? assignedToName,
-    List<String>? attachments,
-    List<String>? witnesses,
+    String? assigneeId,
     String? rootCause,
     String? immediateAction,
     String? correctiveAction,
@@ -131,7 +112,7 @@ class Incident {
     int? daysLost,
   }) => Incident(
     id: id,
-    siteId: siteId,
+    tenantId: tenantId,
     title: title ?? this.title,
     description: description ?? this.description,
     type: type ?? this.type,
@@ -140,12 +121,8 @@ class Incident {
     location: location ?? this.location,
     area: area ?? this.area,
     dateOfIncident: dateOfIncident ?? this.dateOfIncident,
-    reportedBy: reportedBy,
-    reportedByName: reportedByName,
-    assignedTo: assignedTo ?? this.assignedTo,
-    assignedToName: assignedToName ?? this.assignedToName,
-    attachments: attachments ?? this.attachments,
-    witnesses: witnesses ?? this.witnesses,
+    reporterId: reporterId,
+    assigneeId: assigneeId ?? this.assigneeId,
     rootCause: rootCause ?? this.rootCause,
     immediateAction: immediateAction ?? this.immediateAction,
     correctiveAction: correctiveAction ?? this.correctiveAction,
@@ -159,36 +136,34 @@ class Incident {
 /// CAPA (Corrective and Preventive Action)
 class CAPA {
   final String? id;
-  final String siteId;
+  final String tenantId;
   final String? incidentId;
   final String title;
   final String description;
   final String type; // corrective, preventive
   final String status; // open, in_progress, completed, overdue, closed
   final String priority; // high, medium, low
-  final String? assignedTo;
-  final String? assignedToName;
+  final String? assigneeId;
   final DateTime? dueDate;
   final DateTime? completedDate;
   final String? completionNotes;
-  final String? createdBy;
+  final String? creatorId;
   final DateTime? createdAt;
 
   const CAPA({
     this.id,
-    required this.siteId,
+    required this.tenantId,
     this.incidentId,
     required this.title,
     required this.description,
     required this.type,
     this.status = 'open',
     this.priority = 'medium',
-    this.assignedTo,
-    this.assignedToName,
+    this.assigneeId,
     this.dueDate,
     this.completedDate,
     this.completionNotes,
-    this.createdBy,
+    this.creatorId,
     this.createdAt,
   });
 
@@ -196,38 +171,36 @@ class CAPA {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return CAPA(
       id: doc.id,
-      siteId: data['siteId'] ?? '',
+      tenantId: data['tenantId'] ?? '',
       incidentId: data['incidentId'],
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       type: data['type'] ?? 'corrective',
       status: data['status'] ?? 'open',
       priority: data['priority'] ?? 'medium',
-      assignedTo: data['assignedTo'],
-      assignedToName: data['assignedToName'],
+      assigneeId: data['assignedTo'],
       dueDate: (data['dueDate'] as Timestamp?)?.toDate(),
       completedDate: (data['completedDate'] as Timestamp?)?.toDate(),
       completionNotes: data['completionNotes'],
-      createdBy: data['createdBy'],
+      creatorId: data['createdBy'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-    'siteId': siteId,
+    'tenantId': tenantId,
     'incidentId': incidentId,
     'title': title,
     'description': description,
     'type': type,
     'status': status,
     'priority': priority,
-    'assignedTo': assignedTo,
-    'assignedToName': assignedToName,
+    'assigneeId': assigneeId,
     'dueDate': dueDate != null ? Timestamp.fromDate(dueDate!) : null,
     'completedDate':
         completedDate != null ? Timestamp.fromDate(completedDate!) : null,
     'completionNotes': completionNotes,
-    'createdBy': createdBy,
+    'creatorId': creatorId,
     'createdAt':
         createdAt != null
             ? Timestamp.fromDate(createdAt!)

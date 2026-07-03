@@ -1,57 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../config/theme.dart';
+import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
-import 'risk_command_center_screen.dart';
 import 'hira_screen.dart';
 import 'dynamic_risk_assessment_screen.dart';
-import 'bowtie_screen.dart';
 import 'strategic_risk_register_screen.dart';
+import 'bowtie_screen.dart';
+import 'risk_command_center_screen.dart';
+import 'widgets/stream_metric_card.dart';
+import 'widgets/risk_module_card.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
-/// Risk Intelligence Hub — Material 3 Expressive
-class RiskHubScreen extends StatelessWidget {
+/// Risk Management Hub — Unified access to HIRAs, DRAs, Bowties, and command centers.
+class RiskHubScreen extends ConsumerWidget {
   const RiskHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const GHeader(
-          title: 'Risk Intelligence Hub',
-          subtitle: 'Unified command center for organizational risk profiling, assessment, and mitigation.',
-        ),
-        Expanded(
-          child: CustomScrollView(
-            slivers: [
-              // High-level Metrics Row (Simplified placeholders for now)
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                sliver: SliverToBoxAdapter(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final isWide = constraints.maxWidth > 800;
-                      return Flex(
-                        direction: isWide ? Axis.horizontal : Axis.vertical,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildMetricCard(context, 'Critical Risks', '4', Icons.gpp_maybe_rounded, XMTheme.riskExtreme, isWide),
-                          if (isWide) GSpacing.hLg,
-                          if (!isWide) GSpacing.vLg,
-                          _buildMetricCard(context, 'Open Assessments', '12', Icons.pending_actions_rounded, XMTheme.primary, isWide),
-                          if (isWide) GSpacing.hLg,
-                          if (!isWide) GSpacing.vLg,
-                          _buildMetricCard(context, 'Control Strength', '78%', Icons.security_rounded, XMTheme.success, isWide),
-                        ],
-                      );
-                    },
+  Widget build(BuildContext context, WidgetRef ref) {
+    final siteId = ref.watch(currentTenantIdProvider);
+    final firestore = ref.watch(firestoreProvider);
+
+    final criticalRisksStream = siteId == null
+        ? Stream.value('0')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'hazards')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) => s.docs.where((d) {
+                  final severity = d.data()['severity'] ?? '';
+                  return severity == 'Major' || severity == 'Critical';
+                }).length.toString());
+
+    final openAssessmentsStream = siteId == null
+        ? Stream.value('0')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dynamic_risk_assessments')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) => s.docs.where((d) => d.data()['status'] != 'Approved').length.toString());
+
+    final controlStrengthStream = siteId == null
+        ? Stream.value('100%')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dynamic_risk_assessments')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) {
+              if (s.docs.isEmpty) return '80%';
+              final approved = s.docs.where((d) => d.data()['status'] == 'Approved').length;
+              return '${((approved / s.docs.length) * 100).round()}%';
+            });
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Risk Management Hub',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
-                ),
+                  GSpacing.vSm,
+                  Text(
+                    'Evaluate risk thresholds, baseline HIRA, bowtie analysis, and dynamic controls.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
               ),
-    
-              // Main Interactive Modules Grid
-              SliverPadding(
-                padding: const EdgeInsets.all(24),
-                sliver: SliverGrid(
+            ),
+          ),
+
+          // High-level Metrics Row
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            sliver: SliverToBoxAdapter(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 800;
+                  return Flex(
+                    direction: isWide ? Axis.horizontal : Axis.vertical,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      StreamMetricCard(
+                        title: 'Critical Risks',
+                        valueStream: criticalRisksStream,
+                        icon: Icons.gpp_maybe_rounded,
+                        color: XMTheme.riskExtreme,
+                        isWide: isWide,
+                        initialValue: '0',
+                      ),
+                      if (isWide) GSpacing.hLg else GSpacing.vLg,
+                      StreamMetricCard(
+                        title: 'Open Assessments',
+                        valueStream: openAssessmentsStream,
+                        icon: Icons.pending_actions_rounded,
+                        color: XMTheme.primary,
+                        isWide: isWide,
+                        initialValue: '0',
+                      ),
+                      if (isWide) GSpacing.hLg else GSpacing.vLg,
+                      StreamMetricCard(
+                        title: 'Control Strength',
+                        valueStream: controlStrengthStream,
+                        icon: Icons.security_rounded,
+                        color: XMTheme.success,
+                        isWide: isWide,
+                        initialValue: '80%',
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(24),
+            sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 400,
                     mainAxisExtent: 140,
@@ -59,40 +135,35 @@ class RiskHubScreen extends StatelessWidget {
                     mainAxisSpacing: 16,
                   ),
                   delegate: SliverChildListDelegate([
-                    _buildModuleCard(
-                      context,
+                    RiskModuleCard(
                       title: 'Command Center',
                       subtitle: 'Live risk posture and executive dashboard.',
                       icon: Icons.dashboard_rounded,
                       color: XMTheme.primary,
                       onTap: () => _openModule(context, 'Risk Command Center', const RiskCommandCenterScreen()),
                     ),
-                    _buildModuleCard(
-                      context,
+                    RiskModuleCard(
                       title: 'HIRA Register',
                       subtitle: 'Baseline Hazard Identification & Risk Assessment.',
                       icon: Icons.assessment_rounded,
                       color: XMTheme.warning,
                       onTap: () => _openModule(context, 'Baseline HIRA', const HiraScreen()),
                     ),
-                    _buildModuleCard(
-                      context,
+                    RiskModuleCard(
                       title: 'Dynamic RA',
                       subtitle: 'Continuous and task-specific risk evaluations.',
                       icon: Icons.bolt_rounded,
                       color: XMTheme.error,
                       onTap: () => _openModule(context, 'Dynamic Risk Assessment', const DynamicRiskAssessmentScreen()),
                     ),
-                    _buildModuleCard(
-                      context,
+                    RiskModuleCard(
                       title: 'Bow-Tie Analysis',
                       subtitle: 'Visualize barriers, threats, and consequences.',
                       icon: Icons.account_tree_rounded,
                       color: XMTheme.info,
                       onTap: () => _openModule(context, 'Bow-Tie Analysis', const BowtieScreen()),
                     ),
-                    _buildModuleCard(
-                      context,
+                    RiskModuleCard(
                       title: 'Strategic Register',
                       subtitle: 'High-level organizational risk tracking.',
                       icon: Icons.list_alt_rounded,
@@ -105,87 +176,14 @@ class RiskHubScreen extends StatelessWidget {
               const SliverToBoxAdapter(child: GSpacing.vXxl),
             ],
           ),
-        ),
-      ],
-    );
-  }
+        );
+      }
 
   void _openModule(BuildContext context, String title, Widget child) {
     UIUtils.showSideSheet(
       context: context,
       title: title,
       builder: (ctx) => child,
-    );
-  }
-
-  Widget _buildMetricCard(BuildContext context, String title, String value, IconData icon, Color color, bool isWide) {
-    final theme = Theme.of(context);
-    final card = GCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          GSpacing.hMd,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(title, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
-                GSpacing.vXs,
-                Text(value, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-    return isWide ? Expanded(child: card) : card;
-  }
-
-  Widget _buildModuleCard(BuildContext context, {required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) {
-    final theme = Theme.of(context);
-    return GCard(
-      margin: EdgeInsets.zero,
-      padding: EdgeInsets.zero,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            GSpacing.hMd,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  GSpacing.vSm,
-                  Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Text('Open Module', style: theme.textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.bold)),
-                      GSpacing.hSm,
-                      Icon(Icons.arrow_forward_rounded, size: 14, color: color),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

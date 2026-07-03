@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:uuid/uuid.dart';
 
 /// A utility to index the current UI state for AI consumption.
@@ -98,13 +97,6 @@ class UIIndexer {
     };
   }
 
-  bool _isVisible(Offset position, Size size) {
-    final screenSize = MediaQuery.of(context).size;
-    return position.dx < screenSize.width &&
-           position.dy < screenSize.height &&
-           (position.dx + size.width) > 0 &&
-           (position.dy + size.height) > 0;
-  }
 
   Map<String, dynamic> _textStyleToMap(TextStyle? style) {
     if (style == null) return {};
@@ -117,6 +109,6 @@ class UIIndexer {
   }
 
   String _toHex(Color color) {
-    return '#${color.value.toRadixString(16).padLeft(8, '0').toUpperCase()}';
+    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase()}';
   }
 }

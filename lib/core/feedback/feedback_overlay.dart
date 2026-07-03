@@ -1,14 +1,16 @@
-import 'dart:convert';
-import 'dart:typed_data';
+// ignore_for_file: use_build_context_synchronously
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'ui_indexer.dart';
-import '../widgets/ds_widgets.dart';
+import 'widgets/feedback_bottom_sheet.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import '../../core/providers/app_providers.dart';
 
-class FeedbackOverlay extends StatefulWidget {
+class FeedbackOverlay extends ConsumerStatefulWidget {
   final Widget child;
   final bool isEnabled;
 
@@ -19,10 +21,10 @@ class FeedbackOverlay extends StatefulWidget {
   });
 
   @override
-  State<FeedbackOverlay> createState() => _FeedbackOverlayState();
+  ConsumerState<FeedbackOverlay> createState() => _FeedbackOverlayState();
 }
 
-class _FeedbackOverlayState extends State<FeedbackOverlay> {
+class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
   final GlobalKey _boundaryKey = GlobalKey();
   Offset _position = const Offset(20, 100);
   bool _isUploading = false;
@@ -67,7 +69,7 @@ class _FeedbackOverlayState extends State<FeedbackOverlay> {
         'screenshot_url': screenshotUrl,
       };
 
-      await FirebaseFirestore.instance.collection('dev_feedback').doc(feedbackId).set(feedbackData);
+      await FirebaseFirestore.instance.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dev_feedback').doc(feedbackId).set(feedbackData);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -89,80 +91,18 @@ class _FeedbackOverlayState extends State<FeedbackOverlay> {
     // Capture state immediately when dialog is triggered
     final indexer = UIIndexer(context, screenName: ModalRoute.of(context)?.settings.name ?? 'Dashboard');
     final snapshot = indexer.captureState();
-    final TextEditingController controller = TextEditingController();
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GHeader(
-                title: 'Developer Feedback',
-                subtitle: 'Snapshot captured for ${snapshot['screen_name']}',
-              ),
-              GSpacing.vMd,
-              TextField(
-                controller: controller,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Describe the bug or request a feature...',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-                ),
-              ),
-              GSpacing.vLg,
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _isUploading
-                          ? null
-                          : () {
-                              final text = controller.text;
-                              Navigator.pop(context);
-                              _submitFeedback(context, snapshot, text);
-                            },
-                      icon: _isUploading
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.send_rounded),
-                      label: Text(_isUploading ? 'Uploading...' : 'Submit to AI'),
-                    ),
-                  ),
-                ],
-              ),
-              GSpacing.vSm,
-              Center(
-                child: Text(
-                  'Snapshot size: ${(jsonEncode(snapshot).length / 1024).toStringAsFixed(1)} KB',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            ],
-          ),
-        ),
+      builder: (context) => FeedbackBottomSheet(
+        snapshot: snapshot,
+        isUploading: _isUploading,
+        onCancel: () => Navigator.pop(context),
+        onSubmit: (text) {
+          Navigator.pop(context);
+          _submitFeedback(context, snapshot, text);
+        },
       ),
     );
   }
@@ -196,7 +136,7 @@ class _FeedbackOverlayState extends State<FeedbackOverlay> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),

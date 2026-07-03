@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 /// Seeds exhaustive dummy data across ALL modules.
 /// Every dropdown option gets at least one record.
@@ -12,7 +13,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
   String iso(int daysAgoVal) => daysAgo(daysAgoVal).toIso8601String();
 
   // The siteId must match the dev bypass profile: 'Site A'
-  const siteA = 'Site A';
+  const tenantId = 'sentinel-dev';
 
   // ════════════════════════════════════════════════════════════════
   // ─── INCIDENTS ───
@@ -29,11 +30,11 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Open',
       'description':
           'Section B scaffolding buckled under load. Area cordoned off immediately.',
-      'reporterName': 'Alice Smith',
+      'reporterId': 'EMP-001',
       'location': 'South Wing Level 3',
       'dateOfIncident': iso(1),
       'totalCost': 45000,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
@@ -43,11 +44,11 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Investigating',
       'description':
           'Sparky Electrics crew entered high-voltage switchroom without clearance.',
-      'reporterName': 'Bob Jones',
+      'reporterId': 'EMP-002',
       'location': 'Substation Room A',
       'dateOfIncident': iso(2),
-      'contractorName': 'Sparky Electrics',
-      'siteId': siteA,
+      'contractorId': 'CON-002',
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
@@ -57,11 +58,11 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Resolved',
       'description':
           'Worker sustained a sprained ankle. Wet floor sign was not placed after mopping.',
-      'reporterName': 'Charlie Brown',
+      'reporterId': 'EMP-003',
       'location': 'Canteen',
       'dateOfIncident': iso(5),
       'totalCost': 3200,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
@@ -71,11 +72,11 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Closed',
       'description':
           'Small cut on left hand from utility knife. First aid applied on site.',
-      'reporterName': 'David Lee',
+      'reporterId': 'EMP-004',
       'location': 'Admin Block Room 204',
       'dateOfIncident': iso(15),
       'totalCost': 150,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(15),
     },
     // Exhaust remaining Types
@@ -86,10 +87,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Open',
       'description':
           '20L diesel leaked from generator fuel line into stormwater catchment area.',
-      'reporterName': 'Alice Smith',
+      'reporterId': 'EMP-001',
       'location': 'Generator Yard',
       'dateOfIncident': iso(0),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -99,10 +100,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Open',
       'description':
           'Railing on stairwell B between floors 2-3 is loose and wobbles when gripped.',
-      'reporterName': 'Bob Jones',
+      'reporterId': 'EMP-002',
       'location': 'Stairwell B',
       'dateOfIncident': iso(3),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(3),
     },
     // Extra for story depth
@@ -113,10 +114,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Investigating',
       'description':
           'Tower crane operator swung load over occupied walkway. No injuries.',
-      'reporterName': 'Bob Jones',
+      'reporterId': 'EMP-002',
       'location': 'Tower Crane Zone',
       'dateOfIncident': iso(1),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
@@ -126,18 +127,18 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'status': 'Closed',
       'description':
           'Delivery truck reversed into bollard. Minor bumper damage.',
-      'reporterName': 'David Lee',
+      'reporterId': 'EMP-004',
       'location': 'Parking Bay C',
       'dateOfIncident': iso(30),
       'totalCost': 800,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
   ];
   for (var i = 0; i < incidents.length; i++) {
     batch1.set(
       firestore
-          .collection('incidents')
+          .tenantCollection('sentinel-dev', 'incidents')
           .doc('INC-${(i + 1).toString().padLeft(3, '0')}'),
       incidents[i],
     );
@@ -153,10 +154,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Worker removed safety glasses due to lens fogging while grinding.',
       'location': 'Workshop Bay 2',
-      'observerName': 'Alice Smith',
+      'observerId': 'EMP-001',
       'pointsAwarded': 5,
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
@@ -164,10 +165,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Excellent traffic control around crane operation zone — spotter always present.',
       'location': 'Tower Crane Zone',
-      'observerName': 'Bob Jones',
+      'observerId': 'EMP-002',
       'pointsAwarded': 10,
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
@@ -175,10 +176,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Oil slick on walkway near generator. No absorbent or signage placed.',
       'location': 'Generator Yard',
-      'observerName': 'Alice Smith',
+      'observerId': 'EMP-001',
       'pointsAwarded': 5,
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(3),
     },
     {
@@ -186,10 +187,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Team followed full LOTO procedure before servicing conveyor belt.',
       'location': 'Maintenance Shop',
-      'observerName': 'Charlie Brown',
+      'observerId': 'EMP-003',
       'pointsAwarded': 10,
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -197,10 +198,10 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Lifting heavy boxes without bending knees — improper posture.',
       'location': 'Warehouse',
-      'observerName': 'Bob Jones',
+      'observerId': 'EMP-002',
       'pointsAwarded': 5,
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(4),
     },
     {
@@ -208,17 +209,17 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Fire extinguisher near exit obstructed by stacked materials.',
       'location': 'South Wing Level 1',
-      'observerName': 'David Lee',
+      'observerId': 'EMP-004',
       'pointsAwarded': 5,
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(6),
     },
   ];
   for (var i = 0; i < bbs.length; i++) {
     batch1.set(
       firestore
-          .collection('bbs_observations')
+          .tenantCollection('sentinel-dev', 'bbs_observations')
           .doc('BBS-${(i + 1).toString().padLeft(3, '0')}'),
       bbs[i],
     );
@@ -234,73 +235,73 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'title': 'HVAC Welding - South Wing',
       'type': 'Hot Work',
       'status': 'Active',
-      'applicantName': 'John from Acme Builders',
+      'applicantId': 'EMP-005',
       'location': 'South Wing Roof',
       'validUntil': iso(-1),
       'lotoRequired': true,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
       'title': 'Roof Retrofit Access',
       'type': 'Working at Heights',
       'status': 'Approved',
-      'applicantName': 'Bob Jones',
+      'applicantId': 'EMP-002',
       'location': 'Admin Block Roof',
       'validUntil': iso(-3),
       'lotoRequired': false,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
       'title': 'Basement Plumbing Inspection',
       'type': 'Confined Space',
       'status': 'Closed',
-      'applicantName': 'ClearFlow Plumbing',
+      'applicantId': 'CON-003',
       'location': 'Basement Level B2',
       'validUntil': iso(5),
       'lotoRequired': true,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(6),
     },
     {
       'title': 'Server Room Rewire',
       'type': 'Electrical',
       'status': 'Requested',
-      'applicantName': 'Sparky Electrics',
+      'applicantId': 'CON-002',
       'location': 'Server Room',
       'validUntil': iso(-5),
       'lotoRequired': true,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
       'title': 'Foundation Trenching Phase 2',
       'type': 'Excavation',
       'status': 'Active',
-      'applicantName': 'Acme Builders',
+      'applicantId': 'CON-001',
       'location': 'North Perimeter',
       'validUntil': iso(-2),
       'lotoRequired': false,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
       'title': 'Temporary Fence Installation',
       'type': 'Other',
       'status': 'Closed',
-      'applicantName': 'David Lee',
+      'applicantId': 'EMP-004',
       'location': 'East Boundary',
       'validUntil': iso(10),
       'lotoRequired': false,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(12),
     },
   ];
   for (var i = 0; i < permits.length; i++) {
     batch1.set(
       firestore
-          .collection('permits')
+          .tenantCollection('sentinel-dev', 'permits')
           .doc('PTW-${(i + 1).toString().padLeft(3, '0')}'),
       permits[i],
     );
@@ -315,64 +316,64 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'description':
           'Conduct immediate structural audit of all scaffolding on site',
       'rca': 'Root cause: Corroded base plates not inspected during last audit',
-      'assignedToName': 'Bob Jones',
+      'assigneeId': 'EMP-002',
       'dueDate': iso(-3),
       'status': 'Open',
       'incidentId': 'INC-001',
       'createdById': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
       'description':
           'Procure anti-fog safety glasses for high-humidity work areas',
       'rca': 'Workers removing PPE due to lens fogging — inadequate PPE spec',
-      'assignedToName': 'Alice Smith',
+      'assigneeId': 'EMP-001',
       'dueDate': iso(-5),
       'status': 'In Progress',
       'createdById': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
       'description':
           'Update LOTO training module with new switchgear procedures',
       'rca': 'Unauthorized entry incident linked to outdated training material',
-      'assignedToName': 'Charlie Brown',
+      'assigneeId': 'EMP-003',
       'dueDate': iso(0),
       'status': 'Completed',
       'incidentId': 'INC-002',
       'createdById': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
     {
       'description': 'Install wet floor signage dispensers in all break areas',
       'rca': 'Slip incident caused by absence of wet floor signs after mopping',
-      'assignedToName': 'Facilities Team',
+      'assigneeId': 'EMP-004',
       'dueDate': iso(5),
       'status': 'Verified',
       'incidentId': 'INC-003',
       'createdById': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(20),
     },
     {
       'description': 'Repair loose railing on Stairwell B between floors 2-3',
       'rca': 'Fasteners corroded due to water ingress from leaking roof',
-      'assignedToName': 'Maintenance Dept',
+      'assigneeId': 'EMP-005',
       'dueDate': iso(-1),
       'status': 'Open',
       'incidentId': 'INC-006',
       'createdById': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(3),
     },
   ];
   for (var i = 0; i < capas.length; i++) {
     batch1.set(
       firestore
-          .collection('capas')
+          .tenantCollection('sentinel-dev', 'capas')
           .doc('CAPA-${(i + 1).toString().padLeft(3, '0')}'),
       capas[i],
     );
@@ -394,7 +395,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'Critical',
       'location': 'South Wing Level 4',
       'status': 'Open',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -403,7 +404,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'High',
       'location': 'Admin Block Corridor B',
       'status': 'Open',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
@@ -412,7 +413,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'Medium',
       'location': 'Basement P2',
       'status': 'Open',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
@@ -421,14 +422,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'Low',
       'location': 'Server Room Entrance',
       'status': 'Resolved',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
   ];
   for (var i = 0; i < hazards.length; i++) {
     batch2.set(
       firestore
-          .collection('hazards')
+          .tenantCollection('sentinel-dev', 'hazards')
           .doc('HAZ-${(i + 1).toString().padLeft(3, '0')}'),
       hazards[i],
     );
@@ -443,7 +444,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'role': 'Safety Officer',
       'department': 'HSE',
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(365),
     },
     {
@@ -451,7 +452,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'role': 'Site Supervisor',
       'department': 'Operations',
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(200),
     },
     {
@@ -459,7 +460,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'role': 'Technician',
       'department': 'Maintenance',
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(100),
     },
     {
@@ -467,7 +468,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'role': 'Project Manager',
       'department': 'Projects',
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(500),
     },
     {
@@ -475,14 +476,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'role': 'Environmental Officer',
       'department': 'HSE',
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(90),
     },
   ];
   for (var i = 0; i < employees.length; i++) {
     batch2.set(
       firestore
-          .collection('employees')
+          .tenantCollection('sentinel-dev', 'employees')
           .doc('EMP-${(i + 1).toString().padLeft(3, '0')}'),
       employees[i],
     );
@@ -499,7 +500,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'complianceScore': 92,
       'contactPerson': 'John Doe',
       'contactEmail': 'john@acme.co.za',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(120),
     },
     {
@@ -509,7 +510,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'complianceScore': 65,
       'contactPerson': 'Mark Volt',
       'contactEmail': 'mark@sparky.co.za',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(80),
     },
     {
@@ -519,7 +520,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'complianceScore': 88,
       'contactPerson': 'Jane Flow',
       'contactEmail': 'jane@clearflow.co.za',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(200),
     },
     {
@@ -529,14 +530,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'complianceScore': 40,
       'contactPerson': 'Peter Frame',
       'contactEmail': 'peter@safescaffold.co.za',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(300),
     },
   ];
   for (var i = 0; i < contractors.length; i++) {
     batch2.set(
       firestore
-          .collection('contractors')
+          .tenantCollection('sentinel-dev', 'contractors')
           .doc('CON-${(i + 1).toString().padLeft(3, '0')}'),
       contractors[i],
     );
@@ -551,7 +552,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'type': 'Heavy Machinery',
       'status': 'Operational',
       'nextMaintenance': iso(-15),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(60),
     },
     {
@@ -559,7 +560,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'type': 'Power',
       'status': 'Maintenance Required',
       'nextMaintenance': iso(5),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(90),
     },
     {
@@ -567,7 +568,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'type': 'Access',
       'status': 'Out of Service',
       'nextMaintenance': iso(20),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(120),
     },
     {
@@ -575,14 +576,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'type': 'Heavy Machinery',
       'status': 'Operational',
       'nextMaintenance': iso(-30),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(45),
     },
   ];
   for (var i = 0; i < equipment.length; i++) {
     batch2.set(
       firestore
-          .collection('equipment')
+          .tenantCollection('sentinel-dev', 'equipment')
           .doc('EQ-${(i + 1).toString().padLeft(3, '0')}'),
       equipment[i],
     );
@@ -598,7 +599,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'Minor',
       'volume': '5L',
       'contained': true,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
@@ -607,7 +608,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'Moderate',
       'volume': '20L',
       'contained': false,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -616,14 +617,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'severity': 'Moderate',
       'volume': '10L',
       'contained': true,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(8),
     },
   ];
   for (var i = 0; i < spills.length; i++) {
     batch2.set(
       firestore
-          .collection('environmental_spills')
+          .tenantCollection('sentinel-dev', 'environmental_spills')
           .doc('SPILL-${(i + 1).toString().padLeft(3, '0')}'),
       spills[i],
     );
@@ -639,7 +640,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'quantity': '500kg',
       'destination': 'SafeDisposal Inc',
       'status': 'In Transit',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
@@ -648,7 +649,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'quantity': '2 Tons',
       'destination': 'City Landfill',
       'status': 'Delivered',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
@@ -657,14 +658,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'quantity': '1.5 Tons',
       'destination': 'GreenRecycle',
       'status': 'Pending Pickup',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
   ];
   for (var i = 0; i < waste.length; i++) {
     batch2.set(
       firestore
-          .collection('waste_manifests')
+          .tenantCollection('sentinel-dev', 'waste_manifests')
           .doc('WST-${(i + 1).toString().padLeft(3, '0')}'),
       waste[i],
     );
@@ -679,7 +680,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'value': '12.5 tCO2e',
       'target': '10 tCO2e',
       'status': 'Off Track',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -687,7 +688,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'value': '450 kL',
       'target': '500 kL',
       'status': 'On Track',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -695,14 +696,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'value': '120 hrs',
       'target': '100 hrs',
       'status': 'Achieved',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
   ];
   for (var i = 0; i < esg.length; i++) {
     batch2.set(
       firestore
-          .collection('esg_metrics')
+          .tenantCollection('sentinel-dev', 'esg_metrics')
           .doc('ESG-${(i + 1).toString().padLeft(3, '0')}'),
       esg[i],
     );
@@ -717,8 +718,8 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'riskLevel': 'Extreme',
       'mitigations': 'Full body harness, safety nets, 2-person buddy system',
       'approved': false,
-      'assessorName': 'Alice Smith',
-      'siteId': siteA,
+      'assessorId': 'EMP-001',
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
@@ -726,8 +727,8 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'riskLevel': 'Low',
       'mitigations': 'Proper ventilation, respiratory PPE',
       'approved': true,
-      'assessorName': 'Bob Jones',
-      'siteId': siteA,
+      'assessorId': 'EMP-002',
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
     {
@@ -735,8 +736,8 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'riskLevel': 'Medium',
       'mitigations': 'LOTO on power, certified electricians only',
       'approved': true,
-      'assessorName': 'Alice Smith',
-      'siteId': siteA,
+      'assessorId': 'EMP-001',
+      'tenantId': tenantId,
       'createdAt': iso(3),
     },
     {
@@ -744,15 +745,15 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'riskLevel': 'High',
       'mitigations': 'Shoring, ground penetrating radar, daily inspections',
       'approved': false,
-      'assessorName': 'Bob Jones',
-      'siteId': siteA,
+      'assessorId': 'EMP-002',
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
   ];
   for (var i = 0; i < dra.length; i++) {
     batch2.set(
       firestore
-          .collection('dynamic_risk_assessments')
+          .tenantCollection('sentinel-dev', 'dynamic_risk_assessments')
           .doc('DRA-${(i + 1).toString().padLeft(3, '0')}'),
       dra[i],
     );
@@ -764,42 +765,42 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
   // ════════════════════════════════════════════════════════════════
   final ppe = <Map<String, dynamic>>[
     {
-      'employeeName': 'Alice Smith',
+      'employeeId': 'EMP-001',
       'ppeType': 'Hard Hat',
       'status': 'Compliant',
       'expiryDate': iso(-90),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
     {
-      'employeeName': 'Bob Jones',
+      'employeeId': 'EMP-002',
       'ppeType': 'Safety Boots',
       'status': 'Non-Compliant',
       'expiryDate': iso(10),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
     {
-      'employeeName': 'Charlie Brown',
+      'employeeId': 'EMP-003',
       'ppeType': 'Safety Glasses',
       'status': 'Expired',
       'expiryDate': iso(15),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(60),
     },
     {
-      'employeeName': 'David Lee',
+      'employeeId': 'EMP-004',
       'ppeType': 'High-Vis Vest',
       'status': 'Compliant',
       'expiryDate': iso(-180),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
   ];
   for (var i = 0; i < ppe.length; i++) {
     batch2.set(
       firestore
-          .collection('ppe_compliance')
+          .tenantCollection('sentinel-dev', 'ppe_compliance')
           .doc('PPE-${(i + 1).toString().padLeft(3, '0')}'),
       ppe[i],
     );
@@ -825,7 +826,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'controlMeasure': 'Engineering Controls',
       'status': 'Active',
       'assessorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
@@ -840,7 +841,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'controlMeasure': 'Administrative Controls',
       'status': 'Active',
       'assessorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
@@ -854,7 +855,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'controlMeasure': 'Elimination',
       'status': 'Active',
       'assessorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(8),
     },
     {
@@ -868,7 +869,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'controlMeasure': 'PPE',
       'status': 'Active',
       'assessorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
     {
@@ -882,14 +883,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'controlMeasure': 'Substitution',
       'status': 'Active',
       'assessorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(15),
     },
   ];
   for (var i = 0; i < hira.length; i++) {
     batch3.set(
       firestore
-          .collection('risk_assessments')
+          .tenantCollection('sentinel-dev', 'risk_assessments')
           .doc('HIRA-${(i + 1).toString().padLeft(3, '0')}'),
       hira[i],
     );
@@ -908,7 +909,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'mitigationBarriers': 'Emergency response, rescue teams, insurance',
       'status': 'Active',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1),
     },
     {
@@ -920,7 +921,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'mitigationBarriers': 'Fire extinguishers, fire brigade, sprinklers',
       'status': 'Draft',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(3),
     },
     {
@@ -932,14 +933,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'mitigationBarriers': 'Rescue team, breathing apparatus, alarm',
       'status': 'Active',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
   ];
   for (var i = 0; i < bowties.length; i++) {
     batch3.set(
       firestore
-          .collection('bowtie_analyses')
+          .tenantCollection('sentinel-dev', 'bowtie_analyses')
           .doc('BT-${(i + 1).toString().padLeft(3, '0')}'),
       bowties[i],
     );
@@ -963,7 +964,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
           'Conduct compliance gap analysis, appoint responsible persons',
       'status': 'Open',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(0),
     },
     {
@@ -980,7 +981,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
           'Pre-qualify alternative scaffolding contractors, retain performance guarantee',
       'status': 'Mitigating',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(2),
     },
     {
@@ -996,7 +997,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'mitigation': 'Crisis comms plan, media training for spokespersons',
       'status': 'Monitoring',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
@@ -1012,14 +1013,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'mitigation': 'Weather monitoring, schedule float, covered work areas',
       'status': 'Monitoring',
       'authorId': 'dev-admin-123',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
   ];
   for (var i = 0; i < strategicRisks.length; i++) {
     batch3.set(
       firestore
-          .collection('strategic_risks')
+          .tenantCollection('sentinel-dev', 'strategic_risks')
           .doc('SR-${(i + 1).toString().padLeft(3, '0')}'),
       strategicRisks[i],
     );
@@ -1030,83 +1031,83 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
   // ════════════════════════════════════════════════════════════════
   final skills = <Map<String, dynamic>>[
     {
-      'employeeName': 'Alice Smith',
+      'employeeId': 'EMP-001',
       'skill': 'First Aid',
       'proficiency': 'Expert',
       'lastAssessed': iso(30),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
     {
-      'employeeName': 'Alice Smith',
+      'employeeId': 'EMP-001',
       'skill': 'Fire Safety',
       'proficiency': 'Advanced',
       'lastAssessed': iso(60),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(60),
     },
     {
-      'employeeName': 'Alice Smith',
+      'employeeId': 'EMP-001',
       'skill': 'Incident Investigation',
       'proficiency': 'Expert',
       'lastAssessed': iso(15),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(15),
     },
     {
-      'employeeName': 'Bob Jones',
+      'employeeId': 'EMP-002',
       'skill': 'LOTO Procedure',
       'proficiency': 'Advanced',
       'lastAssessed': iso(45),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(45),
     },
     {
-      'employeeName': 'Bob Jones',
+      'employeeId': 'EMP-002',
       'skill': 'Working at Heights',
       'proficiency': 'Expert',
       'lastAssessed': iso(20),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(20),
     },
     {
-      'employeeName': 'Bob Jones',
+      'employeeId': 'EMP-002',
       'skill': 'Crane Operation',
       'proficiency': 'Intermediate',
       'lastAssessed': iso(90),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(90),
     },
     {
-      'employeeName': 'Charlie Brown',
+      'employeeId': 'EMP-003',
       'skill': 'Forklift Operation',
       'proficiency': 'Expert',
       'lastAssessed': iso(10),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
     {
-      'employeeName': 'Charlie Brown',
+      'employeeId': 'EMP-003',
       'skill': 'Confined Space Entry',
       'proficiency': 'Beginner',
       'lastAssessed': iso(5),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
-      'employeeName': 'David Lee',
+      'employeeId': 'EMP-004',
       'skill': 'Scaffolding Inspection',
       'proficiency': 'Intermediate',
       'lastAssessed': iso(30),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
     {
-      'employeeName': 'David Lee',
+      'employeeId': 'EMP-004',
       'skill': 'Fall Protection',
       'proficiency': 'Advanced',
       'lastAssessed': iso(40),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(40),
     },
     {
@@ -1114,7 +1115,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'skill': 'Hazmat Handling',
       'proficiency': 'Expert',
       'lastAssessed': iso(15),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(15),
     },
     {
@@ -1122,14 +1123,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'skill': 'First Aid',
       'proficiency': 'Intermediate',
       'lastAssessed': iso(60),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(60),
     },
   ];
   for (var i = 0; i < skills.length; i++) {
     batch3.set(
       firestore
-          .collection('skills_matrix')
+          .tenantCollection('sentinel-dev', 'skills_matrix')
           .doc('SKL-${(i + 1).toString().padLeft(3, '0')}'),
       skills[i],
     );
@@ -1140,57 +1141,57 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
   // ════════════════════════════════════════════════════════════════
   final competencies = <Map<String, dynamic>>[
     {
-      'employeeName': 'Alice Smith',
+      'employeeId': 'EMP-001',
       'certification': 'SAMTRAC',
       'issuer': 'NOSA',
       'status': 'Valid',
       'expiryDate': iso(-365),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(100),
     },
     {
-      'employeeName': 'Alice Smith',
+      'employeeId': 'EMP-001',
       'certification': 'Level 3 First Aid',
       'issuer': 'St Johns',
       'status': 'Expiring Soon',
       'expiryDate': iso(-30),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(200),
     },
     {
-      'employeeName': 'Bob Jones',
+      'employeeId': 'EMP-002',
       'certification': 'Rigging Certificate',
       'issuer': 'ECSA',
       'status': 'Valid',
       'expiryDate': iso(-180),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(90),
     },
     {
-      'employeeName': 'Bob Jones',
+      'employeeId': 'EMP-002',
       'certification': 'Working at Heights',
       'issuer': 'SafeTraining SA',
       'status': 'Expired',
       'expiryDate': iso(15),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(400),
     },
     {
-      'employeeName': 'Charlie Brown',
+      'employeeId': 'EMP-003',
       'certification': 'Forklift Operator License',
       'issuer': 'TETA',
       'status': 'Valid',
       'expiryDate': iso(-730),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(60),
     },
     {
-      'employeeName': 'David Lee',
+      'employeeId': 'EMP-004',
       'certification': 'Project Management (PMP)',
       'issuer': 'PMI',
       'status': 'Valid',
       'expiryDate': iso(-540),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(500),
     },
     {
@@ -1199,7 +1200,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'issuer': 'IRCA',
       'status': 'Valid',
       'expiryDate': iso(-200),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(90),
     },
     {
@@ -1208,14 +1209,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'issuer': 'NFPA',
       'status': 'Revoked',
       'expiryDate': iso(5),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(300),
     },
   ];
   for (var i = 0; i < competencies.length; i++) {
     batch3.set(
       firestore
-          .collection('competency_passports')
+          .tenantCollection('sentinel-dev', 'competency_passports')
           .doc('COMP-${(i + 1).toString().padLeft(3, '0')}'),
       competencies[i],
     );
@@ -1245,7 +1246,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'totalAssets': 1250,
       'constructionDate': '2015-06-01',
       'manager': 'Alice Smith',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(365),
     },
     {
@@ -1263,7 +1264,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'totalAssets': 450,
       'constructionDate': '2010-11-15',
       'manager': 'Bob Jones',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(500),
     },
     {
@@ -1281,14 +1282,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'totalAssets': 180,
       'constructionDate': '2018-02-10',
       'manager': 'Emily Davis',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(200),
     },
   ];
   for (var i = 0; i < properties.length; i++) {
     batch4.set(
       firestore
-          .collection('properties')
+          .tenantCollection('sentinel-dev', 'properties')
           .doc('PROP-${(i + 1).toString().padLeft(3, '0')}'),
       properties[i],
     );
@@ -1308,7 +1309,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'assignedTo': 'Acme Builders',
       'dueDate': iso(-5),
       'progress': 65,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
     {
@@ -1321,7 +1322,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'assignedTo': 'Sparky Electrics',
       'dueDate': iso(-20),
       'progress': 0,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(30),
     },
     {
@@ -1334,14 +1335,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'assignedTo': 'Acme Builders',
       'dueDate': iso(2),
       'progress': 100,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
   ];
   for (var i = 0; i < propertyProjects.length; i++) {
     batch4.set(
       firestore
-          .collection('property_projects')
+          .tenantCollection('sentinel-dev', 'property_projects')
           .doc('PROJ-${(i + 1).toString().padLeft(3, '0')}'),
       propertyProjects[i],
     );
@@ -1358,7 +1359,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'water': 1200,
       'waste': 4.2,
       'carbon': 25.5,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
     {
@@ -1368,7 +1369,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'water': 1350,
       'waste': 5.1,
       'carbon': 27.8,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(35),
     },
     {
@@ -1378,14 +1379,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'water': 800,
       'waste': 12.5,
       'carbon': 85.0,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(5),
     },
   ];
   for (var i = 0; i < utilities.length; i++) {
     batch4.set(
       firestore
-          .collection('property_utilities')
+          .tenantCollection('sentinel-dev', 'property_utilities')
           .doc('UTIL-${(i + 1).toString().padLeft(3, '0')}'),
       utilities[i],
     );
@@ -1401,7 +1402,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'personName': 'Sarah Jenkins',
       'status': 'Appointed',
       'expiry': iso(-730),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(100),
     },
     {
@@ -1410,7 +1411,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'personName': 'David Cho',
       'status': 'Appointed',
       'expiry': iso(-365),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(150),
     },
     {
@@ -1419,7 +1420,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'personName': 'Michael Ross',
       'status': 'Pending Approval',
       'expiry': null,
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(10),
     },
     {
@@ -1428,14 +1429,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'personName': 'Anita Patel',
       'status': 'Appointed',
       'expiry': iso(-1095),
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(50),
     },
   ];
   for (var i = 0; i < appointments.length; i++) {
     batch4.set(
       firestore
-          .collection('legal_appointments')
+          .tenantCollection('sentinel-dev', 'legal_appointments')
           .doc('APT-${(i + 1).toString().padLeft(3, '0')}'),
       appointments[i],
     );
@@ -1452,7 +1453,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'leaseEnd': iso(-365),
       'monthlyRent': 250000,
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(365),
     },
     {
@@ -1462,7 +1463,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'leaseEnd': iso(-540),
       'monthlyRent': 45000,
       'status': 'Active',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(180),
     },
     {
@@ -1472,14 +1473,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'leaseEnd': iso(10),
       'monthlyRent': 85000,
       'status': 'Expiring Soon',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(200),
     },
   ];
   for (var i = 0; i < leases.length; i++) {
     batch4.set(
       firestore
-          .collection('property_leases')
+          .tenantCollection('sentinel-dev', 'property_leases')
           .doc('LSE-${(i + 1).toString().padLeft(3, '0')}'),
       leases[i],
     );
@@ -1497,7 +1498,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'purchaseDate': iso(1000),
       'value': 2500000,
       'status': 'Operational',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(1000),
     },
     {
@@ -1508,7 +1509,7 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'purchaseDate': iso(800),
       'value': 4500000,
       'status': 'Maintenance Required',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(800),
     },
     {
@@ -1519,14 +1520,14 @@ Future<void> seedAllDummyData(FirebaseFirestore firestore) async {
       'purchaseDate': iso(200),
       'value': 1200000,
       'status': 'Operational',
-      'siteId': siteA,
+      'tenantId': tenantId,
       'createdAt': iso(200),
     },
   ];
   for (var i = 0; i < assets.length; i++) {
     batch4.set(
       firestore
-          .collection('property_assets')
+          .tenantCollection('sentinel-dev', 'property_assets')
           .doc('AST-${(i + 1).toString().padLeft(3, '0')}'),
       assets[i],
     );

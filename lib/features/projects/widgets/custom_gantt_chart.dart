@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../config/theme.dart';
 import '../models/project_models.dart';
 import '../providers/project_providers.dart';
+import 'custom_gantt_chart/gantt_dependency_painter.dart';
+import 'custom_gantt_chart/gantt_add_task_dialog.dart';
+import 'custom_gantt_chart/gantt_task_row.dart';
 
 class CustomGanttChart extends ConsumerStatefulWidget {
   final List<ProjectTask> tasks;
@@ -38,37 +40,6 @@ class _CustomGanttChartState extends ConsumerState<CustomGanttChart> {
     totalDays = chartEndDate.difference(chartStartDate).inDays;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (widget.tasks.isEmpty) return const Center(child: Text("No tasks found."));
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Text('Interactive Gantt Timeline', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderTimeline(),
-                  const Divider(height: 1),
-                  ...widget.tasks.map((task) => _buildTaskRow(task)),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildHeaderTimeline() {
     return Container(
       height: 40,
@@ -92,149 +63,116 @@ class _CustomGanttChartState extends ConsumerState<CustomGanttChart> {
     );
   }
 
-  Widget _buildTaskRow(ProjectTask task) {
-    final startOffset = task.startDate.difference(chartStartDate).inDays * dayWidth;
-    final durationDays = task.endDate.difference(task.startDate).inDays;
-    final taskWidth = (durationDays > 0 ? durationDays : 1) * dayWidth;
+  @override
+  Widget build(BuildContext context) {
+    if (widget.tasks.isEmpty) return const Center(child: Text("No tasks found."));
 
-    Color taskColor = XMTheme.primary;
-    if (task.riskLevel == 'Critical') taskColor = XMTheme.error;
-    if (task.riskLevel == 'High') taskColor = Colors.orange;
+    final taskDependencies = ref.watch(projectDependenciesProvider(widget.projectId)).valueOrNull ?? [];
+    final taskLinkedRisks = ref.watch(projectLinkedRisksProvider(widget.projectId)).valueOrNull ?? [];
+    final taskLinkedIncidents = ref.watch(projectLinkedIncidentsProvider(widget.projectId)).valueOrNull ?? [];
+    
+    final taskLinkedCapas = ref.watch(projectLinkedCapasProvider(widget.projectId)).valueOrNull ?? [];
+    
+    Map<String, List<String>> depMap = {};
+    for (var d in taskDependencies) {
+      depMap.putIfAbsent(d['taskId'] as String, () => []).add(d['dependencyId'] as String);
+    }
+    Map<String, List<String>> risksMap = {};
+    for (var r in taskLinkedRisks) {
+      risksMap.putIfAbsent(r['taskId'] as String, () => []).add(r['riskId'] as String);
+    }
+    Map<String, List<String>> incidentsMap = {};
+    for (var i in taskLinkedIncidents) {
+      incidentsMap.putIfAbsent(i['taskId'] as String, () => []).add(i['incidentId'] as String);
+    }
+    Map<String, List<String>> capasMap = {};
+    for (var c in taskLinkedCapas) {
+      capasMap.putIfAbsent(c['taskId'] as String, () => []).add(c['capaId'] as String);
+    }
 
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 0.5)),
-      ),
-      child: Stack(
-        children: [
-          // Background Grid
-          Row(
-            children: List.generate(totalDays, (index) {
-              return Container(
-                width: dayWidth,
-                decoration: BoxDecoration(
-                  border: Border(right: BorderSide(color: Colors.grey.shade100, width: 0.5)),
-                ),
-              );
-            }),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Interactive Gantt Timeline', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              FilledButton.icon(
+                onPressed: () {
+                  showAddTaskDialog(context, ref, widget.projectId);
+                },
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Add Task'),
+              ),
+            ],
           ),
-
-          // Task Bar
-          Positioned(
-            left: startOffset,
-            top: 12,
-            child: GestureDetector(
-              onTap: () => _showTaskEditor(task),
-              child: Container(
-                width: taskWidth,
-                height: taskHeight,
-                decoration: BoxDecoration(
-                  color: taskColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: taskColor),
-                ),
-                child: Stack(
-                  children: [
-                    // Progress Fill
-                    Container(
-                      width: taskWidth * task.progress,
-                      height: taskHeight,
-                      decoration: BoxDecoration(
-                        color: taskColor.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(5),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeaderTimeline(),
+                      const Divider(height: 1),
+                      ...widget.tasks.map((task) => GanttTaskRow(
+                            task: task,
+                            depMap: depMap,
+                            risksMap: risksMap,
+                            incidentsMap: incidentsMap,
+                            capasMap: capasMap,
+                            chartStartDate: chartStartDate,
+                            dayWidth: dayWidth,
+                            taskHeight: taskHeight,
+                            totalDays: totalDays,
+                            projectId: widget.projectId,
+                            allTasks: widget.tasks,
+                            ref: ref,
+                          )),
+                    ],
+                  ),
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: GanttDependencyPainter(
+                        dependenciesMap: depMap,
+                        tasks: widget.tasks,
+                        chartStartDate: chartStartDate,
+                        dayWidth: dayWidth,
+                        taskHeight: taskHeight,
+                        rowHeight: 60.0,
+                        headerHeight: 41.0,
                       ),
                     ),
-                    // Task Title
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          task.title,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: task.progress > 0.5 ? Colors.white : Colors.black87,
+                  ),
+                  if (DateTime.now().isAfter(chartStartDate) && DateTime.now().isBefore(chartEndDate))
+                    Positioned(
+                      left: DateTime.now().difference(chartStartDate).inDays * dayWidth,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 2,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            left: BorderSide(
+                              color: Colors.orange.withAlpha(200),
+                              width: 2,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showTaskEditor(ProjectTask initialTask) {
-    ProjectTask task = initialTask;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 24,
-            right: 24,
-            top: 24,
-          ),
-          child: SizedBox(
-            height: 300,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Update Task Progress', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 8),
-                Text(task.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 24),
-                const Text('Progress Slider:'),
-                Slider(
-                  value: task.progress,
-                  min: 0.0,
-                  max: 1.0,
-                  divisions: 10,
-                  label: '${(task.progress * 100).toInt()}%',
-                  onChanged: (val) {
-                    setModalState(() {
-                      task = task.copyWith(progress: val);
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      // Update task in Firestore
-                      final projectAsync = ref.read(projectProvider(widget.projectId));
-                      final project = projectAsync.value;
-                      if (project != null) {
-                        final updatedTasks = project.tasks.map((t) => t.id == task.id ? task : t).toList();
-                        final updatedProject = project.copyWith(tasks: updatedTasks);
-                        await ref.read(projectServiceProvider).updateProject(updatedProject);
-                      }
-                    },
-                    child: const Text('Save Changes'),
-                  ),
-                )
-              ],
-            ),
-          ),
-        );
-          },
-        );
-      }
+        ),
+      ],
     );
   }
 }

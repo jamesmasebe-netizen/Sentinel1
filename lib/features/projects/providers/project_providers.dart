@@ -3,11 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/project_models.dart';
 import '../../../core/models/safety_models.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 /// Provider for the Projects collection reference
 final projectsCollectionProvider = Provider<CollectionReference<Project>>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return firestore.collection('projects').withConverter<Project>(
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').withConverter<Project>(
         fromFirestore: (snapshot, _) => Project.fromFirestore(snapshot),
         toFirestore: (project, _) => project.toFirestore(),
       );
@@ -15,7 +16,7 @@ final projectsCollectionProvider = Provider<CollectionReference<Project>>((ref) 
 
 /// Stream of all projects for the current site
 final projectsProvider = StreamProvider<List<Project>>((ref) {
-  final siteId = ref.watch(currentSiteIdProvider);
+  final siteId = ref.watch(currentTenantIdProvider);
   if (siteId == null) return const Stream.empty();
 
   final collection = ref.watch(projectsCollectionProvider);
@@ -32,6 +33,17 @@ final projectProvider = StreamProvider.family<Project?, String>((ref, id) {
     if (!snapshot.exists) return null;
     return snapshot.data();
   });
+});
+
+/// Stream of expenses for a specific project
+final projectExpensesProvider = StreamProvider.family<List<ProjectExpense>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'expenses')
+      .where('projectId', isEqualTo: projectId)
+      .orderBy('loggedAt', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map((doc) => ProjectExpense.fromFirestore(doc)).toList());
 });
 
 /// Provider to calculate auto-risk level based on safety score and open NCRs
@@ -67,19 +79,48 @@ final projectRiskLevelProvider = Provider.family<String, Project>((ref, project)
 /// Service class to manage Project business logic
 class ProjectService {
   final FirebaseFirestore _firestore;
+  final String _tenantId;
 
-  ProjectService(this._firestore);
+  ProjectService(this._firestore, this._tenantId);
 
   Future<void> updateProject(Project project) async {
-    await _firestore.collection('projects').doc(project.id).set(
+    await _firestore.tenantCollection(_tenantId, 'projects').doc(project.id).set(
           project.toFirestore(),
           SetOptions(merge: true),
         );
   }
 
+  /// Generates a short, sequential project ID like PRJ-001, PRJ-002, etc.
+  /// Uses a Firestore counter document to ensure uniqueness.
+  Future<String> _generateProjectId() async {
+    final counterRef = _firestore.tenantCollection(_tenantId, 'counters').doc('projects');
+
+    return _firestore.runTransaction<String>((transaction) async {
+      final counterDoc = await transaction.get(counterRef);
+
+      int nextNumber;
+      if (!counterDoc.exists) {
+        nextNumber = 1;
+        transaction.set(counterRef, {'lastNumber': 1});
+      } else {
+        final lastNumber = counterDoc.data()?['lastNumber'] as int? ?? 0;
+        nextNumber = lastNumber + 1;
+        transaction.update(counterRef, {'lastNumber': nextNumber});
+      }
+
+      return 'PRJ-${nextNumber.toString().padLeft(3, '0')}';
+    });
+  }
+
+  Future<String> createProject(Project project) async {
+    final shortId = await _generateProjectId();
+    await _firestore.tenantCollection(_tenantId, 'projects').doc(shortId).set(project.toFirestore());
+    return shortId;
+  }
+
   /// Evaluates compliance locks and approves a stage if valid
   Future<void> approveStage(String projectId, String stageId, String approverId) async {
-    final doc = await _firestore.collection('projects').doc(projectId).get();
+    final doc = await _firestore.tenantCollection(_tenantId, 'projects').doc(projectId).get();
     if (!doc.exists) return;
 
     final project = Project.fromFirestore(doc);
@@ -113,7 +154,7 @@ class ProjectService {
     );
 
     // Update Project
-    await _firestore.collection('projects').doc(projectId).update({
+    await _firestore.tenantCollection(_tenantId, 'projects').doc(projectId).update({
       'stages': updatedStages.map((s) => s.toMap()).toList(),
     });
   }
@@ -121,7 +162,7 @@ class ProjectService {
   /// Triggers a cross-module Action Item if a critical threshold is breached
   Future<void> triggerSafetyActionItem(Project project, String title, String description) async {
     final actionItem = ActionItem(
-      siteId: project.siteId,
+      tenantId: project.tenantId,
       title: 'URGENT: $title',
       description: 'Project: ${project.name} (ID: ${project.id})\n\n$description',
       priority: 'critical',
@@ -131,10 +172,110 @@ class ProjectService {
       createdAt: DateTime.now(),
     );
 
-    await _firestore.collection('actionItems').add(actionItem.toFirestore());
+    await _firestore.tenantCollection(_tenantId, 'actionItems').add(actionItem.toFirestore());
+  }
+
+  /// Add a new expense and increment actual spend on the project atomically
+  Future<void> addExpense(ProjectExpense expense) async {
+    final expenseRef = _firestore.tenantCollection(_tenantId, 'expenses').doc();
+    final projectRef = _firestore.tenantCollection(_tenantId, 'projects').doc(expense.projectId);
+    
+    final expenseWithId = ProjectExpense(
+      id: expenseRef.id,
+      projectId: expense.projectId,
+      tenantId: expense.tenantId,
+      description: expense.description,
+      amount: expense.amount,
+      category: expense.category,
+      loggedAt: expense.loggedAt,
+      loggedBy: expense.loggedBy,
+    );
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.set(expenseRef, expenseWithId.toFirestore());
+      transaction.update(projectRef, {
+        'actualSpend': FieldValue.increment(expense.amount),
+      });
+    });
+  }
+
+  /// Delete an expense and decrement actual spend on the project atomically
+  Future<void> deleteExpense(String expenseId, String projectId, double amount) async {
+    final expenseRef = _firestore.tenantCollection(_tenantId, 'expenses').doc(expenseId);
+    final projectRef = _firestore.tenantCollection(_tenantId, 'projects').doc(projectId);
+
+    await _firestore.runTransaction((transaction) async {
+      transaction.delete(expenseRef);
+      transaction.update(projectRef, {
+        'actualSpend': FieldValue.increment(-amount),
+      });
+    });
   }
 }
 
 final projectServiceProvider = Provider<ProjectService>((ref) {
-  return ProjectService(ref.watch(firestoreProvider));
+  return ProjectService(ref.watch(firestoreProvider), ref.watch(currentTenantIdProvider) ?? '');
+});
+
+/// Fetches a project's linked risk assessments (HIRAs/DRAs)
+final projectRiskAssessmentsProvider = StreamProvider.family<List<String>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('riskAssessments')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => d.id).toList());
+});
+
+/// Fetches a project's linked contractors
+final projectContractorsProvider = StreamProvider.family<List<String>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('contractors')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => d.id).toList());
+});
+
+/// Fetches a project's linked incidents
+final projectIncidentsProvider = StreamProvider.family<List<String>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('incidents')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => d.id).toList());
+});
+
+/// Fetches a project's linked CAPAs
+final projectCapasProvider = StreamProvider.family<List<String>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('capas')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => d.id).toList());
+});
+
+/// Fetches a project's task dependencies
+final projectDependenciesProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('taskDependencies')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+});
+
+/// Fetches a project's task linked Risks
+final projectLinkedRisksProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('taskLinkedRisks')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+});
+
+/// Fetches a project's linked NCRs
+final projectLinkedNcrsProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('taskLinkedNcrs')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+});
+
+/// Fetches a project's linked Incidents
+final projectLinkedIncidentsProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('taskLinkedIncidents')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+});
+
+/// Fetches a project's linked CAPAs
+final projectLinkedCapasProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, projectId) {
+  final firestore = ref.watch(firestoreProvider);
+  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'projects').doc(projectId).collection('taskLinkedCapas')
+      .snapshots().map((snapshot) => snapshot.docs.map((d) => {'id': d.id, ...d.data()}).toList());
 });

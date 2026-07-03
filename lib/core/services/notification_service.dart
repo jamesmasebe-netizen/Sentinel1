@@ -4,6 +4,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 /// Handles FCM device registration, push notifications, and callable function
 /// wrappers for email / emergency broadcast.
@@ -69,7 +70,7 @@ class NotificationService {
       debugPrint('✅ FCM token registered for uid=$uid');
     } catch (e) {
       // Fallback: write directly to Firestore
-      await FirebaseFirestore.instance.collection('fcm_tokens').doc(uid).set({
+      await FirebaseFirestore.instance.tenantCollection(siteId, 'fcm_tokens').doc(uid).set({
         'token': token,
         'siteId': siteId,
         'uid': uid,

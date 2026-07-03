@@ -7,7 +7,7 @@ class UserProfile {
   final String displayName;
   final String? photoURL;
   final String role; // admin, executive, safety_manager, contractor, employee
-  final String? siteId;
+  final String? tenantId;
   final String? department;
   final String? jobTitle;
   final String? phone;
@@ -21,7 +21,7 @@ class UserProfile {
     required this.displayName,
     this.photoURL,
     this.role = 'employee',
-    this.siteId,
+    this.tenantId,
     this.department,
     this.jobTitle,
     this.phone,
@@ -38,7 +38,7 @@ class UserProfile {
       displayName: data['displayName'] ?? data['name'] ?? '',
       photoURL: data['photoURL'],
       role: data['role'] ?? 'employee',
-      siteId: data['siteId'],
+      tenantId: data['tenantId'] ?? data['siteId'],
       department: data['department'],
       jobTitle: data['jobTitle'],
       phone: data['phone'],
@@ -53,7 +53,7 @@ class UserProfile {
     'displayName': displayName,
     'photoURL': photoURL,
     'role': role,
-    'siteId': siteId,
+    'tenantId': tenantId,
     'department': department,
     'jobTitle': jobTitle,
     'phone': phone,
@@ -69,7 +69,7 @@ class UserProfile {
     String? displayName,
     String? photoURL,
     String? role,
-    String? siteId,
+    String? tenantId,
     String? department,
     String? jobTitle,
     String? phone,
@@ -80,7 +80,7 @@ class UserProfile {
     displayName: displayName ?? this.displayName,
     photoURL: photoURL ?? this.photoURL,
     role: role ?? this.role,
-    siteId: siteId ?? this.siteId,
+    tenantId: tenantId ?? this.tenantId,
     department: department ?? this.department,
     jobTitle: jobTitle ?? this.jobTitle,
     phone: phone ?? this.phone,

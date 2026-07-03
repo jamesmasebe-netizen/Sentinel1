@@ -42,4 +42,8 @@ class SessionManager {
   void stopSession() {
     _inactivityTimer?.cancel();
   }
+
+  void endSession() {
+    stopSession();
+  }
 }

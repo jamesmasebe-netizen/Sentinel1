@@ -21,6 +21,7 @@ class Finding {
   final String modifiedBy;
   final DateTime modifiedAt;
   final List<Map<String, dynamic>> statusHistory;
+  final String siteId;
 
   Finding({
     required this.findingId,
@@ -28,6 +29,7 @@ class Finding {
     required this.documentId,
     required this.requirementId,
     required this.status,
+    required this.siteId,
     required this.type,
     required this.description,
     required this.contractorAction,
@@ -45,6 +47,7 @@ class Finding {
       findingId: doc.id,
       submissionId: data['submissionId'] ?? '',
       documentId: data['documentId'] ?? '',
+      siteId: data['siteId'] ?? '',
       requirementId: data['requirementId'] ?? 0,
       status: FindingStatus.values.firstWhere(
         (e) => e.name == data['status'],

@@ -8,10 +8,17 @@ class ProjectTask {
   final DateTime startDate;
   final DateTime endDate;
   final double progress; // 0.0 to 1.0
-  final List<String> dependencies; // IDs of tasks that must finish before this starts
   final String assignedTo; // Employee or Contractor ID
   final String riskLevel; // 'Low', 'Medium', 'High', 'Critical'
   final bool isMilestone;
+
+  // Enhancements
+  final String assignedToName;
+  final String? assignedToAvatar;
+  final DateTime? baselineStart;
+  final DateTime? baselineEnd;
+  final String parentId; // ID of the parent task/process
+  final String taskType; // 'process', 'task', 'subtask'
 
   ProjectTask({
     required this.id,
@@ -20,10 +27,15 @@ class ProjectTask {
     required this.startDate,
     required this.endDate,
     this.progress = 0.0,
-    this.dependencies = const [],
     this.assignedTo = '',
     this.riskLevel = 'Medium',
     this.isMilestone = false,
+    this.assignedToName = '',
+    this.assignedToAvatar,
+    this.baselineStart,
+    this.baselineEnd,
+    this.parentId = '',
+    this.taskType = 'task',
   });
 
   ProjectTask copyWith({
@@ -33,10 +45,15 @@ class ProjectTask {
     DateTime? startDate,
     DateTime? endDate,
     double? progress,
-    List<String>? dependencies,
     String? assignedTo,
     String? riskLevel,
     bool? isMilestone,
+    String? assignedToName,
+    String? assignedToAvatar,
+    DateTime? baselineStart,
+    DateTime? baselineEnd,
+    String? parentId,
+    String? taskType,
   }) {
     return ProjectTask(
       id: id ?? this.id,
@@ -45,10 +62,15 @@ class ProjectTask {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       progress: progress ?? this.progress,
-      dependencies: dependencies ?? this.dependencies,
       assignedTo: assignedTo ?? this.assignedTo,
       riskLevel: riskLevel ?? this.riskLevel,
       isMilestone: isMilestone ?? this.isMilestone,
+      assignedToName: assignedToName ?? this.assignedToName,
+      assignedToAvatar: assignedToAvatar ?? this.assignedToAvatar,
+      baselineStart: baselineStart ?? this.baselineStart,
+      baselineEnd: baselineEnd ?? this.baselineEnd,
+      parentId: parentId ?? this.parentId,
+      taskType: taskType ?? this.taskType,
     );
   }
 
@@ -60,10 +82,15 @@ class ProjectTask {
       startDate: (map['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       endDate: (map['endDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       progress: (map['progress'] as num?)?.toDouble() ?? 0.0,
-      dependencies: List<String>.from(map['dependencies'] ?? []),
       assignedTo: map['assignedTo'] ?? '',
       riskLevel: map['riskLevel'] ?? 'Medium',
       isMilestone: map['isMilestone'] ?? false,
+      assignedToName: map['assignedToName'] ?? '',
+      assignedToAvatar: map['assignedToAvatar'],
+      baselineStart: (map['baselineStart'] as Timestamp?)?.toDate(),
+      baselineEnd: (map['baselineEnd'] as Timestamp?)?.toDate(),
+      parentId: map['parentId'] ?? '',
+      taskType: map['taskType'] ?? 'task',
     );
   }
 
@@ -74,10 +101,15 @@ class ProjectTask {
       'startDate': Timestamp.fromDate(startDate),
       'endDate': Timestamp.fromDate(endDate),
       'progress': progress,
-      'dependencies': dependencies,
       'assignedTo': assignedTo,
       'riskLevel': riskLevel,
       'isMilestone': isMilestone,
+      'assignedToName': assignedToName,
+      'assignedToAvatar': assignedToAvatar,
+      'baselineStart': baselineStart != null ? Timestamp.fromDate(baselineStart!) : null,
+      'baselineEnd': baselineEnd != null ? Timestamp.fromDate(baselineEnd!) : null,
+      'parentId': parentId,
+      'taskType': taskType,
     };
   }
 }
@@ -129,7 +161,7 @@ class ProjectStage {
 /// Represents an overarching Project entity integrating operations and SHEQ.
 class Project {
   final String id; // Traceable ID like PRJ-2024-0001
-  final String siteId; // Organization Site ID
+  final String tenantId; // Organization Site ID
   final String propertyId; // Linked Property
   final String name;
   final String description;
@@ -137,11 +169,17 @@ class Project {
   final DateTime startDate;
   final DateTime targetEndDate;
   final double budget;
+  final double actualSpend;
+  final double estimatedCostAtCompletion;
+
+  // Project Lead / Contacts
+  final String projectLead;
+  final String projectLeadContact;
+  final String fallbackContact;
+  final String fallbackContactContact;
 
   // Linked Entities
-  final List<String> contractorIds; // Linked Contractors executing the project
-  final List<String> riskAssessmentIds; // Linked HIRAs / DRAs
-
+  
   // Calculated & Aggregated Safety Fields
   final String overallRiskLevel; // Auto-calculated based on tasks/NCRs/Safety File
   final double safetyFileScore; // 0.0 to 100.0, acts as compliance lock
@@ -157,7 +195,7 @@ class Project {
 
   Project({
     required this.id,
-    required this.siteId,
+    required this.tenantId,
     required this.propertyId,
     required this.name,
     required this.description,
@@ -165,8 +203,12 @@ class Project {
     required this.startDate,
     required this.targetEndDate,
     this.budget = 0.0,
-    this.contractorIds = const [],
-    this.riskAssessmentIds = const [],
+    this.actualSpend = 0.0,
+    this.estimatedCostAtCompletion = 0.0,
+    this.projectLead = '',
+    this.projectLeadContact = '',
+    this.fallbackContact = '',
+    this.fallbackContactContact = '',
     this.overallRiskLevel = 'Medium',
     this.safetyFileScore = 0.0,
     this.totalNcrs = 0,
@@ -187,8 +229,12 @@ class Project {
     DateTime? startDate,
     DateTime? targetEndDate,
     double? budget,
-    List<String>? contractorIds,
-    List<String>? riskAssessmentIds,
+    double? actualSpend,
+    double? estimatedCostAtCompletion,
+    String? projectLead,
+    String? projectLeadContact,
+    String? fallbackContact,
+    String? fallbackContactContact,
     String? overallRiskLevel,
     double? safetyFileScore,
     int? totalNcrs,
@@ -200,7 +246,7 @@ class Project {
   }) {
     return Project(
       id: id ?? this.id,
-      siteId: siteId ?? this.siteId,
+      tenantId: siteId ?? tenantId,
       propertyId: propertyId ?? this.propertyId,
       name: name ?? this.name,
       description: description ?? this.description,
@@ -208,8 +254,12 @@ class Project {
       startDate: startDate ?? this.startDate,
       targetEndDate: targetEndDate ?? this.targetEndDate,
       budget: budget ?? this.budget,
-      contractorIds: contractorIds ?? this.contractorIds,
-      riskAssessmentIds: riskAssessmentIds ?? this.riskAssessmentIds,
+      actualSpend: actualSpend ?? this.actualSpend,
+      estimatedCostAtCompletion: estimatedCostAtCompletion ?? this.estimatedCostAtCompletion,
+      projectLead: projectLead ?? this.projectLead,
+      projectLeadContact: projectLeadContact ?? this.projectLeadContact,
+      fallbackContact: fallbackContact ?? this.fallbackContact,
+      fallbackContactContact: fallbackContactContact ?? this.fallbackContactContact,
       overallRiskLevel: overallRiskLevel ?? this.overallRiskLevel,
       safetyFileScore: safetyFileScore ?? this.safetyFileScore,
       totalNcrs: totalNcrs ?? this.totalNcrs,
@@ -238,7 +288,7 @@ class Project {
 
     return Project(
       id: doc.id,
-      siteId: data['siteId'] ?? '',
+      tenantId: data['siteId'] ?? '',
       propertyId: data['propertyId'] ?? '',
       name: data['name'] ?? '',
       description: data['description'] ?? '',
@@ -246,8 +296,12 @@ class Project {
       startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       targetEndDate: (data['targetEndDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       budget: (data['budget'] as num?)?.toDouble() ?? 0.0,
-      contractorIds: List<String>.from(data['contractorIds'] ?? []),
-      riskAssessmentIds: List<String>.from(data['riskAssessmentIds'] ?? []),
+      actualSpend: (data['actualSpend'] as num?)?.toDouble() ?? 0.0,
+      estimatedCostAtCompletion: (data['estimatedCostAtCompletion'] as num?)?.toDouble() ?? 0.0,
+      projectLead: data['projectLead'] ?? '',
+      projectLeadContact: data['projectLeadContact'] ?? '',
+      fallbackContact: data['fallbackContact'] ?? '',
+      fallbackContactContact: data['fallbackContactContact'] ?? '',
       overallRiskLevel: data['overallRiskLevel'] ?? 'Medium',
       safetyFileScore: (data['safetyFileScore'] as num?)?.toDouble() ?? 0.0,
       totalNcrs: data['totalNcrs'] ?? 0,
@@ -261,7 +315,7 @@ class Project {
 
   Map<String, dynamic> toFirestore() {
     return {
-      'siteId': siteId,
+      'tenantId': tenantId,
       'propertyId': propertyId,
       'name': name,
       'description': description,
@@ -269,8 +323,12 @@ class Project {
       'startDate': Timestamp.fromDate(startDate),
       'targetEndDate': Timestamp.fromDate(targetEndDate),
       'budget': budget,
-      'contractorIds': contractorIds,
-      'riskAssessmentIds': riskAssessmentIds,
+      'actualSpend': actualSpend,
+      'estimatedCostAtCompletion': estimatedCostAtCompletion,
+      'projectLead': projectLead,
+      'projectLeadContact': projectLeadContact,
+      'fallbackContact': fallbackContact,
+      'fallbackContactContact': fallbackContactContact,
       'overallRiskLevel': overallRiskLevel,
       'safetyFileScore': safetyFileScore,
       'totalNcrs': totalNcrs,
@@ -288,13 +346,39 @@ class Project {
     final totalProgress = tasks.fold(0.0, (acc, task) => acc + task.progress);
     return totalProgress / tasks.length;
   }
+
+  /// Cost Performance Index (CPI)
+  /// CPI > 1.0 means under budget. CPI < 1.0 means over budget.
+  double get costPerformanceIndex {
+    if (actualSpend == 0.0) return 1.0;
+    // Earned Value = budget * overallProgress
+    final earnedValue = budget * overallProgress;
+    return earnedValue / actualSpend;
+  }
+
+  /// Schedule Performance Index (SPI)
+  /// SPI > 1.0 means ahead of schedule. SPI < 1.0 means behind schedule.
+  double get schedulePerformanceIndex {
+    final now = DateTime.now();
+    if (now.isBefore(startDate)) return 1.0; // Hasn't started
+    final totalDuration = targetEndDate.difference(startDate).inDays;
+    final elapsedDuration = now.difference(startDate).inDays;
+    if (totalDuration <= 0) return 1.0;
+
+    final plannedProgress = (elapsedDuration / totalDuration).clamp(0.0, 1.0);
+    if (plannedProgress == 0.0) return 1.0;
+    
+    // SPI = Earned Value / Planned Value
+    // We can simplify this to: overallProgress / plannedProgress
+    return overallProgress / plannedProgress;
+  }
 }
 
 /// Specialized subset Model for NCRs connected to a Project
 class ProjectNCR {
   final String id;
   final String projectId;
-  final String siteId;
+  final String tenantId;
   final String description;
   final String severity; // 'Minor', 'Major', 'Critical'
   final String status; // 'Open', 'Resolved'
@@ -304,7 +388,7 @@ class ProjectNCR {
   ProjectNCR({
     required this.id,
     required this.projectId,
-    required this.siteId,
+    required this.tenantId,
     required this.description,
     required this.severity,
     this.status = 'Open',
@@ -317,7 +401,7 @@ class ProjectNCR {
     return ProjectNCR(
       id: doc.id,
       projectId: data['projectId'] ?? '',
-      siteId: data['siteId'] ?? '',
+      tenantId: data['siteId'] ?? '',
       description: data['description'] ?? '',
       severity: data['severity'] ?? 'Major',
       status: data['status'] ?? 'Open',
@@ -329,12 +413,61 @@ class ProjectNCR {
   Map<String, dynamic> toFirestore() {
     return {
       'projectId': projectId,
-      'siteId': siteId,
+      'tenantId': tenantId,
       'description': description,
       'severity': severity,
       'status': status,
       'reportedDate': Timestamp.fromDate(reportedDate),
       'reportedBy': reportedBy,
+    };
+  }
+}
+
+/// Specialized subset Model for Expenses connected to a Project
+class ProjectExpense {
+  final String id;
+  final String projectId;
+  final String tenantId;
+  final String description;
+  final double amount;
+  final String category; // 'Labor', 'Materials', 'Subcontractor', 'Other'
+  final DateTime loggedAt;
+  final String? loggedBy;
+
+  ProjectExpense({
+    required this.id,
+    required this.projectId,
+    required this.tenantId,
+    required this.description,
+    required this.amount,
+    required this.category,
+    required this.loggedAt,
+    this.loggedBy,
+  });
+
+  factory ProjectExpense.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return ProjectExpense(
+      id: doc.id,
+      projectId: data['projectId'] ?? '',
+      tenantId: data['siteId'] ?? '',
+      description: data['description'] ?? '',
+      amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+      category: data['category'] ?? 'Other',
+      loggedAt: (data['loggedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      loggedBy: data['loggedBy'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'projectId': projectId,
+      'tenantId': tenantId,
+      'description': description,
+      'amount': amount,
+      'category': category,
+      'loggedAt': Timestamp.fromDate(loggedAt),
+      'loggedBy': loggedBy,
     };
   }
 }

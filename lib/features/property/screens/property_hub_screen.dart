@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:go_router/go_router.dart';
+import '../widgets/property_card.dart';
+import '../widgets/property_map_card.dart';
 import '../../../config/theme.dart';
 import '../providers/property_providers.dart';
 import '../models/property_models.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class PropertyHubScreen extends ConsumerStatefulWidget {
   const PropertyHubScreen({super.key});
@@ -15,7 +16,6 @@ class PropertyHubScreen extends ConsumerStatefulWidget {
 }
 
 class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
-  final LatLng _initialPosition = const LatLng(-26.1075, 28.0567); // JHB focus
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,9 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
               title: 'Property & Facility Hub',
               subtitle: 'Manage and track real-estate assets across the enterprise',
               trailing: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  UIUtils.showToast(context, 'Add Property form opened');
+                },
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Property'),
               ),
@@ -48,7 +50,7 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
             GSpacing.vLg,
 
             // Map View Card
-            _buildMapCard(propertiesAsync),
+            PropertyMapCard(propertiesAsync: propertiesAsync),
             GSpacing.vLg,
 
             // Property List Title
@@ -60,7 +62,9 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    UIUtils.showToast(context, 'Viewing all assets');
+                  },
                   child: const Text('View All'),
                 ),
               ],
@@ -84,7 +88,7 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                     childAspectRatio: childAspectRatio,
                   ),
                   itemCount: properties.length,
-                  itemBuilder: (context, index) => _buildPropertyCard(properties[index]),
+                  itemBuilder: (context, index) => PropertyCard(property: properties[index]),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -144,134 +148,5 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
     );
   }
 
-  Widget _buildMapCard(AsyncValue<List<Property>> propertiesAsync) {
-    return GCard(
-      padding: EdgeInsets.zero,
-      child: Container(
-        height: 400,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-        child: propertiesAsync.when(
-          data: (properties) {
-            final markers = properties.map((p) => Marker(
-              markerId: MarkerId(p.id),
-              position: LatLng(p.lat, p.lng),
-              infoWindow: InfoWindow(title: p.name, snippet: p.type),
-              onTap: () => context.push('/property/${p.id}'),
-            )).toSet();
-
-            return GoogleMap(
-              initialCameraPosition: CameraPosition(target: _initialPosition, zoom: 10),
-              markers: markers,
-              myLocationEnabled: false,
-              zoomControlsEnabled: true,
-              mapToolbarEnabled: false,
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(child: Icon(Icons.map_outlined, size: 64, color: Colors.grey)),
-        ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPropertyCard(Property property) {
-    double occupancyPercent = (property.occupancy / property.capacity);
-    Color statusColor = property.status == 'Optimal' 
-        ? XMTheme.success 
-        : (property.status.contains('Critical') ? XMTheme.error : XMTheme.warning);
-
-    return GCard(
-      padding: EdgeInsets.zero,
-      onTap: () => context.push('/property/${property.id}'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-            // Thumbnail
-            Container(
-              height: 120,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: GStatusTag(label: property.status.toUpperCase(), color: statusColor),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    property.name,
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    property.address,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  GSpacing.vMd,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildMiniStat('ASSETS', property.totalAssets.toString(), Icons.inventory_2_outlined),
-                      _buildMiniStat('COMPLIANCE', '${property.complianceScore}%', Icons.verified_user_outlined),
-                      _buildMiniStat('OCCUPANCY', '${(occupancyPercent * 100).toInt()}%', Icons.people_outline),
-                    ],
-                  ),
-                  GSpacing.vMd,
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: property.complianceScore / 100,
-                      minHeight: 4,
-                      backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        property.complianceScore > 80 ? XMTheme.success : (property.complianceScore > 60 ? XMTheme.warning : XMTheme.error)
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-  }
-
-  Widget _buildMiniStat(String label, String value, IconData icon) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 10, color: Colors.grey),
-            GSpacing.hXs,
-            Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        GSpacing.vXs,
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: XMTheme.primary)),
-      ],
-    );
-  }
-
 }
+

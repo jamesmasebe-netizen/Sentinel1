@@ -13,7 +13,7 @@ class Property {
   final int capacity;
   final String status;
   final DateTime constructionDate;
-  final String manager;
+  final String managerId;
   final double complianceScore; // Added for traceability
   final int totalAssets; // Added for traceability
 
@@ -30,7 +30,7 @@ class Property {
     required this.capacity,
     required this.status,
     required this.constructionDate,
-    required this.manager,
+    required this.managerId,
     this.complianceScore = 0.0,
     this.totalAssets = 0,
   });
@@ -52,7 +52,7 @@ class Property {
       constructionDate: DateTime.parse(
         data['constructionDate'] ?? DateTime.now().toIso8601String(),
       ),
-      manager: data['manager'] ?? '',
+      managerId: data['manager'] ?? '',
       complianceScore: (data['complianceScore'] as num?)?.toDouble() ?? 0.0,
       totalAssets: data['totalAssets'] ?? 0,
     );
@@ -66,7 +66,7 @@ class PropertyProject {
   final String type;
   final String description;
   final String status;
-  final String assignedTo;
+  final String assigneeId;
   final DateTime dueDate;
   final int progress;
 
@@ -77,7 +77,7 @@ class PropertyProject {
     required this.type,
     required this.description,
     required this.status,
-    required this.assignedTo,
+    required this.assigneeId,
     required this.dueDate,
     required this.progress,
   });
@@ -91,7 +91,7 @@ class PropertyProject {
       type: data['type'] ?? '',
       description: data['description'] ?? '',
       status: data['status'] ?? '',
-      assignedTo: data['assignedTo'] ?? '',
+      assigneeId: data['assignedTo'] ?? '',
       dueDate: DateTime.parse(
         data['dueDate'] ?? DateTime.now().toIso8601String(),
       ),
@@ -137,7 +137,7 @@ class LegalAppointment {
   final String id;
   final String propertyId;
   final String role;
-  final String personName;
+  final String personId;
   final String status;
   final DateTime? expiry;
 
@@ -145,7 +145,7 @@ class LegalAppointment {
     required this.id,
     required this.propertyId,
     required this.role,
-    required this.personName,
+    required this.personId,
     required this.status,
     this.expiry,
   });
@@ -156,7 +156,7 @@ class LegalAppointment {
       id: doc.id,
       propertyId: data['propertyId'] ?? '',
       role: data['role'] ?? '',
-      personName: data['personName'] ?? '',
+      personId: data['personName'] ?? '',
       status: data['status'] ?? '',
       expiry: data['expiry'] != null ? DateTime.parse(data['expiry']) : null,
     );
@@ -166,7 +166,7 @@ class LegalAppointment {
 class LeaseInfo {
   final String id;
   final String propertyId;
-  final String tenantName;
+  final String tenantId;
   final double monthlyRent;
   final DateTime startDate;
   final DateTime endDate;
@@ -175,7 +175,7 @@ class LeaseInfo {
   LeaseInfo({
     required this.id,
     required this.propertyId,
-    required this.tenantName,
+    required this.tenantId,
     required this.monthlyRent,
     required this.startDate,
     required this.endDate,
@@ -187,7 +187,7 @@ class LeaseInfo {
     return LeaseInfo(
       id: doc.id,
       propertyId: data['propertyId'] ?? '',
-      tenantName: data['tenantName'] ?? '',
+      tenantId: data['tenantName'] ?? '',
       monthlyRent: (data['monthlyRent'] as num?)?.toDouble() ?? 0.0,
       startDate: DateTime.parse(
         data['startDate'] ?? DateTime.now().toIso8601String(),

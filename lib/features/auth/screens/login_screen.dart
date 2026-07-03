@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../config/theme.dart';
+import '../widgets/login_card.dart';
 
 /// Login screen with Google Sign-In and biometric authentication.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -61,8 +62,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      final authService = ref.read(authServiceProvider);
-      await authService.devBypassLogin();
+      ref.read(isMockLoggedInProvider.notifier).state = true;
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -146,131 +146,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const SizedBox(height: XMTheme.spacingXxl),
 
                     // ─── Login Card ───
-                    Container(
-                      padding: const EdgeInsets.all(XMTheme.spacingLg),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.12),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Sign in to continue',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            ),
-                          ),
-                          const SizedBox(height: XMTheme.spacingLg),
-
-                          // Google Sign-In Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _signInWithGoogle,
-                              icon:
-                                  _isLoading
-                                      ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                      : const Icon(Icons.login, size: 20),
-                              label: Text(
-                                _isLoading
-                                    ? 'Signing in...'
-                                    : 'Sign in with Google',
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF1E293B),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    XMTheme.radiusSm,
-                                  ),
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: XMTheme.spacingMd),
-
-                          // Dev Bypass Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _devBypassLogin,
-                              icon: const Icon(Icons.developer_mode, size: 20),
-                              label: const Text('Bypass Login (Dev)'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    XMTheme.radiusSm,
-                                  ),
-                                  side: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                textStyle: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          if (_error != null) ...[
-                            const SizedBox(height: XMTheme.spacingMd),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: XMTheme.error.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(
-                                  XMTheme.radiusSm,
-                                ),
-                                border: Border.all(
-                                  color: XMTheme.error.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.error_outline,
-                                    color: XMTheme.error,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _error!,
-                                      style: const TextStyle(
-                                        color: XMTheme.error,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                    LoginCard(
+                      isLoading: _isLoading,
+                      error: _error,
+                      onSignInWithGoogle: _signInWithGoogle,
+                      onDevBypassLogin: _devBypassLogin,
                     ),
 
                     const SizedBox(height: XMTheme.spacingXl),

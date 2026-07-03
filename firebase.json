@@ -16,7 +16,7 @@
     }
   ],
   "firestore": {
-    "rules": "firestore.rules",
+    "rules": "firestore.dev.rules",
     "indexes": "firestore.indexes.json",
     "database": "ai-studio-4bb0fb1c-c6d6-4397-a015-156f3ff9dfb5"
   },

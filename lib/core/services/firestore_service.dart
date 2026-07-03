@@ -1,30 +1,31 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'offline_sync_service.dart';
+import 'audit_log_service.dart';
+import '../utils/tenant_firestore_extension.dart';
 
 /// Generic Firestore service with offline-first writes and siteId filtering.
 /// All reads use Firestore streams (real-time). All writes go through OfflineSyncService.
 class FirestoreService {
   final FirebaseFirestore _firestore;
   final OfflineSyncService _offlineSync;
+  final AuditLogService _auditLog;
 
-  FirestoreService(this._firestore, this._offlineSync);
+  FirestoreService(this._firestore, this._offlineSync, this._auditLog);
 
   // ─── READ OPERATIONS (Real-time streams with siteId filtering) ───
 
   /// Stream a collection filtered by siteId, with optional ordering
   Stream<List<T>> streamCollection<T>({
     required String collection,
-    required String siteId,
+    required String tenantId,
     required T Function(DocumentSnapshot) fromFirestore,
     String? orderByField,
     bool descending = true,
     int? limit,
     List<QueryFilter>? filters,
   }) {
-    Query query = _firestore
-        .collection(collection)
-        .where('siteId', isEqualTo: siteId);
+    Query query = _firestore.tenantCollection(tenantId, collection);
 
     if (filters != null) {
       for (final filter in filters) {
@@ -66,12 +67,13 @@ class FirestoreService {
 
   /// Stream a single document
   Stream<T?> streamDocument<T>({
+    required String tenantId,
     required String collection,
     required String documentId,
     required T Function(DocumentSnapshot) fromFirestore,
   }) {
     return _firestore
-        .collection(collection)
+        .tenantCollection(tenantId, collection)
         .doc(documentId)
         .snapshots()
         .map((doc) => doc.exists ? fromFirestore(doc) : null);
@@ -80,15 +82,13 @@ class FirestoreService {
   /// One-time fetch of a collection
   Future<List<T>> getCollection<T>({
     required String collection,
-    required String siteId,
+    required String tenantId,
     required T Function(DocumentSnapshot) fromFirestore,
     String? orderByField,
     bool descending = true,
     int? limit,
   }) async {
-    Query query = _firestore
-        .collection(collection)
-        .where('siteId', isEqualTo: siteId);
+    Query query = _firestore.tenantCollection(tenantId, collection);
 
     if (orderByField != null) {
       query = query.orderBy(orderByField, descending: descending);
@@ -103,11 +103,12 @@ class FirestoreService {
 
   /// One-time fetch of a single document
   Future<T?> getDocument<T>({
+    required String tenantId,
     required String collection,
     required String documentId,
     required T Function(DocumentSnapshot) fromFirestore,
   }) async {
-    final doc = await _firestore.collection(collection).doc(documentId).get();
+    final doc = await _firestore.tenantCollection(tenantId, collection).doc(documentId).get();
     return doc.exists ? fromFirestore(doc) : null;
   }
 
@@ -115,13 +116,16 @@ class FirestoreService {
 
   /// Create a document (offline-first)
   Future<String> createDocument({
+    required String tenantId,
     required String collection,
     required Map<String, dynamic> data,
     String? documentId,
   }) async {
+    final fullPath = _firestore.tenantCollection(tenantId, collection).path;
+    await _auditLog.logAction('CREATE', {'collection': fullPath, 'data': data, 'documentId': documentId}, tenantId);
     return _offlineSync.queueOperation(
       operation: OfflineOperation.create,
-      collection: collection,
+      collection: fullPath,
       data: data,
       documentId: documentId,
     );
@@ -129,13 +133,16 @@ class FirestoreService {
 
   /// Update a document (offline-first)
   Future<String> updateDocument({
+    required String tenantId,
     required String collection,
     required String documentId,
     required Map<String, dynamic> data,
   }) async {
+    final fullPath = _firestore.tenantCollection(tenantId, collection).path;
+    await _auditLog.logAction('UPDATE', {'collection': fullPath, 'documentId': documentId, 'data': data}, tenantId);
     return _offlineSync.queueOperation(
       operation: OfflineOperation.update,
-      collection: collection,
+      collection: fullPath,
       data: data,
       documentId: documentId,
     );
@@ -143,12 +150,15 @@ class FirestoreService {
 
   /// Delete a document (offline-first)
   Future<String> deleteDocument({
+    required String tenantId,
     required String collection,
     required String documentId,
   }) async {
+    final fullPath = _firestore.tenantCollection(tenantId, collection).path;
+    await _auditLog.logAction('DELETE', {'collection': fullPath, 'documentId': documentId}, tenantId);
     return _offlineSync.queueOperation(
       operation: OfflineOperation.delete,
-      collection: collection,
+      collection: fullPath,
       data: {},
       documentId: documentId,
     );
@@ -158,34 +168,41 @@ class FirestoreService {
 
   /// Direct Firestore write (skips offline queue)
   Future<DocumentReference> directCreate({
+    required String tenantId,
     required String collection,
     required Map<String, dynamic> data,
   }) async {
-    return _firestore.collection(collection).add(data);
+    await _auditLog.logAction('DIRECT_CREATE', {'collection': collection, 'data': data}, tenantId);
+    return _firestore.tenantCollection(tenantId, collection).add(data);
   }
 
   /// Direct Firestore update
   Future<void> directUpdate({
+    required String tenantId,
     required String collection,
     required String documentId,
     required Map<String, dynamic> data,
   }) async {
-    await _firestore.collection(collection).doc(documentId).update(data);
+    await _auditLog.logAction('DIRECT_UPDATE', {'collection': collection, 'documentId': documentId, 'data': data}, tenantId);
+    await _firestore.tenantCollection(tenantId, collection).doc(documentId).update(data);
   }
 
   /// Batch write for multiple operations
-  Future<void> batchWrite(List<BatchOperation> operations) async {
+  Future<void> batchWrite({required String tenantId, required List<BatchOperation> operations}) async {
     final batch = _firestore.batch();
     for (final op in operations) {
-      final ref = _firestore.collection(op.collection).doc(op.documentId);
+      final ref = _firestore.tenantCollection(tenantId, op.collection).doc(op.documentId);
       switch (op.type) {
         case BatchOpType.set:
+          await _auditLog.logAction('BATCH_SET', {'collection': op.collection, 'documentId': op.documentId, 'data': op.data}, tenantId);
           batch.set(ref, op.data);
           break;
         case BatchOpType.update:
+          await _auditLog.logAction('BATCH_UPDATE', {'collection': op.collection, 'documentId': op.documentId, 'data': op.data}, tenantId);
           batch.update(ref, op.data);
           break;
         case BatchOpType.delete:
+          await _auditLog.logAction('BATCH_DELETE', {'collection': op.collection, 'documentId': op.documentId}, tenantId);
           batch.delete(ref);
           break;
       }
@@ -196,12 +213,10 @@ class FirestoreService {
   /// Get a count of documents in a collection
   Future<int> getCount({
     required String collection,
-    required String siteId,
+    required String tenantId,
     List<QueryFilter>? filters,
   }) async {
-    Query query = _firestore
-        .collection(collection)
-        .where('siteId', isEqualTo: siteId);
+    Query query = _firestore.tenantCollection(tenantId, collection);
 
     if (filters != null) {
       for (final filter in filters) {

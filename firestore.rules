@@ -10,7 +10,7 @@ service cloud.firestore {
       return request.auth.uid == uid;
     }
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return request.auth.token.role;
     }
     function isAdmin() {
       return getUserRole() in ['admin', 'executive'];
@@ -18,17 +18,17 @@ service cloud.firestore {
     function isSafetyManager() {
       return getUserRole() in ['admin', 'executive', 'safety_manager'];
     }
-    function getUserSiteId() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.siteId;
+    function getUserTenantId() {
+      return request.auth.token.tenantId;
     }
-    function isSameSite(docSiteId) {
-      return isAdmin() || getUserSiteId() == docSiteId;
+    function hasTenantAccess(tenantId) {
+      return isAdmin() || getUserTenantId() == tenantId;
     }
     function isValidTimestamp(field) {
       return request.resource.data[field] is string;
     }
 
-    // ─── Users Collection ─────────────────────────────────────────────────────
+    // ─── Users Collection (Global) ────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(userId);
@@ -36,250 +36,256 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ─── FCM Tokens ───────────────────────────────────────────────────────────
-    match /fcm_tokens/{tokenId} {
-      allow read: if isSignedIn() && (isOwner(tokenId) || isAdmin());
-      allow write: if isSignedIn() && isOwner(tokenId);
-    }
-
-    // ─── Incidents ────────────────────────────────────────────────────────────
-    match /incidents/{incidentId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidTimestamp('createdAt');
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── CAPAs (Corrective & Preventive Actions) ─────────────────────────────
-    match /capas/{capaId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Permits to Work ──────────────────────────────────────────────────────
-    match /permits/{permitId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Hazards ──────────────────────────────────────────────────────────────
-    match /hazards/{hazardId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── BBS Observations ─────────────────────────────────────────────────────
-    match /observations/{obsId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Risk Assessments (HIRA) ──────────────────────────────────────────────
-    match /risk_assessments/{raId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Dynamic Risk Assessments ─────────────────────────────────────────────
-    match /dynamic_risk_assessments/{draId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Bow-Tie Analysis ─────────────────────────────────────────────────────
-    match /bowtie_analyses/{btId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Training Records ─────────────────────────────────────────────────────
-    match /training_records/{trId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Employee Profiles ────────────────────────────────────────────────────
-    match /employees/{empId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── PPE Compliance ───────────────────────────────────────────────────────
-    match /ppe_records/{ppeId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Occupational Health — Medical Surveillance ───────────────────────────
-    match /medical_surveillance/{msId} {
-      // Only safety managers / admin — POPIA-sensitive medical data
-      allow read: if isSignedIn() && isSafetyManager();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Occupational Health — First Aid Log ──────────────────────────────────
-    match /first_aid_log/{faId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Workers' Compensation / COIDA ────────────────────────────────────────
-    match /coida_claims/{claimId} {
-      allow read: if isSignedIn() && isSafetyManager();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Environment ──────────────────────────────────────────────────────────
-    match /environmental_records/{envId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    match /waste_records/{wasteId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    match /spill_records/{spillId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Compliance / Legal Documents ─────────────────────────────────────────
-    match /compliance_docs/{docId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Equipment Management ─────────────────────────────────────────────────
-    match /equipment/{eqId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    match /equipment_inspections/{insId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Contractor Management ────────────────────────────────────────────────
-    match /contractors/{contractorId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Action Items / Tracker ───────────────────────────────────────────────
-    match /action_items/{actionId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Emergency Broadcasts ─────────────────────────────────────────────────
-    match /emergency_broadcasts/{broadcastId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Emergency Plans ──────────────────────────────────────────────────────
-    match /emergency_plans/{planId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && isSafetyManager();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── Muster Records ───────────────────────────────────────────────────────
-    match /muster_records/{musterId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isSafetyManager();
-      allow delete: if isAdmin();
-    }
-
-    // ─── AI Chat History ──────────────────────────────────────────────────────
-    match /ai_chats/{chatId} {
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isOwner(resource.data.userId);
-      allow delete: if isSignedIn() && isOwner(resource.data.userId);
-    }
-
-    // ─── Offline Sync Queue ───────────────────────────────────────────────────
-    match /offline_queue/{queueId} {
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow write: if isSignedIn();
-    }
-
-    // ─── Audit Logs (write-only for clients, read for admins) ─────────────────
-    match /audit_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isSignedIn();
-      allow update, delete: if false; // Audit logs are immutable
-    }
-
-    // ─── Notifications ────────────────────────────────────────────────────────
-    match /notifications/{notifId} {
-      allow read: if isSignedIn() && isOwner(resource.data.userId);
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && isOwner(resource.data.userId);
-      allow delete: if isSignedIn() && isOwner(resource.data.userId);
-    }
-
-    // ─── POPIA Consent Records ────────────────────────────────────────────────
-    match /popia_consent/{consentId} {
-      allow read: if isSignedIn() && (isOwner(consentId) || isAdmin());
-      allow create: if isSignedIn() && isOwner(consentId);
-      allow update: if isSignedIn() && isOwner(consentId);
-      allow delete: if false; // Consent records are immutable for compliance
-    }
-
-    // ─── Sites ────────────────────────────────────────────────────────────────
-    match /sites/{siteId} {
-      allow read: if isSignedIn();
+    // ─── Tenants ──────────────────────────────────────────────────────────────
+    match /tenants/{tenantId} {
+      // Base tenant document
+      allow read: if isSignedIn() && hasTenantAccess(tenantId);
       allow write: if isAdmin();
+
+      // ─── FCM Tokens ───────────────────────────────────────────────────────────
+      match /fcm_tokens/{tokenId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && (isOwner(tokenId) || isAdmin());
+        allow write: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(tokenId);
+      }
+
+      // ─── Incidents ────────────────────────────────────────────────────────────
+      match /incidents/{incidentId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isValidTimestamp('createdAt');
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── CAPAs (Corrective & Preventive Actions) ─────────────────────────────
+      match /capas/{capaId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Permits to Work ──────────────────────────────────────────────────────
+      match /permits/{permitId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Hazards ──────────────────────────────────────────────────────────────
+      match /hazards/{hazardId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── BBS Observations ─────────────────────────────────────────────────────
+      match /observations/{obsId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId);
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Risk Assessments (HIRA) ──────────────────────────────────────────────
+      match /risk_assessments/{raId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Dynamic Risk Assessments ─────────────────────────────────────────────
+      match /dynamic_risk_assessments/{draId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId);
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Bow-Tie Analysis ─────────────────────────────────────────────────────
+      match /bowtie_analyses/{btId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Training Records ─────────────────────────────────────────────────────
+      match /training_records/{trId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Employee Profiles ────────────────────────────────────────────────────
+      match /employees/{empId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── PPE Compliance ───────────────────────────────────────────────────────
+      match /ppe_records/{ppeId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Occupational Health — Medical Surveillance ───────────────────────────
+      match /medical_surveillance/{msId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Occupational Health — First Aid Log ──────────────────────────────────
+      match /first_aid_log/{faId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Workers' Compensation / COIDA ────────────────────────────────────────
+      match /coida_claims/{claimId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Environment ──────────────────────────────────────────────────────────
+      match /environmental_records/{envId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      match /waste_records/{wasteId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      match /spill_records/{spillId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Compliance / Legal Documents ─────────────────────────────────────────
+      match /compliance_docs/{docId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Equipment Management ─────────────────────────────────────────────────
+      match /equipment/{eqId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      match /equipment_inspections/{insId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Contractor Management ────────────────────────────────────────────────
+      match /contractors/{contractorId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Action Items / Tracker ───────────────────────────────────────────────
+      match /action_items/{actionId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId);
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Emergency Broadcasts ─────────────────────────────────────────────────
+      match /emergency_broadcasts/{broadcastId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Emergency Plans ──────────────────────────────────────────────────────
+      match /emergency_plans/{planId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── Muster Records ───────────────────────────────────────────────────────
+      match /muster_records/{musterId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isSafetyManager();
+        allow delete: if hasTenantAccess(tenantId) && isAdmin();
+      }
+
+      // ─── AI Chat History ──────────────────────────────────────────────────────
+      match /ai_chats/{chatId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+        allow delete: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+      }
+
+      // ─── Offline Sync Queue ───────────────────────────────────────────────────
+      match /offline_queue/{queueId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+        allow write: if isSignedIn() && hasTenantAccess(tenantId);
+      }
+
+      // ─── Audit Logs ───────────────────────────────────────────────────────────
+      match /audit_logs/{logId} {
+        allow read: if hasTenantAccess(tenantId) && isAdmin();
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update, delete: if false; // Audit logs are immutable
+      }
+
+      // ─── Notifications ────────────────────────────────────────────────────────
+      match /notifications/{notifId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+        allow create: if isSignedIn() && hasTenantAccess(tenantId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+        allow delete: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(resource.data.userId);
+      }
+
+      // ─── POPIA Consent Records ────────────────────────────────────────────────
+      match /popia_consent/{consentId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId) && (isOwner(consentId) || isAdmin());
+        allow create: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(consentId);
+        allow update: if isSignedIn() && hasTenantAccess(tenantId) && isOwner(consentId);
+        allow delete: if false; // Consent records are immutable for compliance
+      }
+
+      // ─── Sites ────────────────────────────────────────────────────────────────
+      match /sites/{siteId} {
+        allow read: if isSignedIn() && hasTenantAccess(tenantId);
+        allow write: if hasTenantAccess(tenantId) && isAdmin();
+      }
     }
 
     // ─── Catch-all deny ───────────────────────────────────────────────────────

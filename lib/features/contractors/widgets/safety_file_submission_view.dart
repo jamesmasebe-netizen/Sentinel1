@@ -6,10 +6,11 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/safety_file_models.dart';
-import '../../../config/theme.dart';
-import '../../../core/widgets/ds_widgets.dart';
-import '../../../core/models/models.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/ui_utils.dart';
+import 'finding_update_dialog.dart';
+import 'finding_list_item.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 class SafetyFileSubmissionView extends ConsumerStatefulWidget {
   final String contractorId;
@@ -41,54 +42,12 @@ class _SafetyFileSubmissionViewState extends ConsumerState<SafetyFileSubmissionV
       'userId': user.uid,
     };
 
-    await db.collection('findings').doc(finding.findingId).update({
+    await db.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'findings').doc(finding.findingId).update({
       'status': newStatus.name,
       'modifiedBy': user.uid,
       'modifiedAt': FieldValue.serverTimestamp(),
       'statusHistory': FieldValue.arrayUnion([historyEntry]),
     });
-  }
-
-  void _showUpdateDialog(Finding finding) {
-    final commentCtrl = TextEditingController();
-    FindingStatus? selectedStatus;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Update Finding Status'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<FindingStatus>(
-              decoration: const InputDecoration(labelText: 'New Status'),
-              items: FindingStatus.values.map((s) {
-                return DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()));
-              }).toList(),
-              onChanged: (v) => selectedStatus = v,
-            ),
-            GSpacing.vMd,
-            TextFormField(
-              controller: commentCtrl,
-              decoration: const InputDecoration(labelText: 'Comment / Reason'),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () {
-              if (selectedStatus != null && commentCtrl.text.isNotEmpty) {
-                _updateFindingStatus(finding, selectedStatus!, commentCtrl.text);
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text('Update'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _generateReport(String submissionId) async {
@@ -139,7 +98,7 @@ class _SafetyFileSubmissionViewState extends ConsumerState<SafetyFileSubmissionV
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error generating report: $e')));
+        UIUtils.showToast(context, 'Error generating report: $e');
       }
     } finally {
       if(mounted) setState(() => _isGeneratingPdf = false);
@@ -151,7 +110,7 @@ class _SafetyFileSubmissionViewState extends ConsumerState<SafetyFileSubmissionV
     final db = ref.watch(firestoreProvider);
 
     return StreamBuilder<QuerySnapshot>(
-      stream: db.collection('safety_file_submissions')
+      stream: db.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'safety_file_submissions')
           .where('contractorId', isEqualTo: widget.contractorId)
           .where('projectId', isEqualTo: widget.projectId)
           .limit(1)
@@ -193,7 +152,7 @@ class _SafetyFileSubmissionViewState extends ConsumerState<SafetyFileSubmissionV
             const Divider(),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
-                stream: db.collection('findings').where('submissionId', isEqualTo: submissionId).snapshots(),
+                stream: db.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'findings').where('submissionId', isEqualTo: submissionId).snapshots(),
                 builder: (ctx, findingSnap) {
                   if (!findingSnap.hasData) return const Center(child: CircularProgressIndicator());
                   final findings = findingSnap.data!.docs.map((d) => Finding.fromFirestore(d)).toList();
@@ -207,38 +166,9 @@ class _SafetyFileSubmissionViewState extends ConsumerState<SafetyFileSubmissionV
                     itemCount: findings.length,
                     itemBuilder: (context, i) {
                       final f = findings[i];
-                      return GCard(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text('Doc: ${f.documentId}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                GStatusTag(
-                                  label: f.status.name.toUpperCase(),
-                                  color: f.status == FindingStatus.verifiedClosed ? XMTheme.success :
-                                         f.status == FindingStatus.cancelled ? Colors.grey : XMTheme.warning,
-                                ),
-                              ],
-                            ),
-                            GSpacing.vSm,
-                            Text('Type: ${f.type.name}'),
-                            Text('Description: ${f.description}'),
-                            GSpacing.vMd,
-                            if (f.status != FindingStatus.verifiedClosed && f.status != FindingStatus.cancelled)
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton.icon(
-                                  icon: const Icon(Icons.edit, size: 16),
-                                  label: const Text('Update Status'),
-                                  onPressed: () => _showUpdateDialog(f),
-                                ),
-                              )
-                          ],
-                        ),
+                      return FindingListItem(
+                        finding: f,
+                        onUpdateTap: () => FindingUpdateDialog.show(context, f, _updateFindingStatus),
                       );
                     },
                   );

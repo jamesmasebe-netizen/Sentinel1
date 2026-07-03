@@ -1,13 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/widgets/skeleton_loader.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../models/action_tracker_models.dart';
+import '../widgets/action_tracker_stats_row.dart';
+import '../widgets/action_tracker_list_item.dart';
+import '../widgets/action_tracker_search_bar.dart';
+import '../widgets/action_form.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 /// Unified Action Item Tracker — aggregates items from incidents, CAPA, permits, DRA, observations.
 class ActionTrackerScreen extends ConsumerStatefulWidget {
-  const ActionTrackerScreen({super.key});
+  final String? initialSearch;
+  final String? highlightId;
+
+  const ActionTrackerScreen({
+    super.key,
+    this.initialSearch,
+    this.highlightId,
+  });
+
   @override
   ConsumerState<ActionTrackerScreen> createState() => _ActionTrackerState();
 }
@@ -16,386 +31,136 @@ class _ActionTrackerState extends ConsumerState<ActionTrackerScreen> {
   String _filter = 'All';
   String _search = '';
   bool _loading = true;
-  List<_ActionItem> _items = [];
+  List<ActionItem> _items = [];
 
   static const _collections = [
-    _CollSource('incidents', 'Incident'),
-    _CollSource('capas', 'CAPA'),
-    _CollSource('permits', 'Permit'),
-    _CollSource('bbs_observations', 'Observation'),
-    _CollSource('dynamic_risk_assessments', 'DRA'),
-    _CollSource('hazards', 'Hazard'),
+    CollSource('incidents', 'Incident'),
+    CollSource('capas', 'CAPA'),
+    CollSource('permits', 'Permit'),
+    CollSource('bbs_observations', 'Observation'),
+    CollSource('dynamic_risk_assessments', 'DRA'),
+    CollSource('hazards', 'Hazard'),
   ];
+
+  final List<StreamSubscription> _subs = [];
+  final Map<String, List<ActionItem>> _itemsMap = {};
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchAll());
+    if (widget.initialSearch != null) {
+      _search = widget.initialSearch!;
+    }
+    if (widget.highlightId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+                UIUtils.showSideSheet(
+          context: context,
+          title: 'Item Details',
+          builder: (ctx) => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
+          ),
+        );
+      });
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setupStreams());
   }
 
   @override
   void dispose() {
+    for (var sub in _subs) {
+      sub.cancel();
+    }
     super.dispose();
   }
 
-  Future<void> _fetchAll() async {
-    final siteId = ref.read(currentSiteIdProvider);
+  void _setupStreams() {
+    final siteId = ref.read(currentTenantIdProvider);
     final firestore = ref.read(firestoreProvider);
     if (siteId == null) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
       return;
     }
 
-    final List<_ActionItem> all = [];
     for (final coll in _collections) {
-      try {
-        final snap =
-            await firestore
-                .collection(coll.name)
-                .where('siteId', isEqualTo: siteId)
-                .limit(20)
-                .get();
+      final sub = firestore
+          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", coll.name)
+          .where('siteId', isEqualTo: siteId)
+          .limit(20)
+          .snapshots()
+          .listen((snap) {
+        final List<ActionItem> collectionItems = [];
         for (final doc in snap.docs) {
           final d = doc.data();
-          all.add(
-            _ActionItem(
+          collectionItems.add(
+            ActionItem(
               id: doc.id,
               collectionName: coll.name,
               type: coll.type,
-              title:
-                  d['title'] ??
-                  d['description'] ??
-                  d['taskDescription'] ??
-                  d['type'] ??
-                  d['hazard'] ??
-                  'Untitled',
+              title: d['title'] ?? d['description'] ?? d['taskDescription'] ?? d['type'] ?? d['hazard'] ?? 'Untitled',
               status: d['status'] ?? 'Pending',
               dueDate: d['dueDate'] ?? d['createdAt'] ?? '',
-              assignee:
-                  d['assigneeName'] ??
-                  d['observerName'] ??
-                  d['authorName'] ??
-                  'Unassigned',
+              assignee: d['assigneeName'] ?? d['observerName'] ?? d['authorName'] ?? 'Unassigned',
             ),
           );
         }
-      } catch (_) {}
-    }
-    all.sort((a, b) => a.dueDate.compareTo(b.dueDate));
-    if (mounted) {
-      setState(() {
-        _items = all;
-        _loading = false;
+        if (mounted) {
+          setState(() {
+            _itemsMap[coll.name] = collectionItems;
+            _items = _itemsMap.values.expand((e) => e).toList();
+            _items.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+            _loading = false;
+          });
+        }
       });
+      _subs.add(sub);
     }
   }
 
-  Future<void> _updateStatus(_ActionItem item, String newStatus) async {
+  Future<void> _updateStatus(ActionItem item, String newStatus) async {
     try {
-      await ref
-          .read(firestoreProvider)
-          .collection(item.collectionName)
-          .doc(item.id)
-          .update({'status': newStatus});
-      setState(() {
-        final idx = _items.indexOf(item);
-        if (idx >= 0) _items[idx] = item.copyWith(status: newStatus);
-      });
+      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", item.collectionName).doc(item.id).update({'status': newStatus});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: XMTheme.error),
-        );
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final filtered =
-        _items
-            .where(
-              (item) =>
-                  (_filter == 'All' || item.status == _filter) &&
-                  item.title.toLowerCase().contains(_search.toLowerCase()),
-            )
-            .toList();
+    final filtered = _items.where((item) => (_filter == 'All' || item.status == _filter) && item.title.toLowerCase().contains(_search.toLowerCase())).toList();
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => UIUtils.showSideSheet(context: context, title: 'New Action Item', builder: (ctx) => const ActionForm()),
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         children: [
-          const GHeader(
-            title: 'Unified Action Tracker',
-            subtitle: 'Aggregate actions from across all safety modules',
-          ),
-          // Search & filter bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    onChanged: (v) => setState(() => _search = v),
-                    decoration: const InputDecoration(
-                      hintText: 'Search actions...',
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                  ),
-                ),
-                GSpacing.hMd,
-                DropdownButton<String>(
-                  value: _filter,
-                  underline: const SizedBox(),
-                  items:
-                      [
-                            'All',
-                            'Pending',
-                            'In Progress',
-                            'Open',
-                            'Completed',
-                            'Closed',
-                          ]
-                          .map(
-                            (s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(
-                                s,
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                  onChanged: (v) => setState(() => _filter = v!),
-                ),
-              ],
-            ),
+          const GHeader(title: 'Unified Action Tracker', subtitle: 'Aggregate actions from across all safety modules'),
+          ActionTrackerSearchBar(
+            searchValue: _search,
+            onSearchChanged: (v) => setState(() => _search = v),
+            filterValue: _filter,
+            onFilterChanged: (v) => setState(() => _filter = v),
           ),
           GSpacing.vMd,
-          // Stats row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _StatChip(
-                  label: 'Total',
-                  value: '${_items.length}',
-                  color: XMTheme.info,
-                ),
-                _StatChip(
-                  label: 'Pending',
-                  value:
-                      '${_items.where((i) => i.status == 'Pending' || i.status == 'Open').length}',
-                  color: XMTheme.warning,
-                ),
-                _StatChip(
-                  label: 'Active',
-                  value:
-                      '${_items.where((i) => i.status == 'In Progress').length}',
-                  color: XMTheme.primary,
-                ),
-                _StatChip(
-                  label: 'Done',
-                  value:
-                      '${_items.where((i) => i.status == 'Completed' || i.status == 'Closed').length}',
-                  color: XMTheme.success,
-                ),
-              ],
-            ),
-          ),
+          ActionTrackerStatsRow(items: _items),
           GSpacing.vMd,
-          // List
           Expanded(
-            child:
-                _loading
-                    ? const HubSkeleton()
-                    : filtered.isEmpty
+            child: _loading
+                ? const HubSkeleton()
+                : filtered.isEmpty
                     ? const Center(child: Text('No action items found'))
                     : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: filtered.length,
-                      itemBuilder: (ctx, i) {
-                        final item = filtered[i];
-                        return GCard(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 4,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: _typeColor(item.type),
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              GSpacing.hMd,
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.title,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      '${item.type} • ${item.assignee} • ${_fmtDate(item.dueDate)}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuButton<String>(
-                                initialValue: item.status,
-                                onSelected: (v) => _updateStatus(item, v),
-                                itemBuilder:
-                                    (_) =>
-                                        ['Pending', 'In Progress', 'Completed']
-                                            .map(
-                                              (s) => PopupMenuItem(
-                                                value: s,
-                                                child: Text(
-                                                  s,
-                                                  style: const TextStyle(
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
-                                child: GStatusTag(
-                                  label: item.status,
-                                  color: _statusColor(item.status),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filtered.length,
+                        itemBuilder: (ctx, i) => ActionTrackerListItem(item: filtered[i], onUpdateStatus: _updateStatus),
+                      ),
           ),
         ],
       ),
     );
   }
-
-  Color _typeColor(String type) {
-    switch (type) {
-      case 'Incident':
-        return XMTheme.error;
-      case 'CAPA':
-        return XMTheme.warning;
-      case 'Permit':
-        return XMTheme.primary;
-      case 'Observation':
-        return XMTheme.info;
-      case 'DRA':
-        return XMTheme.secondary;
-      case 'Hazard':
-        return XMTheme.severityMajor;
-      default:
-        return XMTheme.statusDraft;
-    }
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'Pending':
-      case 'Open':
-        return XMTheme.warning;
-      case 'In Progress':
-        return XMTheme.primary;
-      case 'Completed':
-      case 'Closed':
-        return XMTheme.success;
-      default:
-        return XMTheme.statusDraft;
-    }
-  }
-
-  String _fmtDate(String? iso) {
-    if (iso == null || iso.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(iso);
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return '';
-    }
-  }
-}
-
-class _CollSource {
-  final String name, type;
-  const _CollSource(this.name, this.type);
-}
-
-class _ActionItem {
-  final String id, collectionName, type, title, status, dueDate, assignee;
-  const _ActionItem({
-    required this.id,
-    required this.collectionName,
-    required this.type,
-    required this.title,
-    required this.status,
-    required this.dueDate,
-    required this.assignee,
-  });
-  _ActionItem copyWith({String? status}) => _ActionItem(
-    id: id,
-    collectionName: collectionName,
-    type: type,
-    title: title,
-    status: status ?? this.status,
-    dueDate: dueDate,
-    assignee: assignee,
-  );
-}
-
-class _StatChip extends StatelessWidget {
-  final String label, value;
-  final Color color;
-  const _StatChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-  @override
-  Widget build(BuildContext context) => Expanded(
-    child: GCard(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      color: color.withValues(alpha: 0.05),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }

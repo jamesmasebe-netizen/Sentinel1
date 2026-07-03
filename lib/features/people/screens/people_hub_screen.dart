@@ -1,25 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'employee_profiles_screen.dart';
-import '../../training/screens/training_screen.dart';
-import 'skills_matrix_screen.dart';
-import 'competency_passport_screen.dart';
-import '../../health/screens/occupational_health_screen.dart';
-import '../../workers_comp/screens/workers_comp_screen.dart';
-
+import '../widgets/people_hub/stream_metric_card.dart';
+import '../widgets/people_hub/people_hub_modules_grid.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 /// People & Health Hub Dashboard — Material 3 Expressive
-class PeopleHubScreen extends StatelessWidget {
+class PeopleHubScreen extends ConsumerWidget {
   const PeopleHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final siteId = ref.watch(currentTenantIdProvider);
+    final firestore = ref.watch(firestoreProvider);
+
+    final employeesStream = siteId == null
+        ? Stream.value('0')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'employees')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) => s.docs.length.toString());
+
+    final trainingComplianceStream = siteId == null
+        ? Stream.value('100%')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'competency_passports')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) {
+              if (s.docs.isEmpty) return '100%';
+              final valid = s.docs.where((d) => d.data()['status'] == 'Valid').length;
+              return '${((valid / s.docs.length) * 100).toStringAsFixed(0)}%';
+            });
+
+    final healthAssessmentsStream = siteId == null
+        ? Stream.value('0 Due')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'medical_records')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) {
+              final dueCount = s.docs.where((d) {
+                final data = d.data();
+                final status = data['status'] ?? '';
+                final nextDueStr = data['nextDueDate'] ?? '';
+                if (status == 'Unfit') return true;
+                if (nextDueStr.isNotEmpty) {
+                  try {
+                    final nextDue = DateTime.parse(nextDueStr);
+                    return nextDue.isBefore(DateTime.now());
+                  } catch (_) {}
+                }
+                return false;
+              }).length;
+              return '$dueCount Due';
+            });
+
+    final workersCompStream = siteId == null
+        ? Stream.value('0 Open')
+        : firestore
+            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'coida_claims')
+            .where('siteId', isEqualTo: siteId)
+            .snapshots()
+            .map((s) => '${s.docs.where((d) => d.data()['status'] != 'Closed').length} Open');
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          UIUtils.showToast(context, 'Quick Add: Employee coming soon');
+          UIUtils.showSideSheet(context: context, title: 'Employee Profiles', builder: (ctx) => const EmployeeProfilesScreen());
         },
         backgroundColor: XMTheme.primary,
         foregroundColor: Colors.white,
@@ -63,43 +116,40 @@ class PeopleHubScreen extends StatelessWidget {
                     direction: isWide ? Axis.horizontal : Axis.vertical,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildMetricCard(
-                        context,
-                        'Active Employees',
-                        '142',
-                        Icons.people_rounded,
-                        XMTheme.primary,
-                        isWide,
+                      StreamMetricCard(
+                        title: 'Active Employees',
+                        valueStream: employeesStream,
+                        icon: Icons.people_rounded,
+                        color: XMTheme.primary,
+                        isWide: isWide,
+                        initialValue: '0',
                       ),
-                      if (isWide) GSpacing.hMd,
-                      if (!isWide) GSpacing.vMd,
-                      _buildMetricCard(
-                        context,
-                        'Training Compliance',
-                        '94%',
-                        Icons.school_rounded,
-                        XMTheme.success,
-                        isWide,
+                      if (isWide) GSpacing.hMd else GSpacing.vMd,
+                      StreamMetricCard(
+                        title: 'Training Compliance',
+                        valueStream: trainingComplianceStream,
+                        icon: Icons.school_rounded,
+                        color: XMTheme.success,
+                        isWide: isWide,
+                        initialValue: '100%',
                       ),
-                      if (isWide) GSpacing.hMd,
-                      if (!isWide) GSpacing.vMd,
-                      _buildMetricCard(
-                        context,
-                        'Health Assessments',
-                        '12 Due',
-                        Icons.medical_services_rounded,
-                        XMTheme.warning,
-                        isWide,
+                      if (isWide) GSpacing.hMd else GSpacing.vMd,
+                      StreamMetricCard(
+                        title: 'Health Assessments',
+                        valueStream: healthAssessmentsStream,
+                        icon: Icons.medical_services_rounded,
+                        color: XMTheme.warning,
+                        isWide: isWide,
+                        initialValue: '0 Due',
                       ),
-                      if (isWide) GSpacing.hMd,
-                      if (!isWide) GSpacing.vMd,
-                      _buildMetricCard(
-                        context,
-                        'Workers Comp',
-                        '2 Open',
-                        Icons.healing_rounded,
-                        XMTheme.error,
-                        isWide,
+                      if (isWide) GSpacing.hMd else GSpacing.vMd,
+                      StreamMetricCard(
+                        title: 'Workers Comp',
+                        valueStream: workersCompStream,
+                        icon: Icons.healing_rounded,
+                        color: XMTheme.error,
+                        isWide: isWide,
+                        initialValue: '0 Open',
                       ),
                     ],
                   );
@@ -109,238 +159,11 @@ class PeopleHubScreen extends StatelessWidget {
           ),
 
           // Main Interactive Modules Grid
-          SliverPadding(
-            padding: const EdgeInsets.all(24),
-            sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 400,
-                mainAxisExtent: 140, // Fixed height for cards
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              delegate: SliverChildListDelegate([
-                _buildModuleCard(
-                  context,
-                  title: 'Employee Profiles',
-                  subtitle: 'Directory, roles, and employment history.',
-                  icon: Icons.badge_rounded,
-                  color: XMTheme.primary,
-                  onTap:
-                      () => _openModule(
-                        context,
-                        'Employee Profiles',
-                        const EmployeeProfilesScreen(),
-                      ),
-                ),
-                _buildModuleCard(
-                  context,
-                  title: 'Training & Inductions',
-                  subtitle: 'Manage courses, certificates, and expirations.',
-                  icon: Icons.school_rounded,
-                  color: XMTheme.success,
-                  onTap:
-                      () => _openModule(
-                        context,
-                        'Training & Inductions',
-                        const TrainingScreen(),
-                      ),
-                ),
-                _buildModuleCard(
-                  context,
-                  title: 'Skills Matrix',
-                  subtitle: 'Gap analysis and organizational capability.',
-                  icon: Icons.grid_view_rounded,
-                  color: XMTheme.info,
-                  onTap:
-                      () => _openModule(
-                        context,
-                        'Skills Matrix',
-                        const SkillsMatrixScreen(),
-                      ),
-                ),
-                _buildModuleCard(
-                  context,
-                  title: 'Competency Passport',
-                  subtitle: 'Digital worker verification.',
-                  icon: Icons.card_membership_rounded,
-                  color: const Color(0xFF8B5CF6), // Purple
-                  onTap:
-                      () => _openModule(
-                        context,
-                        'Competency Passport',
-                        const CompetencyPassportScreen(),
-                      ),
-                ),
-                _buildModuleCard(
-                  context,
-                  title: 'Occupational Health',
-                  subtitle: 'Medical surveillance and exposure tracking.',
-                  icon: Icons.medical_services_rounded,
-                  color: XMTheme.secondary,
-                  onTap:
-                      () => _openModule(
-                        context,
-                        'Occupational Health',
-                        const OccupationalHealthScreen(),
-                      ),
-                ),
-                _buildModuleCard(
-                  context,
-                  title: "Worker's Comp",
-                  subtitle: 'Injury claims and return-to-work programs.',
-                  icon: Icons.healing_rounded,
-                  color: XMTheme.error,
-                  onTap:
-                      () => _openModule(
-                        context,
-                        "Worker's Comp",
-                        const WorkersCompScreen(),
-                      ),
-                ),
-              ]),
-            ),
-          ),
+          const PeopleHubModulesGrid(),
 
           // Bottom padding
           const SliverToBoxAdapter(child: GSpacing.vLg),
         ],
-      ),
-    );
-  }
-
-  // Opens a module inside a massive side-sheet rather than routing away
-  void _openModule(BuildContext context, String title, Widget child) {
-    final width = MediaQuery.sizeOf(context).width * 0.85;
-
-    UIUtils.showSideSheet(
-      context: context,
-      title: title,
-      width: width.clamp(400.0, 1200.0), // Cap max width
-      builder: (ctx) => child,
-    );
-  }
-
-  Widget _buildMetricCard(
-    BuildContext context,
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    bool isWide,
-  ) {
-    final theme = Theme.of(context);
-    final card = GCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 28),
-          ),
-          GSpacing.hMd,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  title,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                GSpacing.vSm,
-                Text(
-                  value,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (isWide) {
-      return Expanded(child: card);
-    }
-    return card;
-  }
-
-  Widget _buildModuleCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return GCard(
-      margin: EdgeInsets.zero,
-      padding: EdgeInsets.zero,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            GSpacing.hMd,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  GSpacing.vSm,
-                  Text(
-                    subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Text(
-                        'Open Module',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: color,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      GSpacing.hSm,
-                      Icon(Icons.arrow_forward_rounded, size: 14, color: color),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -59,6 +59,28 @@ class AuthService {
     }
   }
 
+  /// Sign in with SAML/OIDC
+  Future<UserProfile?> signInWithSAML(String providerId) async {
+    try {
+      final samlProvider = SAMLAuthProvider(providerId);
+      final userCredential = await _auth.signInWithProvider(samlProvider);
+      final user = userCredential.user;
+      if (user == null) return null;
+
+      // Store auth state for biometric re-login
+      await _secureStorage.write(key: 'auth_uid', value: user.uid);
+      await _secureStorage.write(key: 'biometric_enabled', value: 'true');
+
+      // Fetch or create user profile
+      final profile = await _getOrCreateProfile(user);
+      _currentProfile = profile;
+      _profileController.add(profile);
+      return profile;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Bypass Login for Dev
   Future<UserProfile?> devBypassLogin() async {
     try {
@@ -135,7 +157,7 @@ class AuthService {
       displayName: user.displayName ?? 'New User',
       photoURL: user.photoURL,
       role: 'employee',
-      siteId: FirebaseConfig.defaultSiteId,
+      tenantId: FirebaseConfig.defaultSiteId,
     );
 
     await docRef.set(newProfile.toFirestore());
@@ -167,12 +189,15 @@ class AuthService {
     await refreshProfile();
   }
 
+  Function? onSignOut;
+
   /// Sign out
   Future<void> signOut() async {
     await _secureStorage.delete(key: 'auth_uid');
     await _auth.signOut();
     _currentProfile = null;
     _profileController.add(null);
+    onSignOut?.call();
   }
 
   /// Listen to auth state and keep profile in sync

@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../widgets/competency_passport/competency_form_card.dart';
+import '../widgets/competency_passport/competency_employee_card.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 /// Competency Passport — per-employee competency tracking with certifications and expiry.
 class CompetencyPassportScreen extends ConsumerStatefulWidget {
@@ -23,7 +27,7 @@ class _CompetencyPassportScreenState
   DateTime? _expiryDate;
   bool _isSubmitting = false;
 
-  static const _statuses = ['Valid', 'Expiring Soon', 'Expired', 'Revoked'];
+
 
   @override
   void dispose() {
@@ -35,12 +39,7 @@ class _CompetencyPassportScreenState
 
   Future<void> _submit() async {
     if (_employeeCtrl.text.isEmpty || _certCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill employee and certification'),
-          backgroundColor: XMTheme.error,
-        ),
-      );
+      UIUtils.showToast(context, 'Please fill employee and certification', type: ToastType.error);
       return;
     }
     setState(() => _isSubmitting = true);
@@ -50,6 +49,7 @@ class _CompetencyPassportScreenState
       await ref
           .read(firestoreServiceProvider)
           .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'competency_passports',
             data: {
               'employeeName': _employeeCtrl.text.trim(),
@@ -57,17 +57,12 @@ class _CompetencyPassportScreenState
               'issuer': _issuerCtrl.text.trim(),
               'status': _status,
               'expiryDate': _expiryDate?.toIso8601String(),
-              'siteId': profile.siteId,
+              'siteId': profile.tenantId,
               'createdAt': DateTime.now().toIso8601String(),
             },
           );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Competency added'),
-            backgroundColor: XMTheme.success,
-          ),
-        );
+        UIUtils.showToast(context, 'Competency added', type: ToastType.success);
         setState(() {
           _showForm = false;
           _employeeCtrl.clear();
@@ -78,9 +73,7 @@ class _CompetencyPassportScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: XMTheme.error),
-        );
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -89,7 +82,7 @@ class _CompetencyPassportScreenState
 
   @override
   Widget build(BuildContext context) {
-    final siteId = ref.watch(currentSiteIdProvider);
+    final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
     if (siteId == null) return const Center(child: Text('No site assigned'));
 
@@ -121,12 +114,23 @@ class _CompetencyPassportScreenState
             ),
           ),
           GSpacing.vMd,
-          if (_showForm) _buildForm(context),
+          if (_showForm)
+            CompetencyFormCard(
+              employeeCtrl: _employeeCtrl,
+              certCtrl: _certCtrl,
+              issuerCtrl: _issuerCtrl,
+              status: _status,
+              onStatusChanged: (v) => setState(() => _status = v),
+              expiryDate: _expiryDate,
+              onExpiryDateChanged: (d) => setState(() => _expiryDate = d),
+              isSubmitting: _isSubmitting,
+              onSubmit: _submit,
+            ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream:
                   firestore
-                      .collection('competency_passports')
+                      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'competency_passports')
                       .where('siteId', isEqualTo: siteId)
                       .orderBy('createdAt', descending: true)
                       .limit(100)
@@ -166,161 +170,7 @@ class _CompetencyPassportScreenState
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children:
                       byEmployee.entries.map<Widget>((entry) {
-                        final allValid = entry.value.every(
-                          (c) => c['status'] == 'Valid',
-                        );
-                        final hasExpired = entry.value.any(
-                          (c) => c['status'] == 'Expired',
-                        );
-                        return GCard(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: (allValid
-                                              ? XMTheme.success
-                                              : hasExpired
-                                              ? XMTheme.error
-                                              : XMTheme.warning)
-                                          .withValues(alpha: 0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      allValid
-                                          ? Icons.verified
-                                          : hasExpired
-                                          ? Icons.cancel
-                                          : Icons.warning,
-                                      size: 20,
-                                      color:
-                                          allValid
-                                              ? XMTheme.success
-                                              : hasExpired
-                                              ? XMTheme.error
-                                              : XMTheme.warning,
-                                    ),
-                                  ),
-                                  GSpacing.hMd,
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          entry.key,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${entry.value.length} certifications',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  GStatusTag(
-                                    label: allValid
-                                          ? 'COMPLIANT'
-                                          : hasExpired
-                                          ? 'NON-COMPLIANT'
-                                          : 'ACTION NEEDED',
-                                    color: (allValid
-                                              ? XMTheme.success
-                                              : hasExpired
-                                              ? XMTheme.error
-                                              : XMTheme.warning),
-                                  ),
-                                ],
-                              ),
-                              GSpacing.vMd,
-                              ...entry.value.map<Widget>((cert) {
-                                final status = cert['status'] ?? 'Valid';
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 4,
-                                        height: 36,
-                                        decoration: BoxDecoration(
-                                          color: _statusColor(status),
-                                          borderRadius: BorderRadius.circular(
-                                            2,
-                                          ),
-                                        ),
-                                      ),
-                                      GSpacing.hMd,
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              cert['certification'] ?? '',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                            Row(
-                                              children: [
-                                                if (cert['issuer'] != null &&
-                                                    cert['issuer']
-                                                        .toString()
-                                                        .isNotEmpty)
-                                                  Text(
-                                                    '${cert['issuer']}',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color:
-                                                          Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                    ),
-                                                  ),
-                                                if (cert['expiryDate'] !=
-                                                    null) ...[
-                                                  Text(
-                                                    ' • Exp: ${_formatDate(cert['expiryDate'])}',
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      color:
-                                                          Theme.of(context)
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      GStatusTag(
-                                        label: status,
-                                        color: _statusColor(status),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                          ),
-                        );
+                        return CompetencyEmployeeCard(entry: entry);
                       }).toList(),
                 );
               },
@@ -332,152 +182,5 @@ class _CompetencyPassportScreenState
 
   }
 
-  Widget _buildForm(BuildContext context) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-        side: BorderSide(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Add Certification',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _employeeCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Employee Name *',
-                prefixIcon: Icon(Icons.person),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _certCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Certification / Competency *',
-                prefixIcon: Icon(Icons.card_membership),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _issuerCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Issuing Body',
-                prefixIcon: Icon(Icons.business),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _status,
-                    decoration: const InputDecoration(labelText: 'Status'),
-                    items:
-                        _statuses
-                            .map(
-                              (s) => DropdownMenuItem(
-                                value: s,
-                                child: Text(
-                                  s,
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (v) => setState(() => _status = v!),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: InkWell(
-                    onTap: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now().add(
-                          const Duration(days: 365),
-                        ),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(
-                          const Duration(days: 1825),
-                        ),
-                      );
-                      if (date != null) setState(() => _expiryDate = date);
-                    },
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Expiry Date',
-                        prefixIcon: Icon(Icons.calendar_today),
-                      ),
-                      child: Text(
-                        _expiryDate != null
-                            ? _formatDate(_expiryDate!.toIso8601String())
-                            : 'Select date',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color:
-                              _expiryDate != null
-                                  ? null
-                                  : Theme.of(context).hintColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _isSubmitting ? null : _submit,
-                icon:
-                    _isSubmitting
-                        ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : const Icon(Icons.save),
-                label: Text(_isSubmitting ? 'Saving...' : 'Add Certification'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  String _formatDate(String iso) {
-    try {
-      final d = DateTime.parse(iso);
-      return '${d.day}/${d.month}/${d.year}';
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'Valid':
-        return XMTheme.success;
-      case 'Expiring Soon':
-        return XMTheme.warning;
-      case 'Expired':
-        return XMTheme.error;
-      case 'Revoked':
-        return XMTheme.riskExtreme;
-      default:
-        return XMTheme.primary;
-    }
-  }
 }

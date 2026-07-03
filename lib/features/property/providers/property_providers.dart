@@ -1,15 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/property_models.dart';
+import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 final propertiesProvider = StreamProvider<List<Property>>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  final siteId = ref.watch(currentSiteIdProvider);
+  final siteId = ref.watch(currentTenantIdProvider);
 
   if (siteId == null) return Stream.value([]);
 
   return firestore
-      .collection('properties')
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'properties')
       .where('siteId', isEqualTo: siteId)
       .snapshots()
       .map(
@@ -22,7 +23,7 @@ final propertyProjectsProvider =
     StreamProvider.family<List<PropertyProject>, String>((ref, propertyId) {
       final firestore = ref.watch(firestoreProvider);
       return firestore
-          .collection('property_projects')
+          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_projects')
           .where('propertyId', isEqualTo: propertyId)
           .snapshots()
           .map(
@@ -37,7 +38,7 @@ final propertyUtilitiesProvider =
     StreamProvider.family<List<UtilityUsage>, String>((ref, propertyId) {
       final firestore = ref.watch(firestoreProvider);
       return firestore
-          .collection('property_utilities')
+          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_utilities')
           .where('propertyId', isEqualTo: propertyId)
           .snapshots()
           .map(
@@ -52,7 +53,7 @@ final propertyAppointmentsProvider =
     StreamProvider.family<List<LegalAppointment>, String>((ref, propertyId) {
       final firestore = ref.watch(firestoreProvider);
       return firestore
-          .collection('legal_appointments')
+          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'legal_appointments')
           .where('propertyId', isEqualTo: propertyId)
           .snapshots()
           .map(
@@ -69,7 +70,7 @@ final propertyLeasesProvider = StreamProvider.family<List<LeaseInfo>, String>((
 ) {
   final firestore = ref.watch(firestoreProvider);
   return firestore
-      .collection('property_leases')
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_leases')
       .where('propertyId', isEqualTo: propertyId)
       .snapshots()
       .map(
@@ -84,7 +85,7 @@ final propertyAssetsProvider = StreamProvider.family<List<AssetInfo>, String>((
 ) {
   final firestore = ref.watch(firestoreProvider);
   return firestore
-      .collection('property_assets')
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_assets')
       .where('propertyId', isEqualTo: propertyId)
       .snapshots()
       .map(
