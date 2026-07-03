@@ -84,7 +84,8 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/launchpad') || location.startsWith('/dashboard')) {
+    if (location.startsWith('/launchpad') ||
+        location.startsWith('/dashboard')) {
       return 0;
     }
     if (location.startsWith('/finance')) return 1;

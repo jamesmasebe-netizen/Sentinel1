@@ -689,7 +689,8 @@ void showTaskEditor(
                                         if (rating == 'Medium') {
                                           badgeColor = XMTheme.warning;
                                         }
-                                        if (rating == 'Low' || rating == 'Safe') {
+                                        if (rating == 'Low' ||
+                                            rating == 'Safe') {
                                           badgeColor = XMTheme.success;
                                         }
 

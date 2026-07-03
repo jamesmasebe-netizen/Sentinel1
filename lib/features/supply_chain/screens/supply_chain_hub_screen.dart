@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'inventory_dashboard.dart';
+import 'warehouse_management_screen.dart';
+import 'asset_management_screen.dart';
 
 class SupplyChainHubScreen extends StatelessWidget {
   const SupplyChainHubScreen({super.key});
@@ -6,8 +9,65 @@ class SupplyChainHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Supply Chain')),
-      body: const Center(child: Text('Supply Chain Hub Placeholder')),
+      appBar: AppBar(title: const Text('Supply Chain & Assets'), elevation: 0),
+      body: GridView.count(
+        padding: const EdgeInsets.all(16.0),
+        crossAxisCount: 2,
+        crossAxisSpacing: 16.0,
+        mainAxisSpacing: 16.0,
+        children: [
+          _buildCard(
+            context,
+            'Inventory / MRP',
+            Icons.inventory_2_outlined,
+            const InventoryDashboard(),
+          ),
+          _buildCard(
+            context,
+            'Warehouse Mgmt',
+            Icons.warehouse_outlined,
+            const WarehouseManagementScreen(),
+          ),
+          _buildCard(
+            context,
+            'Enterprise Asset Mgmt',
+            Icons.precision_manufacturing_outlined,
+            const AssetManagementScreen(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Widget screen,
+  ) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap:
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => screen),
+            ),
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 48, color: Theme.of(context).primaryColor),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
