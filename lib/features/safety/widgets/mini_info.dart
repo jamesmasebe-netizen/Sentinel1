@@ -4,7 +4,12 @@ class MiniInfo extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
-  const MiniInfo({super.key, required this.icon, required this.label, this.color});
+  const MiniInfo({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -14,18 +14,13 @@ class PermitToWorkScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
 
-  const PermitToWorkScreen({
-    super.key,
-    this.initialSearch,
-    this.highlightId,
-  });
+  const PermitToWorkScreen({super.key, this.initialSearch, this.highlightId});
 
   @override
   ConsumerState<PermitToWorkScreen> createState() => _PermitToWorkScreenState();
 }
 
 class _PermitToWorkScreenState extends ConsumerState<PermitToWorkScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -34,13 +29,16 @@ class _PermitToWorkScreenState extends ConsumerState<PermitToWorkScreen> {
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -70,11 +68,15 @@ class _PermitToWorkScreenState extends ConsumerState<PermitToWorkScreen> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'permits')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'permits',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -86,7 +88,13 @@ class _PermitToWorkScreenState extends ConsumerState<PermitToWorkScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.assignment_turned_in_rounded, size: 64, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
+                      Icon(
+                        Icons.assignment_turned_in_rounded,
+                        size: 64,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
+                      ),
                       GSpacing.vMd,
                       const Text('No permits found'),
                     ],
@@ -105,12 +113,22 @@ class _PermitToWorkScreenState extends ConsumerState<PermitToWorkScreen> {
                     data: data,
                     canApprove: isExecutive,
                     onStatusUpdate: (newStatus) async {
-                      await firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'permits').doc(doc.id).update({
-                        'status': newStatus,
-                        'updatedAt': DateTime.now().toIso8601String(),
-                      });
+                      await firestore
+                          .tenantCollection(
+                            ref.watch(currentTenantIdProvider) ?? "",
+                            'permits',
+                          )
+                          .doc(doc.id)
+                          .update({
+                            'status': newStatus,
+                            'updatedAt': DateTime.now().toIso8601String(),
+                          });
                       if (context.mounted) {
-                        UIUtils.showToast(context, 'Status updated to $newStatus', type: ToastType.success);
+                        UIUtils.showToast(
+                          context,
+                          'Status updated to $newStatus',
+                          type: ToastType.success,
+                        );
                       }
                     },
                   );

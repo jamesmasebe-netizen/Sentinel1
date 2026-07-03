@@ -43,7 +43,7 @@ class IncidentHeatmapScatterPlot extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.grey,
                         ),
-                       ),
+                      ),
                     ),
                     const Positioned(
                       bottom: -20,
@@ -80,9 +80,13 @@ class IncidentHeatmapScatterPlot extends ConsumerWidget {
                           width: isCrit ? 16 : 12,
                           height: isCrit ? 16 : 12,
                           decoration: BoxDecoration(
-                            color: (isCrit ? XMTheme.error : XMTheme.warning).withValues(alpha: 0.8),
+                            color: (isCrit ? XMTheme.error : XMTheme.warning)
+                                .withValues(alpha: 0.8),
                             shape: BoxShape.circle,
-                            border: isCrit ? Border.all(color: Colors.white, width: 2) : null,
+                            border:
+                                isCrit
+                                    ? Border.all(color: Colors.white, width: 2)
+                                    : null,
                           ),
                         ),
                       );
@@ -94,7 +98,8 @@ class IncidentHeatmapScatterPlot extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }

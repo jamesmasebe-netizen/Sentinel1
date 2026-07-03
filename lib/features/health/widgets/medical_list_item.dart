@@ -12,10 +12,10 @@ class MedicalListItem extends StatelessWidget {
     final theme = Theme.of(context);
     final status = data['status'] ?? 'Unknown';
     final type = data['medicalType'] ?? 'Exam';
-    
+
     Color color = XMTheme.success;
     IconData icon = Icons.check_circle_outline_rounded;
-    
+
     if (status == 'Unfit') {
       color = XMTheme.error;
       icon = Icons.cancel_outlined;
@@ -31,7 +31,10 @@ class MedicalListItem extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Icon(icon, color: color, size: 24),
           ),
           GSpacing.hLg,
@@ -39,10 +42,19 @@ class MedicalListItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['employeeName'] ?? 'Unknown Employee', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  data['employeeName'] ?? 'Unknown Employee',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 GSpacing.vXs,
-                Text('$type • ${data['idNumber'] ?? "No ID"}',
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(
+                  '$type • ${data['idNumber'] ?? "No ID"}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),
@@ -54,7 +66,10 @@ class MedicalListItem extends StatelessWidget {
               GSpacing.vXs,
               Text(
                 'Due: ${UIUtils.formatTimestamp(data['nextDueDate']).split(',').first}',
-                style: theme.textTheme.labelSmall?.copyWith(fontSize: 9, fontWeight: FontWeight.bold),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

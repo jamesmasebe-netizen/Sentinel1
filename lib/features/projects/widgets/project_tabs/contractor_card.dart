@@ -45,7 +45,8 @@ class ContractorCard extends ConsumerWidget {
         final companyName = contractor['companyName'] ?? 'Unknown Contractor';
         final scopeOfWork = contractor['scopeOfWork'] ?? '';
         final riskRating = contractor['riskRating'] ?? 'Medium';
-        final subcontractors = contractor['subcontractors'] as List<dynamic>? ?? [];
+        final subcontractors =
+            contractor['subcontractors'] as List<dynamic>? ?? [];
 
         String ohsStatus = 'Not Submitted';
         Color ohsColor = Colors.grey;
@@ -87,22 +88,48 @@ class ContractorCard extends ConsumerWidget {
                       color: XMTheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.engineering_rounded, color: XMTheme.primary, size: 22),
+                    child: const Icon(
+                      Icons.engineering_rounded,
+                      color: XMTheme.primary,
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(companyName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text(
+                          companyName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                         if (scopeOfWork.isNotEmpty)
-                          Text(scopeOfWork, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          Text(
+                            scopeOfWork,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                       ],
                     ),
                   ),
                   GStatusTag(
                     label: riskRating,
-                    color: riskRating == 'High' || riskRating == 'Critical' ? XMTheme.error : riskRating == 'Medium' ? XMTheme.warning : XMTheme.success,
+                    color:
+                        riskRating == 'High' || riskRating == 'Critical'
+                            ? XMTheme.error
+                            : riskRating == 'Medium'
+                            ? XMTheme.warning
+                            : XMTheme.success,
                   ),
                 ],
               ),
@@ -115,24 +142,52 @@ class ContractorCard extends ConsumerWidget {
                 ohsColor: ohsColor,
                 submission: submission,
                 ohsScore: ohsScore,
-                onViewFile: () => onShowOHS(context, contractorId, project.id, companyName, submissionId),
+                onViewFile:
+                    () => onShowOHS(
+                      context,
+                      contractorId,
+                      project.id,
+                      companyName,
+                      submissionId,
+                    ),
               ),
               // Subcontractors
               if (subcontractors.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                Text('Subcontractors (${subcontractors.length})', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  'Subcontractors (${subcontractors.length})',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
-                  children: subcontractors.map((sub) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(sub.toString(), style: const TextStyle(fontSize: 11)),
-                  )).toList(),
+                  children:
+                      subcontractors
+                          .map(
+                            (sub) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                sub.toString(),
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
+                          )
+                          .toList(),
                 ),
               ],
               const SizedBox(height: 12),
@@ -143,19 +198,33 @@ class ContractorCard extends ConsumerWidget {
                 children: [
                   TextButton.icon(
                     onPressed: () {
-                      UIUtils.showSideSheet(context: context, title: 'Contractor Management', builder: (ctx) => const ContractorManagementScreen());
+                      UIUtils.showSideSheet(
+                        context: context,
+                        title: 'Contractor Management',
+                        builder: (ctx) => const ContractorManagementScreen(),
+                      );
                     },
                     icon: const Icon(Icons.edit_document, size: 16),
                     label: const Text('Scope', style: TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: () {
-                      UIUtils.showSideSheet(context: context, title: 'Contractor Management', builder: (ctx) => const ContractorManagementScreen());
+                      UIUtils.showSideSheet(
+                        context: context,
+                        title: 'Contractor Management',
+                        builder: (ctx) => const ContractorManagementScreen(),
+                      );
                     },
                     icon: const Icon(Icons.group_add_rounded, size: 16),
                     label: const Text('Subs', style: TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant),
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   TextButton.icon(
                     onPressed: onRemove,
@@ -173,18 +242,28 @@ class ContractorCard extends ConsumerWidget {
   }
 
   Future<Map<String, dynamic>> _fetchContractorWithOHS(
-    dynamic fs, String tenantId, String contractorId, String projectId) async {
-    final contractorDoc = await fs.tenantCollection(tenantId, 'contractors').doc(contractorId).get();
-    final contractor = contractorDoc.exists
-        ? (contractorDoc.data() as Map<String, dynamic>)
-        : <String, dynamic>{};
+    dynamic fs,
+    String tenantId,
+    String contractorId,
+    String projectId,
+  ) async {
+    final contractorDoc =
+        await fs
+            .tenantCollection(tenantId, 'contractors')
+            .doc(contractorId)
+            .get();
+    final contractor =
+        contractorDoc.exists
+            ? (contractorDoc.data() as Map<String, dynamic>)
+            : <String, dynamic>{};
 
-    final submissionQuery = await fs
-        .tenantCollection(tenantId, 'safetyFileSubmissions')
-        .where('contractorId', isEqualTo: contractorId)
-        .where('projectId', isEqualTo: projectId)
-        .limit(1)
-        .get();
+    final submissionQuery =
+        await fs
+            .tenantCollection(tenantId, 'safetyFileSubmissions')
+            .where('contractorId', isEqualTo: contractorId)
+            .where('projectId', isEqualTo: projectId)
+            .limit(1)
+            .get();
 
     Map<String, dynamic>? submission;
     String? submissionId;
@@ -193,6 +272,10 @@ class ContractorCard extends ConsumerWidget {
       submissionId = submissionQuery.docs.first.id;
     }
 
-    return {'contractor': contractor, 'submission': submission, 'submissionId': submissionId};
+    return {
+      'contractor': contractor,
+      'submission': submission,
+      'submissionId': submissionId,
+    };
   }
 }

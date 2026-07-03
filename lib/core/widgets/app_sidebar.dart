@@ -36,24 +36,44 @@ class AppSidebar extends StatelessWidget {
       ),
       destinations: const [
         NavigationRailDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
-          label: Text('Home'),
+          icon: Icon(Icons.grid_view_outlined),
+          selectedIcon: Icon(Icons.grid_view_rounded),
+          label: Text('Launchpad'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.shield_outlined),
-          selectedIcon: Icon(Icons.shield_rounded),
-          label: Text('Safety & Risk'),
+          icon: Icon(Icons.account_balance_outlined),
+          selectedIcon: Icon(Icons.account_balance),
+          label: Text('Finance'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.local_shipping_outlined),
+          selectedIcon: Icon(Icons.local_shipping),
+          label: Text('Supply Chain'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.architecture_outlined),
+          selectedIcon: Icon(Icons.architecture),
+          label: Text('Projects'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.engineering_outlined),
+          selectedIcon: Icon(Icons.engineering),
+          label: Text('Field Service'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.point_of_sale_outlined),
+          selectedIcon: Icon(Icons.point_of_sale),
+          label: Text('CRM'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.support_agent_outlined),
+          selectedIcon: Icon(Icons.support_agent),
+          label: Text('Service'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people_rounded),
-          label: Text('People'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.domain_outlined),
-          selectedIcon: Icon(Icons.domain_rounded),
-          label: Text('Operations'),
+          label: Text('HR'),
         ),
       ],
     );

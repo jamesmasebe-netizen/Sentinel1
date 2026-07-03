@@ -15,11 +15,7 @@ class HazardRegisterScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
 
-  const HazardRegisterScreen({
-    super.key,
-    this.initialSearch,
-    this.highlightId,
-  });
+  const HazardRegisterScreen({super.key, this.initialSearch, this.highlightId});
 
   @override
   ConsumerState<HazardRegisterScreen> createState() =>
@@ -27,7 +23,6 @@ class HazardRegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -36,13 +31,16 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -52,7 +50,10 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
     UIUtils.showSideSheet(
       context: context,
       title: 'Report New Hazard',
-      builder: (ctx) => HazardFormSheet(tenantId: ref.read(currentTenantIdProvider) ?? ''),
+      builder:
+          (ctx) => HazardFormSheet(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+          ),
     );
   }
 
@@ -78,11 +79,15 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'hazards')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'hazards',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());

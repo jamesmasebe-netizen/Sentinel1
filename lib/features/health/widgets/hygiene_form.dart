@@ -30,28 +30,34 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
 
   Future<void> _submitHygiene() async {
     if (_zoneCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Zone name is required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Zone name is required',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'hygiene_surveys',
-        data: {
-          'zoneName': _zoneCtrl.text.trim(),
-          'hazardType': _hazardType,
-          'readingValue': _readingCtrl.text.trim(),
-          'legalLimit': _limitCtrl.text.trim(),
-          'requiresMedicalSurveillance': _requiresSurveillance,
-          'dateConducted': DateTime.now().toIso8601String(),
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'hygiene_surveys',
+            data: {
+              'zoneName': _zoneCtrl.text.trim(),
+              'hazardType': _hazardType,
+              'readingValue': _readingCtrl.text.trim(),
+              'legalLimit': _limitCtrl.text.trim(),
+              'requiresMedicalSurveillance': _requiresSurveillance,
+              'dateConducted': DateTime.now().toIso8601String(),
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         Navigator.pop(context); // Close SideSheet
         UIUtils.showToast(context, 'Hygiene survey saved successfully');
@@ -72,15 +78,27 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
         children: [
           TextFormField(
             controller: _zoneCtrl,
-            decoration: const InputDecoration(labelText: 'Zone / Area *', prefixIcon: Icon(Icons.place_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Zone / Area *',
+              prefixIcon: Icon(Icons.place_outlined),
+            ),
           ),
           GSpacing.vMd,
           DropdownButtonFormField<String>(
             value: _hazardType,
             decoration: const InputDecoration(labelText: 'Hazard Type'),
-            items: ['Noise', 'Dust', 'Chemical', 'Ergonomic', 'Illumination', 'Thermal', 'Other']
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
+            items:
+                [
+                      'Noise',
+                      'Dust',
+                      'Chemical',
+                      'Ergonomic',
+                      'Illumination',
+                      'Thermal',
+                      'Other',
+                    ]
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
             onChanged: (v) => setState(() => _hazardType = v!),
           ),
           GSpacing.vMd,
@@ -105,7 +123,10 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
           SwitchListTile(
             value: _requiresSurveillance,
             onChanged: (v) => setState(() => _requiresSurveillance = v),
-            title: const Text('Requires Medical Surveillance?', style: TextStyle(fontSize: 14)),
+            title: const Text(
+              'Requires Medical Surveillance?',
+              style: TextStyle(fontSize: 14),
+            ),
             contentPadding: EdgeInsets.zero,
           ),
           GSpacing.vLg,

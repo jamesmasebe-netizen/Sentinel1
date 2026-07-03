@@ -8,6 +8,7 @@ import 'employee_profiles_screen.dart';
 import '../widgets/people_hub/stream_metric_card.dart';
 import '../widgets/people_hub/people_hub_modules_grid.dart';
 import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+
 /// People & Health Hub Dashboard — Material 3 Expressive
 class PeopleHubScreen extends ConsumerWidget {
   const PeopleHubScreen({super.key});
@@ -17,62 +18,87 @@ class PeopleHubScreen extends ConsumerWidget {
     final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
 
-    final employeesStream = siteId == null
-        ? Stream.value('0')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'employees')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => s.docs.length.toString());
+    final employeesStream =
+        siteId == null
+            ? Stream.value('0')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'employees',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map((s) => s.docs.length.toString());
 
-    final trainingComplianceStream = siteId == null
-        ? Stream.value('100%')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'competency_passports')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) {
-              if (s.docs.isEmpty) return '100%';
-              final valid = s.docs.where((d) => d.data()['status'] == 'Valid').length;
-              return '${((valid / s.docs.length) * 100).toStringAsFixed(0)}%';
-            });
+    final trainingComplianceStream =
+        siteId == null
+            ? Stream.value('100%')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'competency_passports',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map((s) {
+                  if (s.docs.isEmpty) return '100%';
+                  final valid =
+                      s.docs.where((d) => d.data()['status'] == 'Valid').length;
+                  return '${((valid / s.docs.length) * 100).toStringAsFixed(0)}%';
+                });
 
-    final healthAssessmentsStream = siteId == null
-        ? Stream.value('0 Due')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'medical_records')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) {
-              final dueCount = s.docs.where((d) {
-                final data = d.data();
-                final status = data['status'] ?? '';
-                final nextDueStr = data['nextDueDate'] ?? '';
-                if (status == 'Unfit') return true;
-                if (nextDueStr.isNotEmpty) {
-                  try {
-                    final nextDue = DateTime.parse(nextDueStr);
-                    return nextDue.isBefore(DateTime.now());
-                  } catch (_) {}
-                }
-                return false;
-              }).length;
-              return '$dueCount Due';
-            });
+    final healthAssessmentsStream =
+        siteId == null
+            ? Stream.value('0 Due')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'medical_records',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map((s) {
+                  final dueCount =
+                      s.docs.where((d) {
+                        final data = d.data();
+                        final status = data['status'] ?? '';
+                        final nextDueStr = data['nextDueDate'] ?? '';
+                        if (status == 'Unfit') return true;
+                        if (nextDueStr.isNotEmpty) {
+                          try {
+                            final nextDue = DateTime.parse(nextDueStr);
+                            return nextDue.isBefore(DateTime.now());
+                          } catch (_) {}
+                        }
+                        return false;
+                      }).length;
+                  return '$dueCount Due';
+                });
 
-    final workersCompStream = siteId == null
-        ? Stream.value('0 Open')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'coida_claims')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => '${s.docs.where((d) => d.data()['status'] != 'Closed').length} Open');
+    final workersCompStream =
+        siteId == null
+            ? Stream.value('0 Open')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'coida_claims',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map(
+                  (s) =>
+                      '${s.docs.where((d) => d.data()['status'] != 'Closed').length} Open',
+                );
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          UIUtils.showSideSheet(context: context, title: 'Employee Profiles', builder: (ctx) => const EmployeeProfilesScreen());
+          UIUtils.showSideSheet(
+            context: context,
+            title: 'Employee Profiles',
+            builder: (ctx) => const EmployeeProfilesScreen(),
+          );
         },
         backgroundColor: XMTheme.primary,
         foregroundColor: Colors.white,

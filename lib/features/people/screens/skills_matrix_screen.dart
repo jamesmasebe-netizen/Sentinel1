@@ -38,28 +38,38 @@ class _SkillsMatrixScreenState extends ConsumerState<SkillsMatrixScreen> {
               children: [
                 Text(
                   'Capability Assessments',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 FilledButton.icon(
                   onPressed: () => setState(() => _showForm = !_showForm),
-                  icon: Icon(_showForm ? Icons.close : Icons.assessment, size: 18),
+                  icon: Icon(
+                    _showForm ? Icons.close : Icons.assessment,
+                    size: 18,
+                  ),
                   label: Text(_showForm ? 'Cancel' : 'New Assessment'),
                 ),
               ],
             ),
           ),
           GSpacing.vMd,
-          if (_showForm) SkillAssessmentForm(onCancel: () => setState(() => _showForm = false)),
+          if (_showForm)
+            SkillAssessmentForm(
+              onCancel: () => setState(() => _showForm = false),
+            ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: firestore
-                  .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'skills_matrix')
-                  .where('siteId', isEqualTo: siteId)
-                  .orderBy('createdAt', descending: true)
-                  .limit(100)
-                  .snapshots(),
+              stream:
+                  firestore
+                      .tenantCollection(
+                        ref.watch(currentTenantIdProvider) ?? "",
+                        'skills_matrix',
+                      )
+                      .where('siteId', isEqualTo: siteId)
+                      .orderBy('createdAt', descending: true)
+                      .limit(100)
+                      .snapshots(),
               builder: (ctx, snap) {
                 final docs = snap.data?.docs ?? [];
                 if (snap.connectionState == ConnectionState.waiting) {
@@ -74,7 +84,9 @@ class _SkillsMatrixScreenState extends ConsumerState<SkillsMatrixScreen> {
                         Icon(
                           Icons.grid_on,
                           size: 48,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                         ),
                         GSpacing.vMd,
                         const Text('No skill records yet'),
@@ -93,9 +105,13 @@ class _SkillsMatrixScreenState extends ConsumerState<SkillsMatrixScreen> {
 
                 return ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: byEmployee.entries.map((entry) {
-                    return SkillMatrixCard(employeeName: entry.key, skills: entry.value);
-                  }).toList(),
+                  children:
+                      byEmployee.entries.map((entry) {
+                        return SkillMatrixCard(
+                          employeeName: entry.key,
+                          skills: entry.value,
+                        );
+                      }).toList(),
                 );
               },
             ),

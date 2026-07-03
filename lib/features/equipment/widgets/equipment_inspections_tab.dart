@@ -37,7 +37,10 @@ class EquipmentInspectionsTab extends ConsumerWidget {
           siteId == null
               ? null
               : fs
-                  .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'equipment')
+                  .tenantCollection(
+                    ref.watch(currentTenantIdProvider) ?? "",
+                    'equipment',
+                  )
                   .where('siteId', isEqualTo: siteId)
                   .where('daysUntilInspection', isLessThanOrEqualTo: 30)
                   .orderBy('daysUntilInspection')
@@ -63,7 +66,9 @@ class EquipmentInspectionsTab extends ConsumerWidget {
                 GSpacing.vSm,
                 Text(
                   'No inspections due in the next 30 days',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).disabledColor),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).disabledColor,
+                  ),
                 ),
               ],
             ),

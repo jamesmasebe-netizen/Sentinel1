@@ -17,18 +17,21 @@ class BillingService {
         .collection('billing')
         .doc('subscription')
         .snapshots()
-        .map((doc) => doc.exists ? TenantSubscription.fromFirestore(doc) : null);
+        .map(
+          (doc) => doc.exists ? TenantSubscription.fromFirestore(doc) : null,
+        );
   }
 
   Future<TenantSubscription?> getSubscription(String tenantId) async {
     if (tenantId.isEmpty) return null;
 
-    final doc = await _firestore
-        .collection('tenants')
-        .doc(tenantId)
-        .collection('billing')
-        .doc('subscription')
-        .get();
+    final doc =
+        await _firestore
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('billing')
+            .doc('subscription')
+            .get();
 
     if (!doc.exists) return null;
     return TenantSubscription.fromFirestore(doc);
@@ -40,7 +43,9 @@ final billingServiceProvider = Provider<BillingService>((ref) {
   return BillingService(firestore);
 });
 
-final currentTenantSubscriptionProvider = StreamProvider<TenantSubscription?>((ref) {
+final currentTenantSubscriptionProvider = StreamProvider<TenantSubscription?>((
+  ref,
+) {
   final tenantId = ref.watch(currentTenantIdProvider);
   if (tenantId == null || tenantId.isEmpty) {
     return Stream.value(null);

@@ -12,7 +12,6 @@ class OfflineQueueScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingCount = ref.watch(pendingSyncCountProvider);
-    
 
     return Scaffold(
       appBar: AppBar(title: const Text('Offline Sync Queue')),
@@ -105,4 +104,3 @@ class OfflineQueueScreen extends ConsumerWidget {
     );
   }
 }
-

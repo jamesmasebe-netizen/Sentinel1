@@ -5,16 +5,13 @@ import '../widgets/register_tab.dart';
 import '../widgets/expiring_tab.dart';
 import '../widgets/legal_tab.dart';
 import '../widgets/register_doc_form.dart';
+
 /// Compliance & Documents — register, upload, review, expiry alerts.
 class ComplianceDocsScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
 
-  const ComplianceDocsScreen({
-    super.key,
-    this.initialSearch,
-    this.highlightId,
-  });
+  const ComplianceDocsScreen({super.key, this.initialSearch, this.highlightId});
 
   @override
   ConsumerState<ComplianceDocsScreen> createState() => _CompDocsState();
@@ -30,13 +27,16 @@ class _CompDocsState extends ConsumerState<ComplianceDocsScreen>
     _tab = TabController(length: 3, vsync: this);
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -58,14 +58,21 @@ class _CompDocsState extends ConsumerState<ComplianceDocsScreen>
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Row(
             children: [
-              Text('Regulatory Compliance', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                'Regulatory Compliance',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'Register Document',
-                  builder: (ctx) => const RegisterDocForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Register Document',
+                      builder: (ctx) => const RegisterDocForm(),
+                    ),
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: const Text('Add Document'),
               ),
@@ -78,7 +85,9 @@ class _CompDocsState extends ConsumerState<ComplianceDocsScreen>
           width: double.infinity,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.3,
+            ),
             borderRadius: BorderRadius.circular(16),
           ),
           child: TabBar(
@@ -89,12 +98,18 @@ class _CompDocsState extends ConsumerState<ComplianceDocsScreen>
               color: theme.colorScheme.primary,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: theme.colorScheme.primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             labelColor: theme.colorScheme.onPrimary,
             unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-            labelStyle: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+            labelStyle: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
             tabs: const [
               Tab(text: 'Register'),
               Tab(text: 'Expiring'),
@@ -113,4 +128,3 @@ class _CompDocsState extends ConsumerState<ComplianceDocsScreen>
     );
   }
 }
-

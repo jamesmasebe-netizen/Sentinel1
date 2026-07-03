@@ -53,11 +53,12 @@ class PropertyEsgTab extends ConsumerWidget {
                   borderData: FlBorderData(show: false),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: values
-                          .asMap()
-                          .entries
-                          .map((e) => FlSpot(e.key.toDouble(), e.value))
-                          .toList(),
+                      spots:
+                          values
+                              .asMap()
+                              .entries
+                              .map((e) => FlSpot(e.key.toDouble(), e.value))
+                              .toList(),
                       isCurved: true,
                       color: color,
                       barWidth: 3,
@@ -90,27 +91,28 @@ class PropertyEsgTab extends ConsumerWidget {
           Icons.eco_outlined,
         ),
         utilitiesAsync.when(
-          data: (data) => Column(
-            children: [
-              _buildUtilityCard(
-                'Electricity (kWh)',
-                data.map((d) => d.electricity).toList(),
-                XMTheme.warning,
+          data:
+              (data) => Column(
+                children: [
+                  _buildUtilityCard(
+                    'Electricity (kWh)',
+                    data.map((d) => d.electricity).toList(),
+                    XMTheme.warning,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildUtilityCard(
+                    'Water (kL)',
+                    data.map((d) => d.water).toList(),
+                    Colors.blue,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildUtilityCard(
+                    'Carbon Footprint (tCO2e)',
+                    data.map((d) => d.carbon).toList(),
+                    XMTheme.error,
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              _buildUtilityCard(
-                'Water (kL)',
-                data.map((d) => d.water).toList(),
-                Colors.blue,
-              ),
-              const SizedBox(height: 24),
-              _buildUtilityCard(
-                'Carbon Footprint (tCO2e)',
-                data.map((d) => d.carbon).toList(),
-                XMTheme.error,
-              ),
-            ],
-          ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Text('Error: $err'),
         ),

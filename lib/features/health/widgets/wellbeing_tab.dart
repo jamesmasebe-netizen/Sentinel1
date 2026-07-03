@@ -13,8 +13,18 @@ class WellbeingTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Wellbeing Hub', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          Text('Mental resilience and health initiatives', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            'Wellbeing Hub',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            'Mental resilience and health initiatives',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
           GSpacing.vLg,
           GridView.count(
             crossAxisCount: MediaQuery.of(context).size.width > 900 ? 2 : 1,
@@ -74,12 +84,19 @@ class WellbeingTab extends StatelessWidget {
                         color: XMTheme.success.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.tips_and_updates, color: XMTheme.success, size: 20),
+                      child: const Icon(
+                        Icons.tips_and_updates,
+                        color: XMTheme.success,
+                        size: 20,
+                      ),
                     ),
                     GSpacing.hMd,
                     const Text(
                       'EAP Helpline',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -119,7 +136,10 @@ class WellbeingCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Icon(icon, color: color, size: 24),
           ),
           GSpacing.hLg,
@@ -128,9 +148,21 @@ class WellbeingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 GSpacing.vXs,
-                Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),

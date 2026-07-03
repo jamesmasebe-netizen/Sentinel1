@@ -80,17 +80,19 @@ class PropertyLeasesTab extends ConsumerWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: lease.status == 'Active'
-                        ? XMTheme.success.withValues(alpha: 0.1)
-                        : XMTheme.warning.withValues(alpha: 0.1),
+                    color:
+                        lease.status == 'Active'
+                            ? XMTheme.success.withValues(alpha: 0.1)
+                            : XMTheme.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(XMTheme.radiusXl),
                   ),
                   child: Text(
                     lease.status.toUpperCase(),
                     style: TextStyle(
-                      color: lease.status == 'Active'
-                          ? XMTheme.success
-                          : XMTheme.warning,
+                      color:
+                          lease.status == 'Active'
+                              ? XMTheme.success
+                              : XMTheme.warning,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -131,30 +133,31 @@ class PropertyLeasesTab extends ConsumerWidget {
     final leasesAsync = ref.watch(propertyLeasesProvider(property.id));
 
     return leasesAsync.when(
-      data: (leases) => ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          _buildSectionHeader('TENANT LEASES', Icons.description_outlined),
-          const SizedBox(height: 16),
-          if (leases.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text(
-                  'No leases recorded',
-                  style: TextStyle(color: Colors.grey),
+      data:
+          (leases) => ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              _buildSectionHeader('TENANT LEASES', Icons.description_outlined),
+              const SizedBox(height: 16),
+              if (leases.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text(
+                      'No leases recorded',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                ...leases.map(
+                  (lease) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildLeaseCard(lease),
+                  ),
                 ),
-              ),
-            )
-          else
-            ...leases.map(
-              (lease) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildLeaseCard(lease),
-              ),
-            ),
-        ],
-      ),
+            ],
+          ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
     );

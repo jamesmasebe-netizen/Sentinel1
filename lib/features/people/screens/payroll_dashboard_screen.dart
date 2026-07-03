@@ -21,19 +21,32 @@ class PayrollDashboardScreen extends ConsumerWidget {
             icon: const Icon(Icons.sync),
             tooltip: 'Sync with External Gateway',
             onPressed: () async {
-              UIUtils.showToast(context, 'Starting gateway sync...', type: ToastType.success);
+              UIUtils.showToast(
+                context,
+                'Starting gateway sync...',
+                type: ToastType.success,
+              );
               final siteId = ref.read(currentTenantIdProvider);
               if (siteId != null) {
-                final success = await ref.read(integrationsServiceProvider).syncDataToGateway(
-                  siteId, 
-                  'payroll', 
-                  {'action': 'sync_ledgers', 'timestamp': DateTime.now().toIso8601String()}
-                );
+                final success = await ref
+                    .read(integrationsServiceProvider)
+                    .syncDataToGateway(siteId, 'payroll', {
+                      'action': 'sync_ledgers',
+                      'timestamp': DateTime.now().toIso8601String(),
+                    });
                 if (context.mounted) {
                   if (success) {
-                    UIUtils.showToast(context, 'Sync completed successfully (or running standalone).', type: ToastType.success);
+                    UIUtils.showToast(
+                      context,
+                      'Sync completed successfully (or running standalone).',
+                      type: ToastType.success,
+                    );
                   } else {
-                    UIUtils.showToast(context, 'Gateway Sync Failed. Check Webhook Config.', type: ToastType.error);
+                    UIUtils.showToast(
+                      context,
+                      'Gateway Sync Failed. Check Webhook Config.',
+                      type: ToastType.error,
+                    );
                   }
                 }
               }
@@ -64,8 +77,12 @@ class PayrollDashboardScreen extends ConsumerWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  title: Text('${ledger.employeeName} - ${ledger.periodStart.toLocal().toString().split(' ')[0]} to ${ledger.periodEnd.toLocal().toString().split(' ')[0]}'),
-                  subtitle: Text('Status: ${ledger.status} | Net Pay: \$${ledger.netPay.toStringAsFixed(2)}'),
+                  title: Text(
+                    '${ledger.employeeName} - ${ledger.periodStart.toLocal().toString().split(' ')[0]} to ${ledger.periodEnd.toLocal().toString().split(' ')[0]}',
+                  ),
+                  subtitle: Text(
+                    'Status: ${ledger.status} | Net Pay: \$${ledger.netPay.toStringAsFixed(2)}',
+                  ),
                   trailing: const Icon(Icons.receipt_long),
                 ),
               );

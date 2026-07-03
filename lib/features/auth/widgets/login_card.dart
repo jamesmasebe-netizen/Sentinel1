@@ -22,9 +22,7 @@ class LoginCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.12),
-        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Column(
         children: [
@@ -44,18 +42,15 @@ class LoginCard extends StatelessWidget {
             height: 52,
             child: ElevatedButton.icon(
               onPressed: isLoading ? null : onSignInWithGoogle,
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.login, size: 20),
-              label: Text(
-                isLoading ? 'Signing in...' : 'Sign in with Google',
-              ),
+              icon:
+                  isLoading
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.login, size: 20),
+              label: Text(isLoading ? 'Signing in...' : 'Sign in with Google'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1E293B),
@@ -87,9 +82,7 @@ class LoginCard extends StatelessWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(XMTheme.radiusSm),
-                  side: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                 ),
                 textStyle: const TextStyle(
                   fontSize: 16,
@@ -106,9 +99,7 @@ class LoginCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: XMTheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(XMTheme.radiusSm),
-                border: Border.all(
-                  color: XMTheme.error.withValues(alpha: 0.3),
-                ),
+                border: Border.all(color: XMTheme.error.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [

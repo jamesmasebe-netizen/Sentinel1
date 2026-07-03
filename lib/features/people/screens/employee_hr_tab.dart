@@ -22,7 +22,12 @@ class EmployeeHRTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Leave Balances', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Leave Balances',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               FilledButton.tonalIcon(
                 onPressed: () {
                   UIUtils.showToast(context, 'Leave form opened');
@@ -35,15 +40,41 @@ class EmployeeHRTab extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildLeaveCard('Annual Leave', '15 Days', XMTheme.primary, Icons.calendar_month)),
+              Expanded(
+                child: _buildLeaveCard(
+                  'Annual Leave',
+                  '15 Days',
+                  XMTheme.primary,
+                  Icons.calendar_month,
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildLeaveCard('Sick Leave', '8 Days', XMTheme.info, Icons.medical_services)),
+              Expanded(
+                child: _buildLeaveCard(
+                  'Sick Leave',
+                  '8 Days',
+                  XMTheme.info,
+                  Icons.medical_services,
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildLeaveCard('Family Resp.', '3 Days', XMTheme.warning, Icons.family_restroom)),
+              Expanded(
+                child: _buildLeaveCard(
+                  'Family Resp.',
+                  '3 Days',
+                  XMTheme.warning,
+                  Icons.family_restroom,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 32),
-          Text('Recent Payslips', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Recent Payslips',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           GCard(
             padding: EdgeInsets.zero,
@@ -53,14 +84,29 @@ class EmployeeHRTab extends ConsumerWidget {
               itemCount: 3,
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final date = DateTime.now().subtract(Duration(days: index * 30));
+                final date = DateTime.now().subtract(
+                  Duration(days: index * 30),
+                );
                 return ListTile(
-                  leading: const Icon(Icons.request_quote, color: XMTheme.primary),
-                  title: Text('Payslip - ${DateFormat('MMMM yyyy').format(date)}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                  leading: const Icon(
+                    Icons.request_quote,
+                    color: XMTheme.primary,
+                  ),
+                  title: Text(
+                    'Payslip - ${DateFormat('MMMM yyyy').format(date)}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   subtitle: const Text('Processed successfully'),
-                  trailing: IconButton(icon: const Icon(Icons.download), onPressed: () {
-                    UIUtils.showToast(context, 'Payslip downloaded successfully', type: ToastType.success);
-                  }),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.download),
+                    onPressed: () {
+                      UIUtils.showToast(
+                        context,
+                        'Payslip downloaded successfully',
+                        type: ToastType.success,
+                      );
+                    },
+                  ),
                 );
               },
             ),
@@ -69,7 +115,12 @@ class EmployeeHRTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Disciplinary Record', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Disciplinary Record',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               TextButton.icon(
                 onPressed: () {
                   UIUtils.showToast(context, 'Disciplinary action form opened');
@@ -85,19 +136,28 @@ class EmployeeHRTab extends ConsumerWidget {
               padding: const EdgeInsets.all(32.0),
               child: Column(
                 children: [
-                  Icon(Icons.gavel, size: 48, color: XMTheme.secondaryLight.withValues(alpha: 0.3)),
+                  Icon(
+                    Icons.gavel,
+                    size: 48,
+                    color: XMTheme.secondaryLight.withValues(alpha: 0.3),
+                  ),
                   const SizedBox(height: 16),
                   const Text('No disciplinary records found.'),
                 ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildLeaveCard(String title, String balance, Color color, IconData icon) {
+  Widget _buildLeaveCard(
+    String title,
+    String balance,
+    Color color,
+    IconData icon,
+  ) {
     return GCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -105,9 +165,15 @@ class EmployeeHRTab extends ConsumerWidget {
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 12),
-          Text(title, style: const TextStyle(fontSize: 13, color: XMTheme.secondaryLight)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 13, color: XMTheme.secondaryLight),
+          ),
           const SizedBox(height: 4),
-          Text(balance, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+            balance,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );

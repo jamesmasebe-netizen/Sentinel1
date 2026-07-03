@@ -30,7 +30,11 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
 
   Future<void> _submit(BuildContext context) async {
     if (_titleCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Document title is required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Document title is required',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSub = true);
@@ -60,7 +64,9 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
         UIUtils.showToast(context, 'Document successfully registered');
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSub = false);
     }
@@ -113,9 +119,26 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
                 child: DropdownButtonFormField<String>(
                   value: _docType,
                   decoration: const InputDecoration(labelText: 'Category'),
-                  items: ['Licence', 'Certificate', 'Permit', 'Policy', 'Procedure', 'Audit', 'Other']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
-                      .toList(),
+                  items:
+                      [
+                            'Licence',
+                            'Certificate',
+                            'Permit',
+                            'Policy',
+                            'Procedure',
+                            'Audit',
+                            'Other',
+                          ]
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
                   onChanged: (v) => setState(() => _docType = v!),
                 ),
               ),
@@ -124,9 +147,18 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
                 child: DropdownButtonFormField<String>(
                   value: _docStatus,
                   decoration: const InputDecoration(labelText: 'Status'),
-                  items: ['Current', 'Under Review', 'Expired', 'Superseded']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13))))
-                      .toList(),
+                  items:
+                      ['Current', 'Under Review', 'Expired', 'Superseded']
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
                   onChanged: (v) => setState(() => _docStatus = v!),
                 ),
               ),
@@ -151,15 +183,26 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today_rounded, size: 20, color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
                   GSpacing.hMd,
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('EXPIRY DATE', style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1)),
+                      Text(
+                        'EXPIRY DATE',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          letterSpacing: 1,
+                        ),
+                      ),
                       Text(
                         '${_expiry.day} ${UIUtils.getMonthName(_expiry.month)} ${_expiry.year}',
-                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -173,9 +216,17 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
             height: 54,
             child: FilledButton.icon(
               onPressed: _isSub ? null : () => _submit(context),
-              icon: _isSub
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.app_registration_rounded),
+              icon:
+                  _isSub
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Icon(Icons.app_registration_rounded),
               label: Text(_isSub ? 'REGISTERING...' : 'REGISTER DOCUMENT'),
             ),
           ),

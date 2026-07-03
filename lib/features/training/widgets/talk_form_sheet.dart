@@ -35,34 +35,39 @@ class _TalkFormSheetState extends ConsumerState<TalkFormSheet> {
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
-      
-      final attendees = _attendeesCtrl.text
-          .split(',')
-          .map((a) => a.trim())
-          .where((a) => a.isNotEmpty)
-          .toList();
 
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'toolbox_talks',
-        data: {
-          'topic': _topicCtrl.text.trim(),
-          'date': _talkDate.toIso8601String(),
-          'conductorName': profile.displayName,
-          'location': _talkLocCtrl.text.trim(),
-          'attendees': attendees,
-          'authorId': profile.uid,
-          'siteId': profile.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
-      
+      final attendees =
+          _attendeesCtrl.text
+              .split(',')
+              .map((a) => a.trim())
+              .where((a) => a.isNotEmpty)
+              .toList();
+
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'toolbox_talks',
+            data: {
+              'topic': _topicCtrl.text.trim(),
+              'date': _talkDate.toIso8601String(),
+              'conductorName': profile.displayName,
+              'location': _talkLocCtrl.text.trim(),
+              'attendees': attendees,
+              'authorId': profile.uid,
+              'siteId': profile.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
+
       if (mounted) {
         Navigator.pop(context); // Close side sheet
         UIUtils.showToast(context, 'Toolbox talk logged successfully');
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

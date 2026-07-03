@@ -25,23 +25,82 @@ class ProjectMetricsGrid extends ConsumerWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 2.5,
       children: [
-        _buildMetricActionCard(context, 'Incidents', ref.watch(projectIncidentsProvider(project.id)).valueOrNull?.length ?? 0, Icons.local_hospital, XMTheme.error, () {
-          UIUtils.showSideSheet(context: context, title: 'Incidents Register', builder: (ctx) => const IncidentsRegisterScreen());
-        }),
-        _buildMetricActionCard(context, 'NCRs', project.totalNcrs, Icons.assignment_late, XMTheme.warning, () {
-          UIUtils.showSideSheet(context: context, title: 'Report Incident', builder: (ctx) => IncidentReportForm(tenantId: ref.read(currentTenantIdProvider) ?? ''));
-        }),
-        _buildMetricActionCard(context, 'CAPAs', ref.watch(projectCapasProvider(project.id)).valueOrNull?.length ?? 0, Icons.check_circle_outline, XMTheme.success, () {
-          UIUtils.showSideSheet(context: context, title: 'CAPA Management', builder: (ctx) => const CAPAScreen());
-        }),
-        _buildMetricActionCard(context, 'Permits', ref.watch(projectRiskAssessmentsProvider(project.id)).valueOrNull?.length ?? 0, Icons.assignment_turned_in, XMTheme.info, () {
-          UIUtils.showSideSheet(context: context, title: 'Permit to Work', builder: (ctx) => const PermitToWorkScreen());
-        }),
+        _buildMetricActionCard(
+          context,
+          'Incidents',
+          ref.watch(projectIncidentsProvider(project.id)).valueOrNull?.length ??
+              0,
+          Icons.local_hospital,
+          XMTheme.error,
+          () {
+            UIUtils.showSideSheet(
+              context: context,
+              title: 'Incidents Register',
+              builder: (ctx) => const IncidentsRegisterScreen(),
+            );
+          },
+        ),
+        _buildMetricActionCard(
+          context,
+          'NCRs',
+          project.totalNcrs,
+          Icons.assignment_late,
+          XMTheme.warning,
+          () {
+            UIUtils.showSideSheet(
+              context: context,
+              title: 'Report Incident',
+              builder:
+                  (ctx) => IncidentReportForm(
+                    tenantId: ref.read(currentTenantIdProvider) ?? '',
+                  ),
+            );
+          },
+        ),
+        _buildMetricActionCard(
+          context,
+          'CAPAs',
+          ref.watch(projectCapasProvider(project.id)).valueOrNull?.length ?? 0,
+          Icons.check_circle_outline,
+          XMTheme.success,
+          () {
+            UIUtils.showSideSheet(
+              context: context,
+              title: 'CAPA Management',
+              builder: (ctx) => const CAPAScreen(),
+            );
+          },
+        ),
+        _buildMetricActionCard(
+          context,
+          'Permits',
+          ref
+                  .watch(projectRiskAssessmentsProvider(project.id))
+                  .valueOrNull
+                  ?.length ??
+              0,
+          Icons.assignment_turned_in,
+          XMTheme.info,
+          () {
+            UIUtils.showSideSheet(
+              context: context,
+              title: 'Permit to Work',
+              builder: (ctx) => const PermitToWorkScreen(),
+            );
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildMetricActionCard(BuildContext context, String title, int count, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildMetricActionCard(
+    BuildContext context,
+    String title,
+    int count,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -50,7 +109,9 @@ class ProjectMetricsGrid extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Row(
           children: [
@@ -68,12 +129,28 @@ class ProjectMetricsGrid extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(title, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   Row(
                     children: [
-                      Text('$count', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(
+                        '$count',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Spacer(),
-                      Icon(Icons.add_circle, size: 16, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.add_circle,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ],
                   ),
                 ],

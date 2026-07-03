@@ -19,10 +19,7 @@ class IncidentPhotoCaptureSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Photo Evidence',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('Photo Evidence', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         Row(
           children: [

@@ -70,12 +70,15 @@ class NotificationService {
       debugPrint('✅ FCM token registered for uid=$uid');
     } catch (e) {
       // Fallback: write directly to Firestore
-      await FirebaseFirestore.instance.tenantCollection(siteId, 'fcm_tokens').doc(uid).set({
-        'token': token,
-        'siteId': siteId,
-        'uid': uid,
-        'updatedAt': DateTime.now().toIso8601String(),
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance
+          .tenantCollection(siteId, 'fcm_tokens')
+          .doc(uid)
+          .set({
+            'token': token,
+            'siteId': siteId,
+            'uid': uid,
+            'updatedAt': DateTime.now().toIso8601String(),
+          }, SetOptions(merge: true));
       debugPrint('⚠️  FCM token fallback write (Functions unavailable): $e');
     }
   }

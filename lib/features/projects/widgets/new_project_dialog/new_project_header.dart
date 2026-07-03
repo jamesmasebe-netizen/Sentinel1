@@ -20,17 +20,25 @@ class NewProjectHeader extends StatelessWidget {
               color: XMTheme.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.add_business_rounded, color: XMTheme.primary, size: 22),
+            child: const Icon(
+              Icons.add_business_rounded,
+              color: XMTheme.primary,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('New Project',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Project methodology — stages auto-configured',
-                    style: TextStyle(fontSize: 12, color: XMTheme.secondaryLight)),
+                Text(
+                  'New Project',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Project methodology — stages auto-configured',
+                  style: TextStyle(fontSize: 12, color: XMTheme.secondaryLight),
+                ),
               ],
             ),
           ),

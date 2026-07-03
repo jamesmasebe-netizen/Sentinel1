@@ -24,27 +24,30 @@ class EmployeeList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore
-          .tenantCollection(siteId, 'employees')
-          .where('siteId', isEqualTo: siteId)
-          .orderBy('fullName')
-          .snapshots(),
+      stream:
+          firestore
+              .tenantCollection(siteId, 'employees')
+              .where('siteId', isEqualTo: siteId)
+              .orderBy('fullName')
+              .snapshots(),
       builder: (ctx, snap) {
-        final docs = (snap.data?.docs ?? []).where((d) {
-          final data = d.data() as Map<String, dynamic>;
-          final matchSearch =
-              (data['fullName'] ?? '')
-                  .toString()
-                  .toLowerCase()
-                  .contains(search.toLowerCase()) ||
-              (data['employeeCode'] ?? '')
-                  .toString()
-                  .toLowerCase()
-                  .contains(search.toLowerCase());
-          final matchStatus = filterStatus == 'All' || data['status'] == filterStatus;
-          final matchDept = filterDept == 'All' || data['department'] == filterDept;
-          return matchSearch && matchStatus && matchDept;
-        }).toList();
+        final docs =
+            (snap.data?.docs ?? []).where((d) {
+              final data = d.data() as Map<String, dynamic>;
+              final matchSearch =
+                  (data['fullName'] ?? '').toString().toLowerCase().contains(
+                    search.toLowerCase(),
+                  ) ||
+                  (data['employeeCode'] ?? '')
+                      .toString()
+                      .toLowerCase()
+                      .contains(search.toLowerCase());
+              final matchStatus =
+                  filterStatus == 'All' || data['status'] == filterStatus;
+              final matchDept =
+                  filterDept == 'All' || data['department'] == filterDept;
+              return matchSearch && matchStatus && matchDept;
+            }).toList();
 
         if (docs.isEmpty) {
           return Center(
@@ -54,7 +57,9 @@ class EmployeeList extends StatelessWidget {
                 Icon(
                   Icons.people_outline,
                   size: 48,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                 ),
                 GSpacing.vMd,
                 const Text('No employees found'),

@@ -16,7 +16,10 @@ class SpillListItem extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(Icons.water_drop, color: color, size: 20),
           ),
           GSpacing.hMd,
@@ -24,9 +27,14 @@ class SpillListItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['substance'] ?? 'Unknown Substance', style: const TextStyle(fontWeight: FontWeight.w700)),
-                Text('${data['volume'] ?? ""} @ ${data['location'] ?? ""}',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  data['substance'] ?? 'Unknown Substance',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  '${data['volume'] ?? ""} @ ${data['location'] ?? ""}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),

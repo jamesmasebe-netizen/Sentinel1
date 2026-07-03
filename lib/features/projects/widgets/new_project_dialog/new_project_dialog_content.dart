@@ -15,10 +15,12 @@ class NewProjectDialogContent extends ConsumerStatefulWidget {
   const NewProjectDialogContent({super.key});
 
   @override
-  ConsumerState<NewProjectDialogContent> createState() => _NewProjectDialogContentState();
+  ConsumerState<NewProjectDialogContent> createState() =>
+      _NewProjectDialogContentState();
 }
 
-class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogContent> {
+class _NewProjectDialogContentState
+    extends ConsumerState<NewProjectDialogContent> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -44,13 +46,35 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
   ];
 
   List<ProjectStage> get _defaultStages => [
-        ProjectStage(id: 'stage_0', stageName: 'Starting Up a Project (SU)', order: 0),
-        ProjectStage(id: 'stage_1', stageName: 'Initiating a Project (IP)', order: 1, requiresSafetyClearance: true),
-        ProjectStage(id: 'stage_2', stageName: 'Controlling a Stage (CS)', order: 2),
-        ProjectStage(id: 'stage_3', stageName: 'Managing Stage Boundaries (SB)', order: 3),
-        ProjectStage(id: 'stage_4', stageName: 'Managing Product Delivery (MP)', order: 4, requiresSafetyClearance: true),
-        ProjectStage(id: 'stage_5', stageName: 'Closing a Project (CP)', order: 5),
-      ];
+    ProjectStage(
+      id: 'stage_0',
+      stageName: 'Starting Up a Project (SU)',
+      order: 0,
+    ),
+    ProjectStage(
+      id: 'stage_1',
+      stageName: 'Initiating a Project (IP)',
+      order: 1,
+      requiresSafetyClearance: true,
+    ),
+    ProjectStage(
+      id: 'stage_2',
+      stageName: 'Controlling a Stage (CS)',
+      order: 2,
+    ),
+    ProjectStage(
+      id: 'stage_3',
+      stageName: 'Managing Stage Boundaries (SB)',
+      order: 3,
+    ),
+    ProjectStage(
+      id: 'stage_4',
+      stageName: 'Managing Product Delivery (MP)',
+      order: 4,
+      requiresSafetyClearance: true,
+    ),
+    ProjectStage(id: 'stage_5', stageName: 'Closing a Project (CP)', order: 5),
+  ];
 
   @override
   void dispose() {
@@ -92,7 +116,11 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
     } catch (e) {
       setState(() => _saving = false);
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to create project: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to create project: $e',
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -108,7 +136,9 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
       setState(() {
         if (isStart) {
           _startDate = picked;
-          if (_endDate.isBefore(_startDate)) _endDate = _startDate.add(const Duration(days: 90));
+          if (_endDate.isBefore(_startDate)) {
+            _endDate = _startDate.add(const Duration(days: 90));
+          }
         } else {
           _endDate = picked;
         }
@@ -139,8 +169,11 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                       prefixIcon: Icon(Icons.label_rounded),
                       hintText: 'e.g. Building Renovation Phase 1',
                     ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Project name is required' : null,
+                    validator:
+                        (v) =>
+                            (v == null || v.trim().isEmpty)
+                                ? 'Project name is required'
+                                : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -164,9 +197,15 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                             prefixIcon: Icon(Icons.category_rounded),
                             isDense: true,
                           ),
-                          items: _categories
-                              .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                              .toList(),
+                          items:
+                              _categories
+                                  .map(
+                                    (c) => DropdownMenuItem(
+                                      value: c,
+                                      child: Text(c),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (v) => setState(() => _category = v!),
                         ),
                       ),
@@ -182,7 +221,8 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                           ),
                           validator: (v) {
                             if (v != null && v.isNotEmpty) {
-                              if (double.tryParse(v.replaceAll(',', '')) == null) {
+                              if (double.tryParse(v.replaceAll(',', '')) ==
+                                  null) {
                                 return 'Enter a valid number';
                               }
                             }
@@ -205,8 +245,10 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                               prefixIcon: Icon(Icons.calendar_today_rounded),
                               isDense: true,
                             ),
-                            child: Text(dateFmt.format(_startDate),
-                                style: const TextStyle(fontSize: 14)),
+                            child: Text(
+                              dateFmt.format(_startDate),
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
                         ),
                       ),
@@ -221,8 +263,10 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                               prefixIcon: Icon(Icons.event_rounded),
                               isDense: true,
                             ),
-                            child: Text(dateFmt.format(_endDate),
-                                style: const TextStyle(fontSize: 14)),
+                            child: Text(
+                              dateFmt.format(_endDate),
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ),
                         ),
                       ),
@@ -239,10 +283,13 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                             setState(() {
                               _selectedLeadId = val;
                               if (val != null) {
-                                final emps = ref.read(employeesProvider).valueOrNull;
+                                final emps =
+                                    ref.read(employeesProvider).valueOrNull;
                                 if (emps != null) {
                                   try {
-                                    final emp = emps.firstWhere((e) => e.id == val);
+                                    final emp = emps.firstWhere(
+                                      (e) => e.id == val,
+                                    );
                                     _leadContactCtrl.text = emp.email;
                                   } catch (_) {}
                                 }
@@ -275,10 +322,13 @@ class _NewProjectDialogContentState extends ConsumerState<NewProjectDialogConten
                             setState(() {
                               _selectedFallbackId = val;
                               if (val != null) {
-                                final emps = ref.read(employeesProvider).valueOrNull;
+                                final emps =
+                                    ref.read(employeesProvider).valueOrNull;
                                 if (emps != null) {
                                   try {
-                                    final emp = emps.firstWhere((e) => e.id == val);
+                                    final emp = emps.firstWhere(
+                                      (e) => e.id == val,
+                                    );
                                     _fallbackContactCtrl.text = emp.email;
                                   } catch (_) {}
                                 }

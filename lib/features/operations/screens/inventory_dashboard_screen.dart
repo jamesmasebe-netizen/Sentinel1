@@ -11,9 +11,7 @@ class InventoryDashboardScreen extends ConsumerWidget {
     final warehousesAsyncValue = ref.watch(warehousesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Supply Chain & Operations'),
-      ),
+      appBar: AppBar(title: const Text('Supply Chain & Operations')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -46,7 +44,9 @@ class InventoryDashboardScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 warehouse.name,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Text(warehouse.location),
@@ -84,14 +84,18 @@ class InventoryDashboardScreen extends ConsumerWidget {
                     return Card(
                       child: ListTile(
                         title: Text(item.name),
-                        subtitle: Text('SKU: ${item.sku} | Category: ${item.category}'),
+                        subtitle: Text(
+                          'SKU: ${item.sku} | Category: ${item.category}',
+                        ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               '${item.quantity} ${item.unit}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             if (item.cost != null)
                               Text('\$${item.cost!.toStringAsFixed(2)}'),

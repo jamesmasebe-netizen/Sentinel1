@@ -13,31 +13,36 @@ class ExpiryAlertsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
-    
+
     return StreamBuilder<QuerySnapshot>(
-      stream: siteId == null
-          ? null
-          : firestore
-              .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'training_records')
-              .where('siteId', isEqualTo: siteId)
-              .where('status', isEqualTo: 'Active')
-              .snapshots(),
+      stream:
+          siteId == null
+              ? null
+              : firestore
+                  .tenantCollection(
+                    ref.watch(currentTenantIdProvider) ?? "",
+                    'training_records',
+                  )
+                  .where('siteId', isEqualTo: siteId)
+                  .where('status', isEqualTo: 'Active')
+                  .snapshots(),
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         final docs = snap.data?.docs ?? [];
         final now = DateTime.now();
-        
-        final expiring = docs.where((d) {
-          try {
-            final data = d.data() as Map<String, dynamic>;
-            final exp = DateTime.parse(data['expiryDate']);
-            return exp.difference(now).inDays <= 60 && exp.isAfter(now);
-          } catch (_) {
-            return false;
-          }
-        }).toList();
+
+        final expiring =
+            docs.where((d) {
+              try {
+                final data = d.data() as Map<String, dynamic>;
+                final exp = DateTime.parse(data['expiryDate']);
+                return exp.difference(now).inDays <= 60 && exp.isAfter(now);
+              } catch (_) {
+                return false;
+              }
+            }).toList();
 
         if (expiring.isEmpty) {
           return Center(
@@ -74,18 +79,23 @@ class ExpiryAlertsTab extends ConsumerWidget {
             final expDate = DateTime.parse(d['expiryDate']);
             final daysLeft = expDate.difference(now).inDays;
             final isUrgent = daysLeft <= 14;
-            
+
             return GCard(
               margin: const EdgeInsets.only(bottom: 12),
-              color: isUrgent 
-                  ? Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3) 
-                  : null,
+              color:
+                  isUrgent
+                      ? Theme.of(
+                        context,
+                      ).colorScheme.errorContainer.withValues(alpha: 0.3)
+                      : null,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Icon(
-                      isUrgent ? Icons.priority_high : Icons.warning_amber_rounded,
+                      isUrgent
+                          ? Icons.priority_high
+                          : Icons.warning_amber_rounded,
                       color: isUrgent ? XMTheme.error : XMTheme.warning,
                     ),
                     GSpacing.hLg,
@@ -95,9 +105,8 @@ class ExpiryAlertsTab extends ConsumerWidget {
                         children: [
                           Text(
                             d['employeeName'] ?? '',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           Text(
                             d['courseName'] ?? '',
@@ -111,7 +120,9 @@ class ExpiryAlertsTab extends ConsumerWidget {
                       children: [
                         Text(
                           '$daysLeft days',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: isUrgent ? XMTheme.error : XMTheme.warning,
                           ),

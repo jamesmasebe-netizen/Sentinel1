@@ -29,14 +29,21 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Row(
             children: [
-              Text('Threat Analysis', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                'Threat Analysis',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New Bow-Tie Analysis',
-                  builder: (ctx) => const BowTieForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New Bow-Tie Analysis',
+                      builder: (ctx) => const BowTieForm(),
+                    ),
                 icon: const Icon(Icons.account_tree_rounded, size: 18),
                 label: const Text('New Analysis'),
               ),
@@ -47,12 +54,16 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
         // ─── List ───
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'bowtie_analyses')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .limit(30)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'bowtie_analyses',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(30)
+                    .snapshots(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -63,9 +74,18 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.account_tree_outlined, size: 64, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.account_tree_outlined,
+                        size: 64,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                      ),
                       const SizedBox(height: 16),
-                      Text('No bow-tie analyses found', style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        'No bow-tie analyses found',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -85,4 +105,3 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
     );
   }
 }
-

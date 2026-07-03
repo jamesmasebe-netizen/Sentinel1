@@ -8,7 +8,11 @@ import '../../people/widgets/employee_selector.dart';
 class PPEIssuanceForm extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
   final String tenantId;
-  const PPEIssuanceForm({super.key, required this.tenantId, required this.onCancel});
+  const PPEIssuanceForm({
+    super.key,
+    required this.tenantId,
+    required this.onCancel,
+  });
 
   @override
   ConsumerState<PPEIssuanceForm> createState() => _PPEIssuanceFormState();
@@ -22,7 +26,16 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
   String _status = 'Compliant';
   DateTime _expiryDate = DateTime.now().add(const Duration(days: 365));
 
-  static const _ppeTypes = ['Hard Hat', 'Safety Boots', 'Hi-Vis Vest', 'Safety Glasses', 'Gloves', 'Ear Protection', 'Harness', 'Respirator'];
+  static const _ppeTypes = [
+    'Hard Hat',
+    'Safety Boots',
+    'Hi-Vis Vest',
+    'Safety Glasses',
+    'Gloves',
+    'Ear Protection',
+    'Harness',
+    'Respirator',
+  ];
   final bool _isCompliant = true;
   final List<String> _missingItems = [];
   final _commentsController = TextEditingController();
@@ -36,14 +49,22 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
 
   Future<void> _submitLog() async {
     if (_employeeId == null) {
-      UIUtils.showToast(context, 'Please enter employee name', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please enter employee name',
+        type: ToastType.error,
+      );
       return;
     }
 
     final role = ref.read(userRoleProvider);
     final canIssue = role == 'admin' || role == 'executive' || role == 'sheq';
     if (!canIssue) {
-      UIUtils.showToast(context, 'You do not have permission to log PPE', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'You do not have permission to log PPE',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -67,10 +88,18 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
       };
 
       final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(tenantId: widget.tenantId, collection: 'ppe_compliance', data: data);
+      await firestoreService.createDocument(
+        tenantId: widget.tenantId,
+        collection: 'ppe_compliance',
+        data: data,
+      );
 
       if (mounted) {
-        UIUtils.showToast(context, 'PPE check recorded successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'PPE check recorded successfully',
+          type: ToastType.success,
+        );
         widget.onCancel();
       }
     } catch (e) {
@@ -91,7 +120,10 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Log PPE Compliance', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Log PPE Compliance',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             GSpacing.vMd,
             EmployeeSelector(
               label: 'Employee Name *',
@@ -104,8 +136,22 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _ppeType,
-                    decoration: const InputDecoration(labelText: 'PPE Type', isDense: true),
-                    items: _ppeTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'PPE Type',
+                      isDense: true,
+                    ),
+                    items:
+                        _ppeTypes
+                            .map(
+                              (t) => DropdownMenuItem(
+                                value: t,
+                                child: Text(
+                                  t,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (v) => setState(() => _ppeType = v!),
                   ),
                 ),
@@ -113,8 +159,22 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _status,
-                    decoration: const InputDecoration(labelText: 'Status', isDense: true),
-                    items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'Status',
+                      isDense: true,
+                    ),
+                    items:
+                        _statuses
+                            .map(
+                              (s) => DropdownMenuItem(
+                                value: s,
+                                child: Text(
+                                  s,
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                            )
+                            .toList(),
                     onChanged: (v) => setState(() => _status = v!),
                   ),
                 ),
@@ -125,9 +185,16 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.calendar_today),
               title: const Text('Expiry Date'),
-              subtitle: Text('${_expiryDate.day}/${_expiryDate.month}/${_expiryDate.year}'),
+              subtitle: Text(
+                '${_expiryDate.day}/${_expiryDate.month}/${_expiryDate.year}',
+              ),
               onTap: () async {
-                final d = await showDatePicker(context: context, initialDate: _expiryDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 1825)));
+                final d = await showDatePicker(
+                  context: context,
+                  initialDate: _expiryDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 1825)),
+                );
                 if (d != null) setState(() => _expiryDate = d);
               },
             ),
@@ -136,7 +203,14 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _isSubmitting ? null : () => _submitLog(),
-                icon: _isSubmitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.save),
+                icon:
+                    _isSubmitting
+                        ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : const Icon(Icons.save),
                 label: Text(_isSubmitting ? 'Saving...' : 'Save Record'),
               ),
             ),

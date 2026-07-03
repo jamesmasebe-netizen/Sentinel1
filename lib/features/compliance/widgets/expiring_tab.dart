@@ -15,13 +15,16 @@ class ExpiringTab extends ConsumerWidget {
     final theme = Theme.of(context);
     final siteId = ref.watch(currentTenantIdProvider);
     final fs = ref.watch(firestoreProvider);
-    
+
     return StreamBuilder<QuerySnapshot>(
       stream:
           siteId == null
               ? null
               : fs
-                  .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'compliance_docs')
+                  .tenantCollection(
+                    ref.watch(currentTenantIdProvider) ?? "",
+                    'compliance_docs',
+                  )
                   .where('siteId', isEqualTo: siteId)
                   .where('daysUntilExpiry', isLessThanOrEqualTo: 90)
                   .orderBy('daysUntilExpiry')
@@ -43,17 +46,25 @@ class ExpiringTab extends ConsumerWidget {
                     color: XMTheme.success.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.verified_user_rounded, size: 48, color: XMTheme.success),
+                  child: const Icon(
+                    Icons.verified_user_rounded,
+                    size: 48,
+                    color: XMTheme.success,
+                  ),
                 ),
                 GSpacing.vLg,
                 Text(
                   'All Documents Up to Date',
-                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 GSpacing.vSm,
                 Text(
                   'No critical expiries in the next 90 days',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

@@ -46,16 +46,15 @@ class ObservationCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            desc,
-            style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-          ),
+          Text(desc, style: theme.textTheme.bodyMedium?.copyWith(height: 1.4)),
           if (intervention != null && intervention.toString().isNotEmpty) ...[
             GSpacing.vMd,
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 borderRadius: BorderRadius.circular(XMTheme.radiusMd),
               ),
               child: Column(
@@ -69,7 +68,10 @@ class ObservationCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(intervention.toString(), style: theme.textTheme.bodySmall),
+                  Text(
+                    intervention.toString(),
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
@@ -80,11 +82,15 @@ class ObservationCard extends StatelessWidget {
             children: [
               Text(
                 observer,
-                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
               Text(
                 UIUtils.formatTimestamp(data['createdAt']),
-                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -95,19 +101,27 @@ class ObservationCard extends StatelessWidget {
 
   Color _typeColor(String type) {
     switch (type) {
-      case 'Safe Act': return XMTheme.success;
-      case 'Unsafe Act': return XMTheme.error;
-      case 'Unsafe Condition': return XMTheme.warning;
-      default: return XMTheme.info;
+      case 'Safe Act':
+        return XMTheme.success;
+      case 'Unsafe Act':
+        return XMTheme.error;
+      case 'Unsafe Condition':
+        return XMTheme.warning;
+      default:
+        return XMTheme.info;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'Safe Act': return Icons.verified;
-      case 'Unsafe Act': return Icons.report_problem;
-      case 'Unsafe Condition': return Icons.warning;
-      default: return Icons.info_outline;
+      case 'Safe Act':
+        return Icons.verified;
+      case 'Unsafe Act':
+        return Icons.report_problem;
+      case 'Unsafe Condition':
+        return Icons.warning;
+      default:
+        return Icons.info_outline;
     }
   }
 }

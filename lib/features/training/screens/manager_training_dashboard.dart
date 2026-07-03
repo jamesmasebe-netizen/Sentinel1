@@ -13,15 +13,20 @@ class ManagerTrainingDashboard extends ConsumerStatefulWidget {
   const ManagerTrainingDashboard({super.key});
 
   @override
-  ConsumerState<ManagerTrainingDashboard> createState() => _ManagerTrainingDashboardState();
+  ConsumerState<ManagerTrainingDashboard> createState() =>
+      _ManagerTrainingDashboardState();
 }
 
-class _ManagerTrainingDashboardState extends ConsumerState<ManagerTrainingDashboard> {
+class _ManagerTrainingDashboardState
+    extends ConsumerState<ManagerTrainingDashboard> {
   void _openAllocateForm() {
     UIUtils.showSideSheet(
       context: context,
       title: 'Allocate Mandatory Course',
-      builder: (ctx) => AllocateCourseForm(tenantId: ref.read(currentTenantIdProvider) ?? '', ),
+      builder:
+          (ctx) => AllocateCourseForm(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+          ),
     );
   }
 
@@ -39,7 +44,9 @@ class _ManagerTrainingDashboardState extends ConsumerState<ManagerTrainingDashbo
             children: [
               Text(
                 'Course Allocations',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               FilledButton.icon(
                 onPressed: _openAllocateForm,
@@ -51,11 +58,15 @@ class _ManagerTrainingDashboardState extends ConsumerState<ManagerTrainingDashbo
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'training_enrollments')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('assignedAt', descending: true)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'training_enrollments',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('assignedAt', descending: true)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -65,7 +76,11 @@ class _ManagerTrainingDashboardState extends ConsumerState<ManagerTrainingDashbo
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.inbox, size: 48, color: Theme.of(context).disabledColor),
+                      Icon(
+                        Icons.inbox,
+                        size: 48,
+                        color: Theme.of(context).disabledColor,
+                      ),
                       const SizedBox(height: 16),
                       const Text('No courses have been allocated yet.'),
                     ],
@@ -77,7 +92,8 @@ class _ManagerTrainingDashboardState extends ConsumerState<ManagerTrainingDashbo
                 padding: const EdgeInsets.all(16),
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
-                  final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                  final data =
+                      snapshot.data!.docs[index].data() as Map<String, dynamic>;
                   final isCompleted = data['status'] == 'Completed';
 
                   return GCard(
@@ -86,19 +102,42 @@ class _ManagerTrainingDashboardState extends ConsumerState<ManagerTrainingDashbo
                     child: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: XMTheme.primary.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person, color: XMTheme.primary),
+                          backgroundColor: XMTheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: XMTheme.primary,
+                          ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(data['employeeName'] ?? 'Unknown Employee', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(
+                                data['employeeName'] ?? 'Unknown Employee',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Course: ${data['courseName'] ?? 'Unknown'}', style: TextStyle(color: XMTheme.secondaryLight, fontSize: 13)),
+                              Text(
+                                'Course: ${data['courseName'] ?? 'Unknown'}',
+                                style: TextStyle(
+                                  color: XMTheme.secondaryLight,
+                                  fontSize: 13,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Due: ${data['dueDate'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(data['dueDate'])) : 'No due date'}', style: TextStyle(color: XMTheme.warning, fontSize: 12)),
+                              Text(
+                                'Due: ${data['dueDate'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(data['dueDate'])) : 'No due date'}',
+                                style: TextStyle(
+                                  color: XMTheme.warning,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ),

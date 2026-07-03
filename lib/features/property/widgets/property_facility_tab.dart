@@ -141,9 +141,10 @@ class PropertyFacilityTab extends ConsumerWidget {
             ),
             Icon(
               Icons.check_circle,
-              color: appointment.status == 'Appointed'
-                  ? XMTheme.success
-                  : XMTheme.warning,
+              color:
+                  appointment.status == 'Appointed'
+                      ? XMTheme.success
+                      : XMTheme.warning,
               size: 16,
             ),
           ],
@@ -167,28 +168,31 @@ class PropertyFacilityTab extends ConsumerWidget {
           Icons.build_circle_outlined,
         ),
         projectsAsync.when(
-          data: (projects) => Column(
-            children: projects.map((p) => _buildProjectCard(p)).toList(),
-          ),
+          data:
+              (projects) => Column(
+                children: projects.map((p) => _buildProjectCard(p)).toList(),
+              ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Text('Error: $err'),
         ),
         const SizedBox(height: 32),
         _buildSectionHeader('Legal Appointments', Icons.verified_user_outlined),
         appointmentsAsync.when(
-          data: (appointments) => GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 3,
-            ),
-            itemCount: appointments.length,
-            itemBuilder: (context, index) =>
-                _buildAppointmentCard(appointments[index]),
-          ),
+          data:
+              (appointments) => GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 3,
+                ),
+                itemCount: appointments.length,
+                itemBuilder:
+                    (context, index) =>
+                        _buildAppointmentCard(appointments[index]),
+              ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Text('Error: $err'),
         ),

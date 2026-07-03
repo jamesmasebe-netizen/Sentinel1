@@ -7,7 +7,8 @@ class EnterpriseSSOScreen extends ConsumerStatefulWidget {
   const EnterpriseSSOScreen({super.key});
 
   @override
-  ConsumerState<EnterpriseSSOScreen> createState() => _EnterpriseSSOScreenState();
+  ConsumerState<EnterpriseSSOScreen> createState() =>
+      _EnterpriseSSOScreenState();
 }
 
 class _EnterpriseSSOScreenState extends ConsumerState<EnterpriseSSOScreen> {
@@ -104,19 +105,20 @@ class _EnterpriseSSOScreenState extends ConsumerState<EnterpriseSSOScreen> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text(
+                            'Sign In with SAML',
+                            style: TextStyle(fontSize: 16),
                           ),
-                        )
-                      : const Text(
-                          'Sign In with SAML',
-                          style: TextStyle(fontSize: 16),
-                        ),
                 ),
               ],
             ),

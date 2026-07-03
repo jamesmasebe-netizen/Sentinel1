@@ -1,13 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum DealStage {
-  lead,
-  qualified,
-  proposal,
-  negotiation,
-  closedWon,
-  closedLost
-}
+enum DealStage { lead, qualified, proposal, negotiation, closedWon, closedLost }
 
 class Deal {
   final String id;
@@ -30,7 +23,7 @@ class Deal {
 
   factory Deal.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
-    
+
     // Parse stage safely
     DealStage parsedStage = DealStage.lead;
     final stageString = data['stage'] as String?;

@@ -14,44 +14,73 @@ class SafetyMetricsHeader extends ConsumerWidget {
     final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
 
-    final openIncidentsStream = siteId == null
-        ? Stream.value('0')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'incidents')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => s.docs.where((d) => d.data()['status'] != 'Closed').length.toString());
+    final openIncidentsStream =
+        siteId == null
+            ? Stream.value('0')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'incidents',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map(
+                  (s) =>
+                      s.docs
+                          .where((d) => d.data()['status'] != 'Closed')
+                          .length
+                          .toString(),
+                );
 
-    final activePermitsStream = siteId == null
-        ? Stream.value('0')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'permits')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => s.docs.where((d) => d.data()['status'] == 'Active').length.toString());
+    final activePermitsStream =
+        siteId == null
+            ? Stream.value('0')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'permits',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map(
+                  (s) =>
+                      s.docs
+                          .where((d) => d.data()['status'] == 'Active')
+                          .length
+                          .toString(),
+                );
 
-    final hazardsStream = siteId == null
-        ? Stream.value('0')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'hazards')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => s.docs.length.toString());
+    final hazardsStream =
+        siteId == null
+            ? Stream.value('0')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'hazards',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map((s) => s.docs.length.toString());
 
-    final capaCompletionStream = siteId == null
-        ? Stream.value('100%')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'capas')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) {
-              if (s.docs.isEmpty) return '100%';
-              final closed = s.docs.where((d) {
-                final status = d.data()['status'] ?? '';
-                return status == 'Closed' || status == 'Completed';
-              }).length;
-              return '${((closed / s.docs.length) * 100).toStringAsFixed(0)}%';
-            });
+    final capaCompletionStream =
+        siteId == null
+            ? Stream.value('100%')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'capas',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map((s) {
+                  if (s.docs.isEmpty) return '100%';
+                  final closed =
+                      s.docs.where((d) {
+                        final status = d.data()['status'] ?? '';
+                        return status == 'Closed' || status == 'Completed';
+                      }).length;
+                  return '${((closed / s.docs.length) * 100).toStringAsFixed(0)}%';
+                });
 
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),

@@ -17,7 +17,6 @@ class EmergencyDrillsTab extends ConsumerStatefulWidget {
 class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
   bool _showDrillForm = false;
 
-
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
@@ -30,13 +29,14 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
             children: [
               Text(
                 'Recent Drills',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => setState(() => _showDrillForm = !_showDrillForm),
+                onPressed:
+                    () => setState(() => _showDrillForm = !_showDrillForm),
                 icon: Icon(_showDrillForm ? Icons.close : Icons.add, size: 18),
                 label: Text(_showDrillForm ? 'Cancel' : 'Log Drill'),
               ),
@@ -44,16 +44,17 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
           ),
         ),
         if (_showDrillForm)
-          DrillFormCard(
-            onCancel: () => setState(() => _showDrillForm = false),
-          ),
+          DrillFormCard(onCancel: () => setState(() => _showDrillForm = false)),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream:
                 siteId == null
                     ? null
                     : fs
-                        .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'emergency_drills')
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'emergency_drills',
+                        )
                         .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)
                         .limit(50)
@@ -68,9 +69,16 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.emergency_outlined, size: 64, color: Theme.of(context).disabledColor),
+                      Icon(
+                        Icons.emergency_outlined,
+                        size: 64,
+                        color: Theme.of(context).disabledColor,
+                      ),
                       GSpacing.vLg,
-                      Text('No drills logged', style: Theme.of(context).textTheme.bodyLarge),
+                      Text(
+                        'No drills logged',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ],
                   ),
                 );

@@ -25,10 +25,7 @@ class IncidentMappingMap extends ConsumerWidget {
                       (p) => Marker(
                         markerId: MarkerId(p.id),
                         position: LatLng(p.lat, p.lng),
-                        infoWindow: InfoWindow(
-                          title: p.name,
-                          snippet: p.type,
-                        ),
+                        infoWindow: InfoWindow(title: p.name, snippet: p.type),
                         onTap: () => context.go('/properties'),
                       ),
                     )

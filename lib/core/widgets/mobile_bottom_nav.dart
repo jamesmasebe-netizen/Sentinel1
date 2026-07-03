@@ -17,24 +17,44 @@ class MobileBottomNav extends StatelessWidget {
       onDestinationSelected: onDestinationSelected,
       destinations: const [
         NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home_rounded),
-          label: 'Home',
+          icon: Icon(Icons.grid_view_outlined),
+          selectedIcon: Icon(Icons.grid_view_rounded),
+          label: 'Launchpad',
         ),
         NavigationDestination(
-          icon: Icon(Icons.shield_outlined),
-          selectedIcon: Icon(Icons.shield_rounded),
-          label: 'Safety & Risk',
+          icon: Icon(Icons.account_balance_outlined),
+          selectedIcon: Icon(Icons.account_balance),
+          label: 'Finance',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.local_shipping_outlined),
+          selectedIcon: Icon(Icons.local_shipping),
+          label: 'Supply Chain',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.architecture_outlined),
+          selectedIcon: Icon(Icons.architecture),
+          label: 'Projects',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.engineering_outlined),
+          selectedIcon: Icon(Icons.engineering),
+          label: 'Field Service',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.point_of_sale_outlined),
+          selectedIcon: Icon(Icons.point_of_sale),
+          label: 'CRM',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.support_agent_outlined),
+          selectedIcon: Icon(Icons.support_agent),
+          label: 'Service',
         ),
         NavigationDestination(
           icon: Icon(Icons.people_outline),
           selectedIcon: Icon(Icons.people_rounded),
-          label: 'People',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.domain_outlined),
-          selectedIcon: Icon(Icons.domain_rounded),
-          label: 'Operations',
+          label: 'HR',
         ),
       ],
     );

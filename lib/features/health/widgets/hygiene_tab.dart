@@ -15,8 +15,6 @@ class HygieneTab extends ConsumerStatefulWidget {
 }
 
 class _HygieneTabState extends ConsumerState<HygieneTab> {
-
-
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
@@ -32,17 +30,28 @@ class _HygieneTabState extends ConsumerState<HygieneTab> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hygiene Surveys', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  Text('Environmental monitoring logs', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(
+                    'Hygiene Surveys',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Environmental monitoring logs',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New Hygiene Assessment',
-                  builder: (ctx) => const HygieneForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New Hygiene Assessment',
+                      builder: (ctx) => const HygieneForm(),
+                    ),
                 icon: const Icon(Icons.science_rounded, size: 20),
                 label: const Text('New Survey'),
               ),
@@ -51,14 +60,18 @@ class _HygieneTabState extends ConsumerState<HygieneTab> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'hygiene_surveys')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'hygiene_surveys',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(50)
+                        .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty) {
@@ -79,5 +92,3 @@ class _HygieneTabState extends ConsumerState<HygieneTab> {
     );
   }
 }
-
-

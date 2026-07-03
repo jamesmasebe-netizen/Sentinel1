@@ -38,19 +38,21 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'esg_metrics',
-        data: {
-          'category': _esgCategory,
-          'value': double.tryParse(_esgValueCtrl.text) ?? 0,
-          'unit': _esgUnit,
-          'period': _esgPeriod,
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'esg_metrics',
+            data: {
+              'category': _esgCategory,
+              'value': double.tryParse(_esgValueCtrl.text) ?? 0,
+              'unit': _esgUnit,
+              'period': _esgPeriod,
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         Navigator.pop(context);
         UIUtils.showToast(context, 'ESG metric added successfully');
@@ -76,9 +78,19 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
               DropdownButtonFormField<String>(
                 value: _esgCategory,
                 decoration: const InputDecoration(labelText: 'ESG Category'),
-                items: ['Scope 1', 'Scope 2', 'Scope 3', 'Water', 'Waste', 'Diversity', 'Training', 'Ethics']
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
+                items:
+                    [
+                          'Scope 1',
+                          'Scope 2',
+                          'Scope 3',
+                          'Water',
+                          'Waste',
+                          'Diversity',
+                          'Training',
+                          'Ethics',
+                        ]
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
                 onChanged: (v) => setLocalState(() => _esgCategory = v!),
               ),
               GSpacing.vMd,
@@ -87,8 +99,12 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
                   Expanded(
                     child: TextFormField(
                       controller: _esgValueCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Metric Value *'),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Metric Value *',
+                      ),
                     ),
                   ),
                   GSpacing.hMd,
@@ -107,7 +123,9 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _isSubmitting ? null : _submitMetric,
-                  child: Text(_isSubmitting ? 'Adding Metric...' : 'Add Metric'),
+                  child: Text(
+                    _isSubmitting ? 'Adding Metric...' : 'Add Metric',
+                  ),
                 ),
               ),
             ],
@@ -128,13 +146,17 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ESG Performance', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'ESG Performance',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'Resource Usage',
-                  builder: (ctx) => _buildResourceForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Resource Usage',
+                      builder: (ctx) => _buildResourceForm(),
+                    ),
                 icon: const Icon(Icons.eco_outlined, size: 18),
                 label: const Text('Add Metric'),
               ),
@@ -143,17 +165,23 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'esg_metrics')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'esg_metrics',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(50)
+                        .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return const Center(child: Text('No ESG metrics recorded'));
+              if (docs.isEmpty) {
+                return const Center(child: Text('No ESG metrics recorded'));
+              }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,
@@ -182,10 +210,15 @@ class _MetricListItem extends StatelessWidget {
         children: [
           GStatusTag(label: data['category'] ?? 'ESG', color: XMTheme.primary),
           GSpacing.hLg,
-          Text('${data['value']} ${data['unit']}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+          Text(
+            '${data['value']} ${data['unit']}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+          ),
           const Spacer(),
-          Text(data['period'] ?? '2026', style: Theme.of(context).textTheme.labelSmall),
+          Text(
+            data['period'] ?? '2026',
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
         ],
       ),
     );

@@ -21,7 +21,8 @@ class ActionTrackerStatsRow extends StatelessWidget {
           ),
           ActionTrackerStatChip(
             label: 'Pending',
-            value: '${items.where((i) => i.status == 'Pending' || i.status == 'Open').length}',
+            value:
+                '${items.where((i) => i.status == 'Pending' || i.status == 'Open').length}',
             color: XMTheme.warning,
           ),
           ActionTrackerStatChip(
@@ -31,7 +32,8 @@ class ActionTrackerStatsRow extends StatelessWidget {
           ),
           ActionTrackerStatChip(
             label: 'Done',
-            value: '${items.where((i) => i.status == 'Completed' || i.status == 'Closed').length}',
+            value:
+                '${items.where((i) => i.status == 'Completed' || i.status == 'Closed').length}',
             color: XMTheme.success,
           ),
         ],

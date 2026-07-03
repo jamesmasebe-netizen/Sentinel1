@@ -5,9 +5,11 @@ import '../core/services/session_manager.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/lock_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
+import '../features/dashboard/screens/business_os_launchpad.dart';
 import '../features/safety/screens/safety_hub_screen.dart';
 import '../features/risk/screens/risk_hub_screen.dart';
 import '../features/people/screens/people_hub_screen.dart';
+import '../features/people/screens/hr_hub_screen.dart';
 import '../features/operations/screens/action_tracker_screen.dart';
 import '../features/operations/screens/operations_hub_screen.dart';
 import '../features/environment/screens/environmental_screen.dart';
@@ -21,6 +23,12 @@ import '../features/property/screens/property_hub_screen.dart';
 import '../features/property/screens/property_details_screen.dart';
 import '../features/projects/screens/project_dashboard_screen.dart';
 import '../features/projects/screens/project_details_screen.dart';
+import '../features/finance/screens/finance_hub_screen.dart';
+import '../features/supply_chain/screens/supply_chain_hub_screen.dart';
+import '../features/projects/screens/project_operations_hub_screen.dart';
+import '../features/field_service/screens/field_service_hub_screen.dart';
+import '../features/crm/screens/crm_hub_screen.dart';
+import '../features/customer_service/screens/customer_service_hub_screen.dart';
 import '../core/widgets/app_shell.dart';
 
 /// GoRouter configuration with auth guards and shell routes
@@ -29,15 +37,15 @@ final routerProvider = Provider<GoRouter>((ref) {
   final isLocked = ref.watch(isAppLockedProvider);
 
   return GoRouter(
-    initialLocation: '/dashboard',
+    initialLocation: '/launchpad',
     redirect: (context, state) {
       final loggingIn = state.matchedLocation == '/login';
       final locking = state.matchedLocation == '/lock';
 
       if (!isAuthenticated && !loggingIn) return '/login';
-      if (isAuthenticated && loggingIn) return '/dashboard';
+      if (isAuthenticated && loggingIn) return '/launchpad';
       if (isAuthenticated && isLocked && !locking) return '/lock';
-      if (isAuthenticated && !isLocked && locking) return '/dashboard';
+      if (isAuthenticated && !isLocked && locking) return '/launchpad';
 
       return null;
     },
@@ -47,6 +55,48 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
+          GoRoute(
+            path: '/launchpad',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: BusinessOsLaunchpad()),
+          ),
+          GoRoute(
+            path: '/finance',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: FinanceHubScreen()),
+          ),
+          GoRoute(
+            path: '/supply-chain',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: SupplyChainHubScreen()),
+          ),
+          GoRoute(
+            path: '/projects-ops',
+            pageBuilder:
+                (c, s) =>
+                    const NoTransitionPage(child: ProjectOperationsHubScreen()),
+          ),
+          GoRoute(
+            path: '/field-service',
+            pageBuilder:
+                (c, s) =>
+                    const NoTransitionPage(child: FieldServiceHubScreen()),
+          ),
+          GoRoute(
+            path: '/crm',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: CrmHubScreen()),
+          ),
+          GoRoute(
+            path: '/customer-service',
+            pageBuilder:
+                (c, s) =>
+                    const NoTransitionPage(child: CustomerServiceHubScreen()),
+          ),
+          GoRoute(
+            path: '/hr',
+            pageBuilder: (c, s) => const NoTransitionPage(child: HrHubScreen()),
+          ),
           GoRoute(
             path: '/dashboard',
             pageBuilder:
@@ -128,13 +178,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/projects',
-            pageBuilder: (c, s) => const NoTransitionPage(child: ProjectDashboardScreen()),
+            pageBuilder:
+                (c, s) =>
+                    const NoTransitionPage(child: ProjectDashboardScreen()),
           ),
           GoRoute(
             path: '/projects/:id',
-            builder: (context, state) => ProjectDetailsScreen(
-              projectId: state.pathParameters['id']!,
-            ),
+            builder:
+                (context, state) => ProjectDetailsScreen(
+                  projectId: state.pathParameters['id']!,
+                ),
           ),
         ],
       ),

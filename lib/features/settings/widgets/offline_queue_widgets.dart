@@ -25,14 +25,16 @@ class SyncStatusHeader extends ConsumerWidget {
       ),
       child: syncStatus.when(
         data: (status) {
-          final color = status.name == 'synced'
-              ? XMTheme.success
-              : status.name == 'syncing'
+          final color =
+              status.name == 'synced'
+                  ? XMTheme.success
+                  : status.name == 'syncing'
                   ? XMTheme.warning
                   : XMTheme.error;
-          final icon = status.name == 'synced'
-              ? Icons.cloud_done
-              : status.name == 'syncing'
+          final icon =
+              status.name == 'synced'
+                  ? Icons.cloud_done
+                  : status.name == 'syncing'
                   ? Icons.sync
                   : Icons.cloud_off;
           return Row(
@@ -47,8 +49,8 @@ class SyncStatusHeader extends ConsumerWidget {
                       status.name == 'synced'
                           ? 'All Synced'
                           : status.name == 'syncing'
-                              ? 'Syncing…'
-                              : 'Sync Failed',
+                          ? 'Syncing…'
+                          : 'Sync Failed',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
@@ -56,21 +58,27 @@ class SyncStatusHeader extends ConsumerWidget {
                       ),
                     ),
                     pendingCount.when(
-                      data: (c) => Text(
-                        '$c operations pending',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      loading: () => const Text(
-                        'Checking…',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      error: (_, __) => const Text(
-                        'Error checking queue',
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      data:
+                          (c) => Text(
+                            '$c operations pending',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      loading:
+                          () => const Text(
+                            'Checking…',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                      error:
+                          (_, __) => const Text(
+                            'Error checking queue',
+                            style: TextStyle(fontSize: 12),
+                          ),
                     ),
                   ],
                 ),
@@ -112,10 +120,7 @@ class EmptyQueueView extends StatelessWidget {
           const SizedBox(height: 16),
           const Text(
             'Offline Queue is Empty',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
           const SizedBox(height: 8),
           Padding(

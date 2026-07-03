@@ -20,7 +20,9 @@ class CapaResolutionChart extends ConsumerWidget {
             SizedBox(
               width: 110,
               height: 110,
-              child: CustomPaint(painter: _StatusRingPainter(pctClosed: closed)),
+              child: CustomPaint(
+                painter: _StatusRingPainter(pctClosed: closed),
+              ),
             ),
             const SizedBox(width: 24),
             Column(
@@ -40,7 +42,10 @@ class CapaResolutionChart extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${closed.toStringAsFixed(0)}% Closed',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -58,7 +63,10 @@ class CapaResolutionChart extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Text(
                       '${open.toStringAsFixed(0)}% Open',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -67,7 +75,8 @@ class CapaResolutionChart extends ConsumerWidget {
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
@@ -109,5 +118,6 @@ class _StatusRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _StatusRingPainter oldDelegate) => oldDelegate.pctClosed != pctClosed;
+  bool shouldRepaint(covariant _StatusRingPainter oldDelegate) =>
+      oldDelegate.pctClosed != pctClosed;
 }

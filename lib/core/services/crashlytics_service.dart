@@ -13,7 +13,11 @@ class CrashlyticsService {
     }
   }
 
-  Future<void> logError(dynamic error, StackTrace stackTrace, {String? reason}) async {
+  Future<void> logError(
+    dynamic error,
+    StackTrace stackTrace, {
+    String? reason,
+  }) async {
     // Stub for logging errors
     if (kDebugMode) {
       print('Crashlytics Error: $reason - $error');

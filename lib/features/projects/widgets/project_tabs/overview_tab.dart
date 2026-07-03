@@ -23,17 +23,23 @@ class OverviewTab extends ConsumerWidget {
               Expanded(
                 child: Text(
                   project.name,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               GStatusTag(
                 label: project.status,
-                color: project.status == 'Active' ? XMTheme.success : XMTheme.primary,
+                color:
+                    project.status == 'Active'
+                        ? XMTheme.success
+                        : XMTheme.primary,
               ),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.edit_rounded, size: 20),
-                onPressed: () => showEditProjectDetailsDialog(context, project, ref),
+                onPressed:
+                    () => showEditProjectDetailsDialog(context, project, ref),
                 tooltip: 'Edit Project details',
               ),
             ],
@@ -41,7 +47,9 @@ class OverviewTab extends ConsumerWidget {
           GSpacing.vSm,
           Text(
             '${project.id} • ${project.category}',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           GSpacing.vLg,
 
@@ -50,7 +58,12 @@ class OverviewTab extends ConsumerWidget {
           GSpacing.vLg,
 
           // ─── Quick Actions & Associated Metrics ───
-          Text('Project Metrics & Quick Actions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Project Metrics & Quick Actions',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
           GSpacing.vMd,
           ProjectMetricsGrid(project: project),
           GSpacing.vLg,
@@ -63,7 +76,12 @@ class OverviewTab extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Description', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      'Description',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.edit_rounded, size: 18),
                       onPressed: () {
@@ -80,9 +98,27 @@ class OverviewTab extends ConsumerWidget {
                 GSpacing.vLg,
                 Row(
                   children: [
-                    Expanded(child: _buildInfoItem('Start Date', project.startDate.toIso8601String().split('T')[0], Icons.calendar_today)),
-                    Expanded(child: _buildInfoItem('Target Date', project.targetEndDate.toIso8601String().split('T')[0], Icons.event_available)),
-                    Expanded(child: _buildInfoItem('Budget', 'R${project.budget.toStringAsFixed(2)}', Icons.monetization_on)),
+                    Expanded(
+                      child: _buildInfoItem(
+                        'Start Date',
+                        project.startDate.toIso8601String().split('T')[0],
+                        Icons.calendar_today,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildInfoItem(
+                        'Target Date',
+                        project.targetEndDate.toIso8601String().split('T')[0],
+                        Icons.event_available,
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildInfoItem(
+                        'Budget',
+                        'R${project.budget.toStringAsFixed(2)}',
+                        Icons.monetization_on,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -97,7 +133,12 @@ class OverviewTab extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Contacts & Escalation', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      'Contacts & Escalation',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.edit_rounded, size: 18),
                       onPressed: () {
@@ -117,16 +158,47 @@ class OverviewTab extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.person_rounded, size: 16, color: XMTheme.primary),
+                              const Icon(
+                                Icons.person_rounded,
+                                size: 16,
+                                color: XMTheme.primary,
+                              ),
                               const SizedBox(width: 6),
-                              Text('Project Lead', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                              Text(
+                                'Project Lead',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(project.projectLead.isNotEmpty ? project.projectLead : 'None Assigned', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(
+                            project.projectLead.isNotEmpty
+                                ? project.projectLead
+                                : 'None Assigned',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                           if (project.projectLeadContact.isNotEmpty) ...[
                             const SizedBox(height: 2),
-                            Text(project.projectLeadContact, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                            Text(
+                              project.projectLeadContact,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -137,16 +209,47 @@ class OverviewTab extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.person_outline_rounded, size: 16, color: XMTheme.warning),
+                              const Icon(
+                                Icons.person_outline_rounded,
+                                size: 16,
+                                color: XMTheme.warning,
+                              ),
                               const SizedBox(width: 6),
-                              Text('Backup / Escalation', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                              Text(
+                                'Backup / Escalation',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(project.fallbackContact.isNotEmpty ? project.fallbackContact : 'None Assigned', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(
+                            project.fallbackContact.isNotEmpty
+                                ? project.fallbackContact
+                                : 'None Assigned',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                           if (project.fallbackContactContact.isNotEmpty) ...[
                             const SizedBox(height: 2),
-                            Text(project.fallbackContactContact, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                            Text(
+                              project.fallbackContactContact,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ],
                       ),
@@ -155,7 +258,7 @@ class OverviewTab extends ConsumerWidget {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -169,10 +272,13 @@ class OverviewTab extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
-        )
+        ),
       ],
     );
   }

@@ -37,13 +37,16 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -71,7 +74,11 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
       ),
       body: TabBarView(
         controller: _tab,
-        children: [_registerTab(), const ContractorComplianceCard(), _inductionsTab()],
+        children: [
+          _registerTab(),
+          const ContractorComplianceCard(),
+          _inductionsTab(),
+        ],
       ),
     );
   }
@@ -125,9 +132,7 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
           ),
         ),
         if (_showForm)
-          AddContractorForm(
-            onCancel: () => setState(() => _showForm = false),
-          ),
+          AddContractorForm(onCancel: () => setState(() => _showForm = false)),
         Expanded(
           child: ContractorList(
             searchQuery: _searchQuery,

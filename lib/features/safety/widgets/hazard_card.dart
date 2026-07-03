@@ -28,15 +28,25 @@ class HazardCard extends StatelessWidget {
                   color: _sevColor(severity).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.warning_amber_rounded, color: _sevColor(severity), size: 20),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  color: _sevColor(severity),
+                  size: 20,
+                ),
               ),
               GSpacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(location, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      location,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
@@ -59,7 +69,10 @@ class HazardCard extends StatelessWidget {
             children: [
               _MiniInfo(icon: Icons.person_outline, label: reportedBy),
               GSpacing.hMd,
-              _MiniInfo(icon: Icons.calendar_today_rounded, label: UIUtils.formatTimestamp(data['createdAt'])),
+              _MiniInfo(
+                icon: Icons.calendar_today_rounded,
+                label: UIUtils.formatTimestamp(data['createdAt']),
+              ),
             ],
           ),
         ],

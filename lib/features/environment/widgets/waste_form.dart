@@ -38,21 +38,23 @@ class _WasteFormState extends ConsumerState<WasteForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'waste_manifests',
-        data: {
-          'wasteType': _wasteType,
-          'quantity': double.tryParse(_qtyCtrl.text) ?? 0,
-          'unit': _wasteUnit,
-          'transporterName': _transporterCtrl.text.trim(),
-          'disposalFacility': _facilityCtrl.text.trim(),
-          'status': _wasteStatus,
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+            data: {
+              'wasteType': _wasteType,
+              'quantity': double.tryParse(_qtyCtrl.text) ?? 0,
+              'unit': _wasteUnit,
+              'transporterName': _transporterCtrl.text.trim(),
+              'disposalFacility': _facilityCtrl.text.trim(),
+              'status': _wasteStatus,
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         Navigator.pop(context);
         UIUtils.showToast(context, 'Waste manifest added successfully');
@@ -74,9 +76,10 @@ class _WasteFormState extends ConsumerState<WasteForm> {
           DropdownButtonFormField<String>(
             value: _wasteType,
             decoration: const InputDecoration(labelText: 'Waste Type'),
-            items: ['Hazardous', 'General', 'Recyclable', 'Medical', 'E-Waste']
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
+            items:
+                ['Hazardous', 'General', 'Recyclable', 'Medical', 'E-Waste']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
             onChanged: (v) => setState(() => _wasteType = v!),
           ),
           GSpacing.vMd,
@@ -85,7 +88,9 @@ class _WasteFormState extends ConsumerState<WasteForm> {
               Expanded(
                 child: TextFormField(
                   controller: _qtyCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(labelText: 'Quantity *'),
                 ),
               ),
@@ -95,9 +100,12 @@ class _WasteFormState extends ConsumerState<WasteForm> {
                 child: DropdownButtonFormField<String>(
                   value: _wasteUnit,
                   decoration: const InputDecoration(labelText: 'Unit'),
-                  items: ['kg', 'tons', 'liters', 'm3']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
+                  items:
+                      ['kg', 'tons', 'liters', 'm3']
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
+                          .toList(),
                   onChanged: (v) => setState(() => _wasteUnit = v!),
                 ),
               ),
@@ -106,12 +114,18 @@ class _WasteFormState extends ConsumerState<WasteForm> {
           GSpacing.vMd,
           TextFormField(
             controller: _transporterCtrl,
-            decoration: const InputDecoration(labelText: 'Transporter Name', prefixIcon: Icon(Icons.local_shipping_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Transporter Name',
+              prefixIcon: Icon(Icons.local_shipping_outlined),
+            ),
           ),
           GSpacing.vMd,
           TextFormField(
             controller: _facilityCtrl,
-            decoration: const InputDecoration(labelText: 'Disposal Facility', prefixIcon: Icon(Icons.factory_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Disposal Facility',
+              prefixIcon: Icon(Icons.factory_outlined),
+            ),
           ),
           GSpacing.vLg,
           SizedBox(

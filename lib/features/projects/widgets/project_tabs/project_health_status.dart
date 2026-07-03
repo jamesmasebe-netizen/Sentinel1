@@ -17,10 +17,20 @@ class ProjectHealthStatus extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const Icon(Icons.analytics_rounded, color: XMTheme.primary, size: 36),
+                const Icon(
+                  Icons.analytics_rounded,
+                  color: XMTheme.primary,
+                  size: 36,
+                ),
                 GSpacing.vSm,
                 const Text('Schedule Variance', style: TextStyle(fontSize: 12)),
-                Text('${(project.overallProgress * 100).toInt()}%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(
+                  '${(project.overallProgress * 100).toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -31,10 +41,20 @@ class ProjectHealthStatus extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const Icon(Icons.shield_rounded, color: XMTheme.success, size: 36),
+                const Icon(
+                  Icons.shield_rounded,
+                  color: XMTheme.success,
+                  size: 36,
+                ),
                 GSpacing.vSm,
                 const Text('Safety Compliance', style: TextStyle(fontSize: 12)),
-                Text('${project.safetyFileScore.toInt()}%', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(
+                  '${project.safetyFileScore.toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),
@@ -45,10 +65,20 @@ class ProjectHealthStatus extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                const Icon(Icons.warning_rounded, color: XMTheme.warning, size: 36),
+                const Icon(
+                  Icons.warning_rounded,
+                  color: XMTheme.warning,
+                  size: 36,
+                ),
                 GSpacing.vSm,
                 const Text('Overall Risk', style: TextStyle(fontSize: 12)),
-                Text(project.overallRiskLevel, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(
+                  project.overallRiskLevel,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
           ),

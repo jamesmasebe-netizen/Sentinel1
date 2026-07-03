@@ -19,10 +19,8 @@ class FindingUpdateDialog extends StatefulWidget {
   ) {
     showDialog(
       context: context,
-      builder: (ctx) => FindingUpdateDialog(
-        finding: finding,
-        onUpdate: onUpdate,
-      ),
+      builder:
+          (ctx) => FindingUpdateDialog(finding: finding, onUpdate: onUpdate),
     );
   }
 
@@ -49,9 +47,13 @@ class _FindingUpdateDialogState extends State<FindingUpdateDialog> {
         children: [
           DropdownButtonFormField<FindingStatus>(
             decoration: const InputDecoration(labelText: 'New Status'),
-            items: FindingStatus.values.map((s) {
-              return DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()));
-            }).toList(),
+            items:
+                FindingStatus.values.map((s) {
+                  return DropdownMenuItem(
+                    value: s,
+                    child: Text(s.name.toUpperCase()),
+                  );
+                }).toList(),
             onChanged: (v) => setState(() => _selectedStatus = v),
           ),
           GSpacing.vMd,
@@ -63,11 +65,18 @@ class _FindingUpdateDialogState extends State<FindingUpdateDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
             if (_selectedStatus != null && _commentCtrl.text.isNotEmpty) {
-              widget.onUpdate(widget.finding, _selectedStatus!, _commentCtrl.text);
+              widget.onUpdate(
+                widget.finding,
+                _selectedStatus!,
+                _commentCtrl.text,
+              );
               Navigator.pop(context);
             }
           },

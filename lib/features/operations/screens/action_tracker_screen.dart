@@ -17,11 +17,7 @@ class ActionTrackerScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
 
-  const ActionTrackerScreen({
-    super.key,
-    this.initialSearch,
-    this.highlightId,
-  });
+  const ActionTrackerScreen({super.key, this.initialSearch, this.highlightId});
 
   @override
   ConsumerState<ActionTrackerScreen> createState() => _ActionTrackerState();
@@ -53,13 +49,16 @@ class _ActionTrackerState extends ConsumerState<ActionTrackerScreen> {
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -89,37 +88,54 @@ class _ActionTrackerState extends ConsumerState<ActionTrackerScreen> {
           .limit(20)
           .snapshots()
           .listen((snap) {
-        final List<ActionItem> collectionItems = [];
-        for (final doc in snap.docs) {
-          final d = doc.data();
-          collectionItems.add(
-            ActionItem(
-              id: doc.id,
-              collectionName: coll.name,
-              type: coll.type,
-              title: d['title'] ?? d['description'] ?? d['taskDescription'] ?? d['type'] ?? d['hazard'] ?? 'Untitled',
-              status: d['status'] ?? 'Pending',
-              dueDate: d['dueDate'] ?? d['createdAt'] ?? '',
-              assignee: d['assigneeName'] ?? d['observerName'] ?? d['authorName'] ?? 'Unassigned',
-            ),
-          );
-        }
-        if (mounted) {
-          setState(() {
-            _itemsMap[coll.name] = collectionItems;
-            _items = _itemsMap.values.expand((e) => e).toList();
-            _items.sort((a, b) => a.dueDate.compareTo(b.dueDate));
-            _loading = false;
+            final List<ActionItem> collectionItems = [];
+            for (final doc in snap.docs) {
+              final d = doc.data();
+              collectionItems.add(
+                ActionItem(
+                  id: doc.id,
+                  collectionName: coll.name,
+                  type: coll.type,
+                  title:
+                      d['title'] ??
+                      d['description'] ??
+                      d['taskDescription'] ??
+                      d['type'] ??
+                      d['hazard'] ??
+                      'Untitled',
+                  status: d['status'] ?? 'Pending',
+                  dueDate: d['dueDate'] ?? d['createdAt'] ?? '',
+                  assignee:
+                      d['assigneeName'] ??
+                      d['observerName'] ??
+                      d['authorName'] ??
+                      'Unassigned',
+                ),
+              );
+            }
+            if (mounted) {
+              setState(() {
+                _itemsMap[coll.name] = collectionItems;
+                _items = _itemsMap.values.expand((e) => e).toList();
+                _items.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+                _loading = false;
+              });
+            }
           });
-        }
-      });
       _subs.add(sub);
     }
   }
 
   Future<void> _updateStatus(ActionItem item, String newStatus) async {
     try {
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", item.collectionName).doc(item.id).update({'status': newStatus});
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            item.collectionName,
+          )
+          .doc(item.id)
+          .update({'status': newStatus});
     } catch (e) {
       if (mounted) {
         UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
@@ -129,16 +145,31 @@ class _ActionTrackerState extends ConsumerState<ActionTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _items.where((item) => (_filter == 'All' || item.status == _filter) && item.title.toLowerCase().contains(_search.toLowerCase())).toList();
+    final filtered =
+        _items
+            .where(
+              (item) =>
+                  (_filter == 'All' || item.status == _filter) &&
+                  item.title.toLowerCase().contains(_search.toLowerCase()),
+            )
+            .toList();
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () => UIUtils.showSideSheet(context: context, title: 'New Action Item', builder: (ctx) => const ActionForm()),
+        onPressed:
+            () => UIUtils.showSideSheet(
+              context: context,
+              title: 'New Action Item',
+              builder: (ctx) => const ActionForm(),
+            ),
         child: const Icon(Icons.add),
       ),
       body: Column(
         children: [
-          const GHeader(title: 'Unified Action Tracker', subtitle: 'Aggregate actions from across all safety modules'),
+          const GHeader(
+            title: 'Unified Action Tracker',
+            subtitle: 'Aggregate actions from across all safety modules',
+          ),
           ActionTrackerSearchBar(
             searchValue: _search,
             onSearchChanged: (v) => setState(() => _search = v),
@@ -149,15 +180,20 @@ class _ActionTrackerState extends ConsumerState<ActionTrackerScreen> {
           ActionTrackerStatsRow(items: _items),
           GSpacing.vMd,
           Expanded(
-            child: _loading
-                ? const HubSkeleton()
-                : filtered.isEmpty
+            child:
+                _loading
+                    ? const HubSkeleton()
+                    : filtered.isEmpty
                     ? const Center(child: Text('No action items found'))
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filtered.length,
-                        itemBuilder: (ctx, i) => ActionTrackerListItem(item: filtered[i], onUpdateStatus: _updateStatus),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filtered.length,
+                      itemBuilder:
+                          (ctx, i) => ActionTrackerListItem(
+                            item: filtered[i],
+                            onUpdateStatus: _updateStatus,
+                          ),
+                    ),
           ),
         ],
       ),

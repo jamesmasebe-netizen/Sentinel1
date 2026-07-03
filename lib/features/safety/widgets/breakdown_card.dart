@@ -41,7 +41,12 @@ class BreakdownCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(e.key, style: theme.textTheme.labelMedium),
-                        Text('${(pct * 100).round()}%', style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        Text(
+                          '${(pct * 100).round()}%',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),

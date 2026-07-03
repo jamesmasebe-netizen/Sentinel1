@@ -18,9 +18,16 @@ class CourseCatalogTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.library_books, size: 64, color: Theme.of(context).disabledColor),
+                Icon(
+                  Icons.library_books,
+                  size: 64,
+                  color: Theme.of(context).disabledColor,
+                ),
                 GSpacing.vLg,
-                Text('No courses available in the catalog.', style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  'No courses available in the catalog.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
               ],
             ),
           );
@@ -28,8 +35,13 @@ class CourseCatalogTab extends ConsumerWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            int crossAxisCount = constraints.maxWidth > 800 ? 4 : constraints.maxWidth > 500 ? 3 : 2;
-            
+            int crossAxisCount =
+                constraints.maxWidth > 800
+                    ? 4
+                    : constraints.maxWidth > 500
+                    ? 3
+                    : 2;
+
             return GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -48,14 +60,20 @@ class CourseCatalogTab extends ConsumerWidget {
                       Expanded(
                         flex: 4,
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
                           child: Image.network(
                             course.thumbnailUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              child: const Icon(Icons.image_not_supported),
-                            ),
+                            errorBuilder:
+                                (_, __, ___) => Container(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  child: const Icon(Icons.image_not_supported),
+                                ),
                           ),
                         ),
                       ),
@@ -68,15 +86,21 @@ class CourseCatalogTab extends ConsumerWidget {
                             children: [
                               Text(
                                 course.title,
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               GSpacing.vSm,
                               Text(
                                 course.instructorId,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                   fontSize: 11,
                                 ),
                                 maxLines: 1,
@@ -91,14 +115,22 @@ class CourseCatalogTab extends ConsumerWidget {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => CoursePlayerScreen(course: course),
+                                        builder:
+                                            (context) => CoursePlayerScreen(
+                                              course: course,
+                                            ),
                                       ),
                                     );
                                   },
                                   style: FilledButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
                                   ),
-                                  child: const Text('Start Course', style: TextStyle(fontSize: 12)),
+                                  child: const Text(
+                                    'Start Course',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
                                 ),
                               ),
                             ],
@@ -110,7 +142,7 @@ class CourseCatalogTab extends ConsumerWidget {
                 );
               },
             );
-          }
+          },
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

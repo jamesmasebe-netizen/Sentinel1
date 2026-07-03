@@ -5,13 +5,17 @@ class ChatMessage {
   final String text;
   final bool isUser;
   final bool isError;
-  const ChatMessage({required this.text, required this.isUser, this.isError = false});
+  const ChatMessage({
+    required this.text,
+    required this.isUser,
+    this.isError = false,
+  });
 }
 
 class ChatBubbleWidget extends StatelessWidget {
   final ChatMessage msg;
   const ChatBubbleWidget({super.key, required this.msg});
-  
+
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -58,25 +62,30 @@ class QuickPrompts extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
-        children: [
-          'Explain LOTOTO procedure',
-          'Draft a toolbox talk on falls',
-          'What is an LTIFR?',
-          'PPE for chemical handling',
-          'Steps for incident investigation',
-        ].map(
-          (q) => Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ActionChip(
-              label: Text(q, style: const TextStyle(fontSize: 11)),
-              onPressed: () => onPromptSelected(q),
-              backgroundColor: XMTheme.secondary.withValues(alpha: 0.08),
-              side: BorderSide(
-                color: XMTheme.secondary.withValues(alpha: 0.3),
-              ),
-            ),
-          ),
-        ).toList(),
+        children:
+            [
+                  'Explain LOTOTO procedure',
+                  'Draft a toolbox talk on falls',
+                  'What is an LTIFR?',
+                  'PPE for chemical handling',
+                  'Steps for incident investigation',
+                ]
+                .map(
+                  (q) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ActionChip(
+                      label: Text(q, style: const TextStyle(fontSize: 11)),
+                      onPressed: () => onPromptSelected(q),
+                      backgroundColor: XMTheme.secondary.withValues(
+                        alpha: 0.08,
+                      ),
+                      side: BorderSide(
+                        color: XMTheme.secondary.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
       ),
     );
   }

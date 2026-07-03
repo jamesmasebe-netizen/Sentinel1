@@ -10,17 +10,35 @@ import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 class LeaveManagementScreen extends ConsumerWidget {
   const LeaveManagementScreen({super.key});
 
-  Future<void> _updateStatus(BuildContext context, WidgetRef ref, LeaveRequest req, String status) async {
+  Future<void> _updateStatus(
+    BuildContext context,
+    WidgetRef ref,
+    LeaveRequest req,
+    String status,
+  ) async {
     try {
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'leave_requests').doc(req.id).update({
-        'status': status,
-      });
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'leave_requests',
+          )
+          .doc(req.id)
+          .update({'status': status});
       if (context.mounted) {
-        UIUtils.showToast(context, 'Leave request $status', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Leave request $status',
+          type: ToastType.success,
+        );
       }
     } catch (e) {
       if (context.mounted) {
-        UIUtils.showToast(context, 'Error updating request: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Error updating request: $e',
+          type: ToastType.error,
+        );
       }
     }
   }
@@ -30,9 +48,7 @@ class LeaveManagementScreen extends ConsumerWidget {
     final requestsAsync = ref.watch(leaveRequestsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Leave Management'),
-      ),
+      appBar: AppBar(title: const Text('Leave Management')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           UIUtils.showSideSheet(
@@ -55,7 +71,7 @@ class LeaveManagementScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final req = requests[index];
               final isPending = req.status == 'Pending';
-              
+
               return Card(
                 margin: const EdgeInsets.only(bottom: 8.0),
                 child: Padding(
@@ -66,20 +82,35 @@ class LeaveManagementScreen extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(req.employeeName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(
+                            req.employeeName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                           Chip(
                             label: Text(req.status),
-                            backgroundColor: req.status == 'Approved' ? Colors.green.shade100 
-                                : req.status == 'Rejected' ? Colors.red.shade100 : Colors.orange.shade100,
+                            backgroundColor:
+                                req.status == 'Approved'
+                                    ? Colors.green.shade100
+                                    : req.status == 'Rejected'
+                                    ? Colors.red.shade100
+                                    : Colors.orange.shade100,
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text('Type: ${req.leaveType}'),
-                      Text('Dates: ${UIUtils.formatDate(req.startDate)} - ${UIUtils.formatDate(req.endDate)}'),
+                      Text(
+                        'Dates: ${UIUtils.formatDate(req.startDate)} - ${UIUtils.formatDate(req.endDate)}',
+                      ),
                       if (req.reason != null && req.reason!.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        Text('Reason: ${req.reason}', style: const TextStyle(fontStyle: FontStyle.italic)),
+                        Text(
+                          'Reason: ${req.reason}',
+                          style: const TextStyle(fontStyle: FontStyle.italic),
+                        ),
                       ],
                       if (isPending) ...[
                         const SizedBox(height: 16),
@@ -87,19 +118,35 @@ class LeaveManagementScreen extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             OutlinedButton(
-                              onPressed: () => _updateStatus(context, ref, req, 'Rejected'),
-                              style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                              onPressed:
+                                  () => _updateStatus(
+                                    context,
+                                    ref,
+                                    req,
+                                    'Rejected',
+                                  ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
                               child: const Text('Reject'),
                             ),
                             const SizedBox(width: 8),
                             FilledButton(
-                              onPressed: () => _updateStatus(context, ref, req, 'Approved'),
-                              style: FilledButton.styleFrom(backgroundColor: Colors.green),
+                              onPressed:
+                                  () => _updateStatus(
+                                    context,
+                                    ref,
+                                    req,
+                                    'Approved',
+                                  ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Colors.green,
+                              ),
                               child: const Text('Approve'),
                             ),
                           ],
                         ),
-                      ]
+                      ],
                     ],
                   ),
                 ),

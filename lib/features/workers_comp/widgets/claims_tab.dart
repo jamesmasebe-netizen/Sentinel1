@@ -40,7 +40,9 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'coida_claims',
             data: {
@@ -77,7 +79,10 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
     try {
       await ref
           .read(firestoreProvider)
-          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'coida_claims')
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'coida_claims',
+          )
           .doc(id)
           .update({field: value});
       if (mounted) UIUtils.showToast(context, 'Status updated to $value');
@@ -111,21 +116,30 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Log New COIDA Claim', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Log New COIDA Claim',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 GSpacing.vMd,
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: _empCtrl,
-                        decoration: const InputDecoration(labelText: 'Employee Name *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Employee Name *',
+                        ),
                       ),
                     ),
                     GSpacing.hMd,
                     Expanded(
                       child: TextFormField(
                         controller: _idCtrl,
-                        decoration: const InputDecoration(labelText: 'ID Number'),
+                        decoration: const InputDecoration(
+                          labelText: 'ID Number',
+                        ),
                       ),
                     ),
                   ],
@@ -136,7 +150,9 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                     Expanded(
                       child: TextFormField(
                         controller: _claimNoCtrl,
-                        decoration: const InputDecoration(labelText: 'Claim Number'),
+                        decoration: const InputDecoration(
+                          labelText: 'Claim Number',
+                        ),
                       ),
                     ),
                     GSpacing.hMd,
@@ -144,7 +160,9 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                       child: TextFormField(
                         controller: _lostDaysCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Lost Work Days'),
+                        decoration: const InputDecoration(
+                          labelText: 'Lost Work Days',
+                        ),
                       ),
                     ),
                   ],
@@ -152,12 +170,20 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                 GSpacing.vMd,
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('Incident Date', style: theme.textTheme.labelSmall),
+                  title: Text(
+                    'Incident Date',
+                    style: theme.textTheme.labelSmall,
+                  ),
                   subtitle: Text(
                     '${_incidentDate.day}/${_incidentDate.month}/${_incidentDate.year}',
-                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  trailing: Icon(Icons.calendar_month_rounded, color: theme.colorScheme.primary),
+                  trailing: Icon(
+                    Icons.calendar_month_rounded,
+                    color: theme.colorScheme.primary,
+                  ),
                   onTap: () async {
                     final d = await showDatePicker(
                       context: context,
@@ -182,14 +208,18 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
         ],
         GSpacing.vMd,
         StreamBuilder<QuerySnapshot>(
-          stream: siteId == null
-              ? null
-              : fs
-                  .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'coida_claims')
-                  .where('siteId', isEqualTo: siteId)
-                  .orderBy('createdAt', descending: true)
-                  .limit(50)
-                  .snapshots(),
+          stream:
+              siteId == null
+                  ? null
+                  : fs
+                      .tenantCollection(
+                        ref.watch(currentTenantIdProvider) ?? "",
+                        'coida_claims',
+                      )
+                      .where('siteId', isEqualTo: siteId)
+                      .orderBy('createdAt', descending: true)
+                      .limit(50)
+                      .snapshots(),
           builder: (ctx, snap) {
             final docs = snap.data?.docs ?? [];
             if (docs.isEmpty) {
@@ -201,69 +231,88 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
               );
             }
             return Column(
-              children: docs.map((doc) {
-                final d = doc.data() as Map<String, dynamic>;
-                final status = d['status'] ?? 'Submitted';
-                final statusColor = status == 'Accepted'
-                    ? XMTheme.success
-                    : status == 'Rejected'
-                        ? XMTheme.error
-                        : status == 'Closed'
+              children:
+                  docs.map((doc) {
+                    final d = doc.data() as Map<String, dynamic>;
+                    final status = d['status'] ?? 'Submitted';
+                    final statusColor =
+                        status == 'Accepted'
+                            ? XMTheme.success
+                            : status == 'Rejected'
+                            ? XMTheme.error
+                            : status == 'Closed'
                             ? theme.colorScheme.outline
                             : XMTheme.warning;
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: GCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                d['employeeName'] ?? 'Unknown Employee',
-                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            GStatusTag(label: status.toUpperCase(), color: statusColor),
-                          ],
-                        ),
-                        GSpacing.vSm,
-                        Text(
-                          'Claim: ${d['claimNumber'] ?? 'N/A'} • Lost Days: ${d['lostDays'] ?? 0}',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                        GSpacing.vMd,
-                        Row(
-                          children: [
-                            RtwBadge(label: d['rtwStatus'] ?? 'Off Sick'),
-                            const Spacer(),
-                            if (status != 'Closed')
-                              PopupMenuButton<String>(
-                                initialValue: status,
-                                onSelected: (val) => _updateStatus(doc.id, 'status', val),
-                                itemBuilder: (ctx) => [
-                                  'Accepted',
-                                  'Rejected',
-                                  'Closed',
-                                ].map((s) => PopupMenuItem(value: s, child: Text(s))).toList(),
-                                child: Text(
-                                  'Update Status',
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: theme.colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    d['employeeName'] ?? 'Unknown Employee',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ),
+                                GStatusTag(
+                                  label: status.toUpperCase(),
+                                  color: statusColor,
+                                ),
+                              ],
+                            ),
+                            GSpacing.vSm,
+                            Text(
+                              'Claim: ${d['claimNumber'] ?? 'N/A'} • Lost Days: ${d['lostDays'] ?? 0}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
+                            ),
+                            GSpacing.vMd,
+                            Row(
+                              children: [
+                                RtwBadge(label: d['rtwStatus'] ?? 'Off Sick'),
+                                const Spacer(),
+                                if (status != 'Closed')
+                                  PopupMenuButton<String>(
+                                    initialValue: status,
+                                    onSelected:
+                                        (val) => _updateStatus(
+                                          doc.id,
+                                          'status',
+                                          val,
+                                        ),
+                                    itemBuilder:
+                                        (ctx) =>
+                                            ['Accepted', 'Rejected', 'Closed']
+                                                .map(
+                                                  (s) => PopupMenuItem(
+                                                    value: s,
+                                                    child: Text(s),
+                                                  ),
+                                                )
+                                                .toList(),
+                                    child: Text(
+                                      'Update Status',
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: theme.colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                      ),
+                    );
+                  }).toList(),
             );
           },
         ),

@@ -27,7 +27,11 @@ class ManualPayslipFormState extends ConsumerState<ManualPayslipForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedEmployeeId == null) {
-      UIUtils.showToast(context, 'Please select an employee', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please select an employee',
+        type: ToastType.error,
+      );
       return;
     }
     _formKey.currentState!.save();
@@ -45,8 +49,14 @@ class ManualPayslipFormState extends ConsumerState<ManualPayslipForm> {
       final periodStart = DateTime(now.year, now.month, 1);
       final periodEnd = DateTime(now.year, now.month + 1, 0);
 
-      final docRef = FirebaseFirestore.instance.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'payroll_ledgers').doc();
-      
+      final docRef =
+          FirebaseFirestore.instance
+              .tenantCollection(
+                ref.watch(currentTenantIdProvider) ?? "",
+                'payroll_ledgers',
+              )
+              .doc();
+
       final ledger = PayrollLedger(
         id: docRef.id,
         employeeId: _selectedEmployeeId!,
@@ -63,12 +73,20 @@ class ManualPayslipFormState extends ConsumerState<ManualPayslipForm> {
       await docRef.set(ledger.toFirestore());
 
       if (mounted) {
-        UIUtils.showToast(context, 'Payslip generated successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Payslip generated successfully',
+          type: ToastType.success,
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to generate payslip: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to generate payslip: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) {
@@ -104,31 +122,54 @@ class ManualPayslipFormState extends ConsumerState<ManualPayslipForm> {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Base Salary', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-              onSaved: (val) => _baseSalary = double.tryParse(val ?? '0') ?? 0.0,
+              decoration: const InputDecoration(
+                labelText: 'Base Salary',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
+              onSaved:
+                  (val) => _baseSalary = double.tryParse(val ?? '0') ?? 0.0,
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Bonuses', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Bonuses',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               initialValue: '0.0',
               onSaved: (val) => _bonuses = double.tryParse(val ?? '0') ?? 0.0,
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Deductions', border: OutlineInputBorder()),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Deductions',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               initialValue: '0.0',
-              onSaved: (val) => _deductions = double.tryParse(val ?? '0') ?? 0.0,
+              onSaved:
+                  (val) => _deductions = double.tryParse(val ?? '0') ?? 0.0,
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _isLoading ? null : _submit,
-              child: _isLoading 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Generate Payslip'),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Text('Generate Payslip'),
             ),
           ],
         ),

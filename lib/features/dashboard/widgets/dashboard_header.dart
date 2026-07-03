@@ -28,8 +28,9 @@ class DashboardHeader extends StatelessWidget {
                 children: [
                   Text(
                     'Analytics Hub',
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   GSpacing.vXs,
                   Text(
@@ -57,8 +58,9 @@ class DashboardHeader extends StatelessWidget {
                 children: [
                   Text(
                     'Analytics Hub',
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   GSpacing.vXs,
                   Text(
@@ -70,10 +72,7 @@ class DashboardHeader extends StatelessWidget {
                 ],
               ),
             ),
-            Wrap(
-              spacing: 12,
-              children: _buildHeaderButtons(theme, context),
-            ),
+            Wrap(spacing: 12, children: _buildHeaderButtons(theme, context)),
           ],
         );
       },
@@ -85,8 +84,8 @@ class DashboardHeader extends StatelessWidget {
       FilledButton.icon(
         onPressed: () {
           UIUtils.showSideSheet(
-            context: context, 
-            title: 'My Approvals Inbox', 
+            context: context,
+            title: 'My Approvals Inbox',
             builder: (ctx) => const ApprovalsInboxScreen(),
           );
         },
@@ -95,23 +94,25 @@ class DashboardHeader extends StatelessWidget {
       ),
       OutlinedButton.icon(
         onPressed: isSeeding ? null : onSeedData,
-        icon: isSeeding
-            ? SizedBox.square(
-                dimension: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: theme.colorScheme.primary,
-                ),
-              )
-            : const Icon(
-                Icons.cloud_upload_outlined,
-                size: 18,
-              ),
+        icon:
+            isSeeding
+                ? SizedBox.square(
+                  dimension: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: theme.colorScheme.primary,
+                  ),
+                )
+                : const Icon(Icons.cloud_upload_outlined, size: 18),
         label: Text(isSeeding ? 'Seeding...' : 'Seed Data'),
       ),
       FilledButton.icon(
         onPressed: () {
-          UIUtils.showToast(context, 'Exporting CSV data...', type: ToastType.info);
+          UIUtils.showToast(
+            context,
+            'Exporting CSV data...',
+            type: ToastType.info,
+          );
         },
         icon: const Icon(Icons.description_outlined, size: 18),
         label: const Text('Export CSV'),

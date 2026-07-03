@@ -21,7 +21,11 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
 
   Future<void> _submit() async {
     if (_selectedEmployeeId == null || _courseCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Please fill in required fields', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill in required fields',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -29,28 +33,36 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
 
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: widget.tenantId,
-        collection: 'training_enrollments',
-        data: {
-          'employeeId': _selectedEmployeeId,
-          'employeeName': _selectedEmployeeName,
-          'courseName': _courseCtrl.text.trim(),
-          'dueDate': _dueDate.toIso8601String(),
-          'assignedAt': DateTime.now().toIso8601String(),
-          'status': 'Assigned',
-          'authorId': profile.uid,
-          'siteId': profile.tenantId,
-          'progressPercentage': 0.0,
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: widget.tenantId,
+            collection: 'training_enrollments',
+            data: {
+              'employeeId': _selectedEmployeeId,
+              'employeeName': _selectedEmployeeName,
+              'courseName': _courseCtrl.text.trim(),
+              'dueDate': _dueDate.toIso8601String(),
+              'assignedAt': DateTime.now().toIso8601String(),
+              'status': 'Assigned',
+              'authorId': profile.uid,
+              'siteId': profile.tenantId,
+              'progressPercentage': 0.0,
+            },
+          );
 
       if (mounted) {
         Navigator.pop(context);
-        UIUtils.showToast(context, 'Course allocated successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Course allocated successfully',
+          type: ToastType.success,
+        );
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -65,7 +77,10 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
         children: [
           const Text('Allocate a mandatory course to an employee.'),
           const SizedBox(height: 24),
-          const Text('Select Employee *', style: TextStyle(fontWeight: FontWeight.w500)),
+          const Text(
+            'Select Employee *',
+            style: TextStyle(fontWeight: FontWeight.w500),
+          ),
           const SizedBox(height: 8),
           EmployeeSelector(
             value: _selectedEmployeeId,
@@ -79,7 +94,10 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _courseCtrl,
-            decoration: const InputDecoration(labelText: 'Course Name *', hintText: 'e.g. Health & Safety Level 1'),
+            decoration: const InputDecoration(
+              labelText: 'Course Name *',
+              hintText: 'e.g. Health & Safety Level 1',
+            ),
           ),
           const SizedBox(height: 16),
           ListTile(

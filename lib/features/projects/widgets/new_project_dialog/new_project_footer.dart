@@ -27,13 +27,17 @@ class NewProjectFooter extends StatelessWidget {
           const SizedBox(width: 12),
           FilledButton.icon(
             onPressed: saving ? null : onSave,
-            icon: saving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.rocket_launch_rounded, size: 18),
+            icon:
+                saving
+                    ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                    : const Icon(Icons.rocket_launch_rounded, size: 18),
             label: Text(saving ? 'Creating...' : 'Initiate Project'),
             style: FilledButton.styleFrom(backgroundColor: XMTheme.primary),
           ),

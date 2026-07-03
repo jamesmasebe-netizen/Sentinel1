@@ -16,18 +16,13 @@ class CAPAScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
 
-  const CAPAScreen({
-    super.key,
-    this.initialSearch,
-    this.highlightId,
-  });
+  const CAPAScreen({super.key, this.initialSearch, this.highlightId});
 
   @override
   ConsumerState<CAPAScreen> createState() => _CAPAScreenState();
 }
 
 class _CAPAScreenState extends ConsumerState<CAPAScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -36,13 +31,16 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -52,10 +50,9 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
     UIUtils.showSideSheet(
       context: context,
       title: 'New Corrective Action',
-      builder: (ctx) => CAPAForm(
-        tenantId: siteId,
-        onCancel: () => Navigator.pop(ctx),
-      ),
+      builder:
+          (ctx) =>
+              CAPAForm(tenantId: siteId, onCancel: () => Navigator.pop(ctx)),
     );
   }
 
@@ -78,7 +75,9 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
             children: [
               Text(
                 'CAPA Register',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               FilledButton.icon(
                 onPressed: () => _showCAPAForm(context, siteId),
@@ -92,12 +91,16 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
         // ─── CAPA List ───
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'capas')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .limit(100)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'capas',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(100)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -109,7 +112,11 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.fact_check_rounded, size: 48, color: XMTheme.success.withValues(alpha: 0.3)),
+                      Icon(
+                        Icons.fact_check_rounded,
+                        size: 48,
+                        color: XMTheme.success.withValues(alpha: 0.3),
+                      ),
                       GSpacing.vMd,
                       const Text('No CAPAs found'),
                     ],
@@ -126,28 +133,44 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
                   return CAPACard(
                     docId: doc.id,
                     data: data,
-                    onStatusUpdate: _isUpdatingStatus
-                        ? (_) async {}
-                        : (newStatus) async {
-                            setState(() => _isUpdatingStatus = true);
-                            try {
-                              await firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'capas').doc(doc.id).update({
-                                'status': newStatus,
-                                'updatedAt': DateTime.now().toIso8601String(),
-                              });
-                              if (mounted) {
-                                UIUtils.showToast(context, 'CAPA status updated to $newStatus', type: ToastType.success);
+                    onStatusUpdate:
+                        _isUpdatingStatus
+                            ? (_) async {}
+                            : (newStatus) async {
+                              setState(() => _isUpdatingStatus = true);
+                              try {
+                                await firestore
+                                    .tenantCollection(
+                                      ref.watch(currentTenantIdProvider) ?? "",
+                                      'capas',
+                                    )
+                                    .doc(doc.id)
+                                    .update({
+                                      'status': newStatus,
+                                      'updatedAt':
+                                          DateTime.now().toIso8601String(),
+                                    });
+                                if (mounted) {
+                                  UIUtils.showToast(
+                                    context,
+                                    'CAPA status updated to $newStatus',
+                                    type: ToastType.success,
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  UIUtils.showToast(
+                                    context,
+                                    'Failed to update CAPA status: $e',
+                                    type: ToastType.error,
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isUpdatingStatus = false);
+                                }
                               }
-                            } catch (e) {
-                              if (mounted) {
-                                UIUtils.showToast(context, 'Failed to update CAPA status: $e', type: ToastType.error);
-                              }
-                            } finally {
-                              if (mounted) {
-                                setState(() => _isUpdatingStatus = false);
-                              }
-                            }
-                          },
+                            },
                   );
                 },
               );
@@ -157,5 +180,4 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
       ],
     );
   }
-
 }

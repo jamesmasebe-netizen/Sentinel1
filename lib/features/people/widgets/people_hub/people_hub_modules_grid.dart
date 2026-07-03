@@ -44,77 +44,132 @@ class PeopleHubModulesGrid extends StatelessWidget {
             subtitle: 'Directory, roles, and employment history.',
             icon: Icons.badge_rounded,
             color: XMTheme.primary,
-            onTap: () => _openModule(context, 'Employee Profiles', const EmployeeProfilesScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Employee Profiles',
+                  const EmployeeProfilesScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Training & Inductions',
             subtitle: 'Manage courses, certificates, and expirations.',
             icon: Icons.school_rounded,
             color: XMTheme.success,
-            onTap: () => _openModule(context, 'Training & Inductions', const TrainingScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Training & Inductions',
+                  const TrainingScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Skills Matrix',
             subtitle: 'Gap analysis and organizational capability.',
             icon: Icons.grid_view_rounded,
             color: XMTheme.info,
-            onTap: () => _openModule(context, 'Skills Matrix', const SkillsMatrixScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Skills Matrix',
+                  const SkillsMatrixScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Competency Passport',
             subtitle: 'Digital worker verification.',
             icon: Icons.card_membership_rounded,
             color: const Color(0xFF8B5CF6), // Purple
-            onTap: () => _openModule(context, 'Competency Passport', const CompetencyPassportScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Competency Passport',
+                  const CompetencyPassportScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Occupational Health',
             subtitle: 'Medical surveillance and exposure tracking.',
             icon: Icons.medical_services_rounded,
             color: XMTheme.secondary,
-            onTap: () => _openModule(context, 'Occupational Health', const OccupationalHealthScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Occupational Health',
+                  const OccupationalHealthScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: "Worker's Comp",
             subtitle: 'Injury claims and return-to-work programs.',
             icon: Icons.healing_rounded,
             color: XMTheme.error,
-            onTap: () => _openModule(context, "Worker's Comp", const WorkersCompScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  "Worker's Comp",
+                  const WorkersCompScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Leave & Time-Off',
             subtitle: 'Manage vacation, sick leave, and approvals.',
             icon: Icons.event_available_rounded,
             color: XMTheme.primary,
-            onTap: () => _openModule(context, 'Leave Management', const LeaveManagementScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Leave Management',
+                  const LeaveManagementScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Recruitment & ATS',
             subtitle: 'Job requisitions and candidate tracking.',
             icon: Icons.work_outline_rounded,
             color: XMTheme.info,
-            onTap: () => _openModule(context, 'Recruitment Dashboard', const RecruitmentDashboardScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Recruitment Dashboard',
+                  const RecruitmentDashboardScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Payroll & Comp',
             subtitle: 'Salary ledgers and payslip generation.',
             icon: Icons.account_balance_wallet_rounded,
             color: XMTheme.success,
-            onTap: () => _openModule(context, 'Payroll Dashboard', const PayrollDashboardScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Payroll Dashboard',
+                  const PayrollDashboardScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'Performance & Goals',
             subtitle: '360-reviews and OKR tracking.',
             icon: Icons.star_border_rounded,
             color: XMTheme.warning,
-            onTap: () => _openModule(context, 'Performance Reviews', const PerformanceReviewScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Performance Reviews',
+                  const PerformanceReviewScreen(),
+                ),
           ),
           PeopleHubModuleCard(
             title: 'OHS Legal Appointments',
             subtitle: 'Section 16.1, 16.2, and 8.2.i mandates.',
             icon: Icons.gavel_rounded,
             color: XMTheme.secondary,
-            onTap: () => _openModule(context, 'OHS Legal Appointments', const OHSAppointmentsScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'OHS Legal Appointments',
+                  const OHSAppointmentsScreen(),
+                ),
           ),
         ]),
       ),

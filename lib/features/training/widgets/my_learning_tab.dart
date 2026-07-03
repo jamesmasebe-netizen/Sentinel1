@@ -21,9 +21,16 @@ class MyLearningTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.school, size: 64, color: Theme.of(context).disabledColor),
+                Icon(
+                  Icons.school,
+                  size: 64,
+                  color: Theme.of(context).disabledColor,
+                ),
                 GSpacing.vLg,
-                Text('You are not enrolled in any courses yet.', style: Theme.of(context).textTheme.bodyLarge),
+                Text(
+                  'You are not enrolled in any courses yet.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
               ],
             ),
           );
@@ -37,8 +44,17 @@ class MyLearningTab extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final enrollment = enrollments[index];
                 final course = courses.firstWhere(
-                  (c) => c.id == enrollment.courseId, 
-                  orElse: () => Course(id: '', title: 'Unknown Course', description: '', instructorId: '', category: '', contentUrl: '', durationMinutes: 0)
+                  (c) => c.id == enrollment.courseId,
+                  orElse:
+                      () => Course(
+                        id: '',
+                        title: 'Unknown Course',
+                        description: '',
+                        instructorId: '',
+                        category: '',
+                        contentUrl: '',
+                        durationMinutes: 0,
+                      ),
                 );
 
                 return GCard(
@@ -48,7 +64,11 @@ class MyLearningTab extends ConsumerWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CoursePlayerScreen(course: course, enrollment: enrollment),
+                          builder:
+                              (context) => CoursePlayerScreen(
+                                course: course,
+                                enrollment: enrollment,
+                              ),
                         ),
                       );
                     },
@@ -64,11 +84,18 @@ class MyLearningTab extends ConsumerWidget {
                               width: 80,
                               height: 80,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 80, height: 80,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                child: const Icon(Icons.image_not_supported),
-                              ),
+                              errorBuilder:
+                                  (_, __, ___) => Container(
+                                    width: 80,
+                                    height: 80,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.surfaceContainerHighest,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                    ),
+                                  ),
                             ),
                           ),
                           GSpacing.hLg,
@@ -78,7 +105,8 @@ class MyLearningTab extends ConsumerWidget {
                               children: [
                                 Text(
                                   course.title,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 GSpacing.vSm,
                                 Text(
@@ -88,14 +116,26 @@ class MyLearningTab extends ConsumerWidget {
                                 GSpacing.vMd,
                                 LinearProgressIndicator(
                                   value: enrollment.progressPercentage,
-                                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  color: enrollment.progressPercentage == 1.0 ? XMTheme.success : Theme.of(context).colorScheme.primary,
+                                  backgroundColor:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                  color:
+                                      enrollment.progressPercentage == 1.0
+                                          ? XMTheme.success
+                                          : Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                 ),
                               ],
                             ),
                           ),
                           GSpacing.hMd,
-                          Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.chevron_right,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ],
                       ),
                     ),

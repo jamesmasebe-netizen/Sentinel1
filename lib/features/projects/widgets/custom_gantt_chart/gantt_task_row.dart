@@ -36,7 +36,8 @@ class GanttTaskRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final startOffset = task.startDate.difference(chartStartDate).inDays * dayWidth;
+    final startOffset =
+        task.startDate.difference(chartStartDate).inDays * dayWidth;
     final durationDays = task.endDate.difference(task.startDate).inDays;
     final taskWidth = (durationDays > 0 ? durationDays : 1) * dayWidth;
 
@@ -61,8 +62,15 @@ class GanttTaskRow extends StatelessWidget {
     return Container(
       height: 60,
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200, width: 0.5)),
-        color: task.taskType == 'process' ? Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(100) : null,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
+        ),
+        color:
+            task.taskType == 'process'
+                ? Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withAlpha(100)
+                : null,
       ),
       child: Stack(
         clipBehavior: Clip.none,
@@ -73,7 +81,9 @@ class GanttTaskRow extends StatelessWidget {
               return Container(
                 width: dayWidth,
                 decoration: BoxDecoration(
-                  border: Border(right: BorderSide(color: Colors.grey.shade100, width: 0.5)),
+                  border: Border(
+                    right: BorderSide(color: Colors.grey.shade100, width: 0.5),
+                  ),
                 ),
               );
             }),
@@ -84,8 +94,27 @@ class GanttTaskRow extends StatelessWidget {
             left: startOffset + indent,
             top: 12,
             child: GestureDetector(
-              onTap: () => showTaskEditor(context, ref, projectId, allTasks, task, depMap[task.id] ?? [], risksMap[task.id] ?? [], incidentsMap[task.id] ?? [], capasMap[task.id] ?? []),
-              child: task.isMilestone ? _buildMilestoneDiamond(task, taskColor) : _buildStandardTaskBar(context, task, taskWidth, taskColor),
+              onTap:
+                  () => showTaskEditor(
+                    context,
+                    ref,
+                    projectId,
+                    allTasks,
+                    task,
+                    depMap[task.id] ?? [],
+                    risksMap[task.id] ?? [],
+                    incidentsMap[task.id] ?? [],
+                    capasMap[task.id] ?? [],
+                  ),
+              child:
+                  task.isMilestone
+                      ? _buildMilestoneDiamond(task, taskColor)
+                      : _buildStandardTaskBar(
+                        context,
+                        task,
+                        taskWidth,
+                        taskColor,
+                      ),
             ),
           ),
         ],
@@ -110,12 +139,20 @@ class GanttTaskRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text(task.title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(
+          task.title,
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
 
-  Widget _buildStandardTaskBar(BuildContext context, ProjectTask task, double taskWidth, Color taskColor) {
+  Widget _buildStandardTaskBar(
+    BuildContext context,
+    ProjectTask task,
+    double taskWidth,
+    Color taskColor,
+  ) {
     return Container(
       width: taskWidth,
       height: taskHeight,
@@ -145,7 +182,10 @@ class GanttTaskRow extends StatelessWidget {
                 task.title,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: task.taskType == 'process' ? FontWeight.bold : FontWeight.normal,
+                  fontWeight:
+                      task.taskType == 'process'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                   color: task.progress > 0.5 ? Colors.white : Colors.black87,
                 ),
                 maxLines: 1,
@@ -163,10 +203,15 @@ class GanttTaskRow extends StatelessWidget {
                 backgroundColor: Colors.white,
                 child: CircleAvatar(
                   radius: 10,
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
                   child: Text(
                     task.assignedToName.substring(0, 1).toUpperCase(),
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
                   ),
                 ),
               ),

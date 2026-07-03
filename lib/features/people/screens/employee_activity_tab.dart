@@ -19,7 +19,12 @@ class EmployeeActivityTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Recent Safety & Ops Activity', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Recent Safety & Ops Activity',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           GCard(
             padding: EdgeInsets.zero,
@@ -30,17 +35,37 @@ class EmployeeActivityTab extends ConsumerWidget {
               separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final date = DateTime.now().subtract(Duration(days: index * 2));
-                final types = ['Incident Reported', 'PTW Approved', 'HIRA Completed', 'Safety Walkabout'];
-                final icons = [Icons.warning, Icons.assignment_turned_in, Icons.analytics, Icons.directions_walk];
-                final colors = [XMTheme.error, XMTheme.success, XMTheme.info, XMTheme.primary];
-                
+                final types = [
+                  'Incident Reported',
+                  'PTW Approved',
+                  'HIRA Completed',
+                  'Safety Walkabout',
+                ];
+                final icons = [
+                  Icons.warning,
+                  Icons.assignment_turned_in,
+                  Icons.analytics,
+                  Icons.directions_walk,
+                ];
+                final colors = [
+                  XMTheme.error,
+                  XMTheme.success,
+                  XMTheme.info,
+                  XMTheme.primary,
+                ];
+
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: colors[index].withValues(alpha: 0.1),
                     child: Icon(icons[index], color: colors[index]),
                   ),
-                  title: Text(types[index], style: const TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text(DateFormat('MMM d, yyyy - HH:mm').format(date)),
+                  title: Text(
+                    types[index],
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: Text(
+                    DateFormat('MMM d, yyyy - HH:mm').format(date),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {},
                 );
@@ -48,14 +73,23 @@ class EmployeeActivityTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 32),
-          Text('Activity Heatmap (Coming Soon)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Activity Heatmap (Coming Soon)',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           GCard(
             padding: const EdgeInsets.all(32),
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.grid_on, size: 48, color: XMTheme.secondaryLight.withValues(alpha: 0.3)),
+                  Icon(
+                    Icons.grid_on,
+                    size: 48,
+                    color: XMTheme.secondaryLight.withValues(alpha: 0.3),
+                  ),
                   const SizedBox(height: 16),
                   const Text('Activity heatmap will be available here.'),
                 ],

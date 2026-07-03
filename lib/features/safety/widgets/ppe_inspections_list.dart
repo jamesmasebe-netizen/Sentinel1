@@ -15,24 +15,31 @@ class PPEInspectionsList extends ConsumerWidget {
     required this.onLogNewCheck,
   });
 
-  void _showEmployeePPEProfile(BuildContext context, WidgetRef ref, String employeeName) {
+  void _showEmployeePPEProfile(
+    BuildContext context,
+    WidgetRef ref,
+    String employeeName,
+  ) {
     UIUtils.showSideSheet(
       context: context,
       title: 'PPE Profile: $employeeName',
-      builder: (ctx) => EmployeePPEProfileSheet(
-        employeeName: employeeName,
-        onLogNewCheck: onLogNewCheck,
-      ),
+      builder:
+          (ctx) => EmployeePPEProfileSheet(
+            employeeName: employeeName,
+            onLogNewCheck: onLogNewCheck,
+          ),
     );
   }
 
-  void _showPPEInventoryDetails(BuildContext context, WidgetRef ref, String ppeType) {
+  void _showPPEInventoryDetails(
+    BuildContext context,
+    WidgetRef ref,
+    String ppeType,
+  ) {
     UIUtils.showSideSheet(
       context: context,
       title: 'PPE Inventory: $ppeType',
-      builder: (ctx) => PPEInventoryDetailsSheet(
-        ppeType: ppeType,
-      ),
+      builder: (ctx) => PPEInventoryDetailsSheet(ppeType: ppeType),
     );
   }
 
@@ -48,17 +55,24 @@ class PPEInspectionsList extends ConsumerWidget {
     }
 
     return Column(
-      children: records
-          .map((r) => PPERow(
-                data: r,
-                onEmployeeTap: () {
-                  _showEmployeePPEProfile(context, ref, r['employeeName'] ?? '');
-                },
-                onPPETap: () {
-                  _showPPEInventoryDetails(context, ref, r['ppeType'] ?? '');
-                },
-              ))
-          .toList(),
+      children:
+          records
+              .map(
+                (r) => PPERow(
+                  data: r,
+                  onEmployeeTap: () {
+                    _showEmployeePPEProfile(
+                      context,
+                      ref,
+                      r['employeeName'] ?? '',
+                    );
+                  },
+                  onPPETap: () {
+                    _showPPEInventoryDetails(context, ref, r['ppeType'] ?? '');
+                  },
+                ),
+              )
+              .toList(),
     );
   }
 }

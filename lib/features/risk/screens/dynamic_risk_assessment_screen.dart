@@ -30,14 +30,24 @@ class _DRAState extends ConsumerState<DynamicRiskAssessmentScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Row(
             children: [
-              Text('Live Assessments', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                'Live Assessments',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New Dynamic Assessment',
-                  builder: (ctx) => DRAForm(tenantId: ref.read(currentTenantIdProvider) ?? ''),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New Dynamic Assessment',
+                      builder:
+                          (ctx) => DRAForm(
+                            tenantId: ref.read(currentTenantIdProvider) ?? '',
+                          ),
+                    ),
                 icon: const Icon(Icons.bolt_rounded, size: 18),
                 label: const Text('New Assessment'),
               ),
@@ -48,12 +58,16 @@ class _DRAState extends ConsumerState<DynamicRiskAssessmentScreen> {
         // ─── Assessment List ───
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dynamic_risk_assessments')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .limit(50)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'dynamic_risk_assessments',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(50)
+                    .snapshots(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -64,9 +78,18 @@ class _DRAState extends ConsumerState<DynamicRiskAssessmentScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.assignment_turned_in_outlined, size: 64, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.assignment_turned_in_outlined,
+                        size: 64,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                      ),
                       GSpacing.vMd,
-                      Text('No dynamic assessments yet', style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        'No dynamic assessments yet',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -86,4 +109,3 @@ class _DRAState extends ConsumerState<DynamicRiskAssessmentScreen> {
     );
   }
 }
-

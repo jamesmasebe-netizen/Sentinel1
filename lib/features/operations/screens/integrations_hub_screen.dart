@@ -19,11 +19,12 @@ class IntegrationsHubScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.add),
             tooltip: 'Add Integration',
-            onPressed: () => UIUtils.showSideSheet(
-              context: context,
-              title: 'Add Gateway Integration',
-              builder: (ctx) => const IntegrationConfigForm(),
-            ),
+            onPressed:
+                () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'Add Gateway Integration',
+                  builder: (ctx) => const IntegrationConfigForm(),
+                ),
           ),
         ],
       ),
@@ -38,22 +39,25 @@ class IntegrationsHubScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   const Text('No gateway integrations configured.'),
                   const SizedBox(height: 8),
-                  const Text('Sentinel is currently running 100% independently.',
-                      style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    'Sentinel is currently running 100% independently.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 16),
                   FilledButton(
-                    onPressed: () => UIUtils.showSideSheet(
-                      context: context,
-                      title: 'Add Gateway Integration',
-                      builder: (ctx) => const IntegrationConfigForm(),
-                    ),
+                    onPressed:
+                        () => UIUtils.showSideSheet(
+                          context: context,
+                          title: 'Add Gateway Integration',
+                          builder: (ctx) => const IntegrationConfigForm(),
+                        ),
                     child: const Text('Configure Webhook Gateway'),
                   ),
                 ],
               ),
             );
           }
-          
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: integrations.length,
@@ -62,11 +66,11 @@ class IntegrationsHubScreen extends ConsumerWidget {
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 child: ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.hub),
-                  ),
+                  leading: const CircleAvatar(child: Icon(Icons.hub)),
                   title: Text(config.name),
-                  subtitle: Text('Type: ${config.type.toUpperCase()}\nWebhook: ${config.webhookUrl}'),
+                  subtitle: Text(
+                    'Type: ${config.type.toUpperCase()}\nWebhook: ${config.webhookUrl}',
+                  ),
                   isThreeLine: true,
                   trailing: Switch(
                     value: config.isEnabled,
@@ -80,9 +84,15 @@ class IntegrationsHubScreen extends ConsumerWidget {
                         apiKey: config.apiKey,
                         tenantId: config.tenantId,
                       );
-                      await ref.read(integrationsServiceProvider).saveIntegration(updated);
+                      await ref
+                          .read(integrationsServiceProvider)
+                          .saveIntegration(updated);
                       if (!context.mounted) return;
-                      UIUtils.showToast(context, 'Integration ${val ? 'Enabled' : 'Disabled'}', type: ToastType.success);
+                      UIUtils.showToast(
+                        context,
+                        'Integration ${val ? 'Enabled' : 'Disabled'}',
+                        type: ToastType.success,
+                      );
                     },
                   ),
                   onTap: () {

@@ -22,11 +22,7 @@ class EquipmentListItem extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          Icon(
-            categoryIcon,
-            color: XMTheme.primary,
-            size: 24,
-          ),
+          Icon(categoryIcon, color: XMTheme.primary, size: 24),
           GSpacing.hMd,
           Expanded(
             child: Column(
@@ -54,9 +50,10 @@ class EquipmentListItem extends StatelessWidget {
             children: [
               GStatusTag(
                 label: status,
-                color: status == 'Operational'
-                    ? XMTheme.success
-                    : status == 'Under Maintenance'
+                color:
+                    status == 'Operational'
+                        ? XMTheme.success
+                        : status == 'Under Maintenance'
                         ? XMTheme.warning
                         : XMTheme.error,
               ),
@@ -65,9 +62,10 @@ class EquipmentListItem extends StatelessWidget {
                 'Insp: ${days}d',
                 style: TextStyle(
                   fontSize: 10,
-                  color: days < 30
-                      ? XMTheme.warning
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color:
+                      days < 30
+                          ? XMTheme.warning
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

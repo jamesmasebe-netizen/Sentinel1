@@ -23,25 +23,39 @@ class _ActionFormState extends ConsumerState<ActionForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedEmployeeId == null) {
-      UIUtils.showToast(context, 'Please select an assignee', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please select an assignee',
+        type: ToastType.error,
+      );
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       final siteId = ref.read(currentTenantIdProvider);
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'actionItems').add({
-        'title': _titleController.text.trim(),
-        'description': _descController.text.trim(),
-        'assigneeId': _selectedEmployeeId,
-        'status': 'Pending',
-        'dueDate': _dueDate.toIso8601String(),
-        'createdAt': DateTime.now().toIso8601String(),
-        'siteId': siteId,
-        'type': 'General',
-      });
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'actionItems',
+          )
+          .add({
+            'title': _titleController.text.trim(),
+            'description': _descController.text.trim(),
+            'assigneeId': _selectedEmployeeId,
+            'status': 'Pending',
+            'dueDate': _dueDate.toIso8601String(),
+            'createdAt': DateTime.now().toIso8601String(),
+            'siteId': siteId,
+            'type': 'General',
+          });
       if (mounted) {
-        UIUtils.showToast(context, 'Action item created', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Action item created',
+          type: ToastType.success,
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -67,24 +81,34 @@ class _ActionFormState extends ConsumerState<ActionForm> {
                   children: [
                     TextFormField(
                       controller: _titleController,
-                      decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
-                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator:
+                          (v) => v == null || v.isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descController,
-                      decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
                     EmployeeSelector(
                       value: _selectedEmployeeId,
-                      onChanged: (val) => setState(() => _selectedEmployeeId = val),
+                      onChanged:
+                          (val) => setState(() => _selectedEmployeeId = val),
                       label: 'Assigned To *',
                     ),
                     const SizedBox(height: 16),
                     ListTile(
-                      title: Text('Due Date: ${_dueDate.toString().split(' ')[0]}'),
+                      title: Text(
+                        'Due Date: ${_dueDate.toString().split(' ')[0]}',
+                      ),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: () async {
                         final d = await showDatePicker(
@@ -103,7 +127,17 @@ class _ActionFormState extends ConsumerState<ActionForm> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
-                  child: _isLoading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text('Submit'),
+                  child:
+                      _isLoading
+                          ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text('Submit'),
                 ),
               ),
             ],

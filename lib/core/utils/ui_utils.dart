@@ -42,11 +42,7 @@ class UIUtils {
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              icon,
-              color: fgColor,
-              size: 20,
-            ),
+            Icon(icon, color: fgColor, size: 20),
             GSpacing.hMd,
             Expanded(
               child: Text(
@@ -64,9 +60,7 @@ class UIUtils {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(XMTheme.radiusLg),
-          side: BorderSide(
-            color: fgColor.withValues(alpha: 0.1),
-          ),
+          side: BorderSide(color: fgColor.withValues(alpha: 0.1)),
         ),
         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         duration: const Duration(seconds: 4),
@@ -86,25 +80,31 @@ class UIUtils {
     final theme = Theme.of(context);
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(XMTheme.radiusLg)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(cancelLabel),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(title),
+            content: Text(content),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(XMTheme.radiusLg),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(cancelLabel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style:
+                    isDestructive
+                        ? FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
+                        )
+                        : null,
+                child: Text(confirmLabel),
+              ),
+            ],
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: isDestructive ? FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
-              foregroundColor: theme.colorScheme.onError,
-            ) : null,
-            child: Text(confirmLabel),
-          ),
-        ],
-      ),
     );
     return result ?? false;
   }
@@ -167,24 +167,27 @@ class UIUtils {
     if (!isWideScreen) {
       return showAppBottomSheet<T>(
         context: context,
-        builder: (ctx) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(child: Text(title, style: theme.textTheme.titleLarge)),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(ctx),
+        builder:
+            (ctx) => Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(title, style: theme.textTheme.titleLarge),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const Divider(height: 1),
+                Expanded(child: builder(ctx)),
+              ],
             ),
-            const Divider(height: 1),
-            Expanded(child: builder(ctx)),
-          ],
-        ),
       );
     }
 
@@ -204,7 +207,11 @@ class UIUtils {
               color: theme.colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(XMTheme.radiusXl),
-                side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                side: BorderSide(
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
+                ),
               ),
               child: SizedBox(
                 width: width,
@@ -228,7 +235,10 @@ class UIUtils {
                             icon: const Icon(Icons.close_rounded),
                             onPressed: () => Navigator.pop(context),
                             style: IconButton.styleFrom(
-                              backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                              backgroundColor: theme
+                                  .colorScheme
+                                  .surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                             ),
                           ),
                         ],
@@ -248,7 +258,9 @@ class UIUtils {
           position: Tween<Offset>(
             begin: const Offset(1, 0),
             end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          ),
           child: FadeTransition(opacity: animation, child: child),
         );
       },
@@ -273,7 +285,20 @@ class UIUtils {
 
   /// Returns the short month name
   static String getMonthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     if (month < 1 || month > 12) return '';
     return months[month - 1];
   }

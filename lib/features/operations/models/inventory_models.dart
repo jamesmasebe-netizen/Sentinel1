@@ -49,20 +49,21 @@ class InventoryItem {
   }
 
   Map<String, dynamic> toFirestore() => {
-        'tenantId': tenantId,
-        'name': name,
-        'sku': sku,
-        'category': category,
-        'quantity': quantity,
-        'unit': unit,
-        if (locationId != null) 'locationId': locationId,
-        if (reorderLevel != null) 'reorderLevel': reorderLevel,
-        if (cost != null) 'cost': cost,
-        'createdAt': createdAt != null
+    'tenantId': tenantId,
+    'name': name,
+    'sku': sku,
+    'category': category,
+    'quantity': quantity,
+    'unit': unit,
+    if (locationId != null) 'locationId': locationId,
+    if (reorderLevel != null) 'reorderLevel': reorderLevel,
+    if (cost != null) 'cost': cost,
+    'createdAt':
+        createdAt != null
             ? Timestamp.fromDate(createdAt!)
             : FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
 
   InventoryItem copyWith({
     String? id,
@@ -132,14 +133,15 @@ class Warehouse {
   }
 
   Map<String, dynamic> toFirestore() => {
-        'tenantId': tenantId,
-        'name': name,
-        'location': location,
-        if (managerId != null) 'managerId': managerId,
-        if (capacity != null) 'capacity': capacity,
-        'createdAt': createdAt != null
+    'tenantId': tenantId,
+    'name': name,
+    'location': location,
+    if (managerId != null) 'managerId': managerId,
+    if (capacity != null) 'capacity': capacity,
+    'createdAt':
+        createdAt != null
             ? Timestamp.fromDate(createdAt!)
             : FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+    'updatedAt': FieldValue.serverTimestamp(),
+  };
 }

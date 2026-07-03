@@ -25,9 +25,28 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
   String _status = 'Open';
   bool _isSubmitting = false;
 
-  static const _categories = ['Operational', 'Financial', 'Regulatory', 'Reputational', 'Strategic', 'Environmental'];
-  static const _likelihoods = ['Rare', 'Unlikely', 'Possible', 'Likely', 'Almost Certain'];
-  static const _impacts = ['Negligible', 'Minor', 'Moderate', 'Significant', 'Severe'];
+  static const _categories = [
+    'Operational',
+    'Financial',
+    'Regulatory',
+    'Reputational',
+    'Strategic',
+    'Environmental',
+  ];
+  static const _likelihoods = [
+    'Rare',
+    'Unlikely',
+    'Possible',
+    'Likely',
+    'Almost Certain',
+  ];
+  static const _impacts = [
+    'Negligible',
+    'Minor',
+    'Moderate',
+    'Significant',
+    'Severe',
+  ];
   static const _statuses = ['Open', 'Mitigating', 'Monitoring', 'Closed'];
 
   @override
@@ -39,7 +58,8 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
     super.dispose();
   }
 
-  int _riskScore() => (_likelihoods.indexOf(_likelihood) + 1) * (_impacts.indexOf(_impact) + 1);
+  int _riskScore() =>
+      (_likelihoods.indexOf(_likelihood) + 1) * (_impacts.indexOf(_impact) + 1);
 
   String _riskRating(int score) {
     if (score >= 16) return 'Critical';
@@ -50,7 +70,11 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
 
   Future<void> _submit(BuildContext formCtx) async {
     if (_titleCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Please enter a risk title', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please enter a risk title',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -58,7 +82,9 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
       final score = _riskScore();
-      await ref.read(firestoreServiceProvider).createDocument(
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
             tenantId: widget.tenantId,
             collection: 'strategic_risks',
             data: {
@@ -86,7 +112,9 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
         _mitigationCtrl.clear();
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -104,13 +132,22 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
             children: [
               TextFormField(
                 controller: _titleCtrl,
-                decoration: const InputDecoration(labelText: 'Risk Title *', hintText: 'e.g., Supply Chain Disruption', prefixIcon: Icon(Icons.title_rounded)),
+                decoration: const InputDecoration(
+                  labelText: 'Risk Title *',
+                  hintText: 'e.g., Supply Chain Disruption',
+                  prefixIcon: Icon(Icons.title_rounded),
+                ),
               ),
               GSpacing.vMd,
               TextFormField(
                 controller: _descriptionCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description', hintText: 'Provide context for this strategic risk...', prefixIcon: Icon(Icons.description_outlined), alignLabelWithHint: true),
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Provide context for this strategic risk...',
+                  prefixIcon: Icon(Icons.description_outlined),
+                  alignLabelWithHint: true,
+                ),
               ),
               GSpacing.vMd,
               Row(
@@ -119,7 +156,18 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
                     child: DropdownButtonFormField<String>(
                       value: _category,
                       decoration: const InputDecoration(labelText: 'Category'),
-                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
+                      items:
+                          _categories
+                              .map(
+                                (c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(
+                                    c,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setLocalState(() => _category = v!),
                     ),
                   ),
@@ -128,7 +176,18 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
                     child: DropdownButtonFormField<String>(
                       value: _status,
                       decoration: const InputDecoration(labelText: 'Status'),
-                      items: _statuses.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                      items:
+                          _statuses
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(
+                                    s,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setLocalState(() => _status = v!),
                     ),
                   ),
@@ -137,18 +196,39 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
               GSpacing.vMd,
               TextFormField(
                 controller: _ownerCtrl,
-                decoration: const InputDecoration(labelText: 'Risk Owner', prefixIcon: Icon(Icons.person_outline_rounded)),
+                decoration: const InputDecoration(
+                  labelText: 'Risk Owner',
+                  prefixIcon: Icon(Icons.person_outline_rounded),
+                ),
               ),
               GSpacing.vLg,
-              Text('Risk Assessment (Likelihood × Impact)', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Risk Assessment (Likelihood × Impact)',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               GSpacing.vMd,
               Row(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _likelihood,
-                      decoration: const InputDecoration(labelText: 'Likelihood'),
-                      items: _likelihoods.map((l) => DropdownMenuItem(value: l, child: Text(l, style: const TextStyle(fontSize: 13)))).toList(),
+                      decoration: const InputDecoration(
+                        labelText: 'Likelihood',
+                      ),
+                      items:
+                          _likelihoods
+                              .map(
+                                (l) => DropdownMenuItem(
+                                  value: l,
+                                  child: Text(
+                                    l,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setLocalState(() => _likelihood = v!),
                     ),
                   ),
@@ -157,7 +237,18 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
                     child: DropdownButtonFormField<String>(
                       value: _impact,
                       decoration: const InputDecoration(labelText: 'Impact'),
-                      items: _impacts.map((i) => DropdownMenuItem(value: i, child: Text(i, style: const TextStyle(fontSize: 13)))).toList(),
+                      items:
+                          _impacts
+                              .map(
+                                (i) => DropdownMenuItem(
+                                  value: i,
+                                  child: Text(
+                                    i,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setLocalState(() => _impact = v!),
                     ),
                   ),
@@ -167,19 +258,39 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _ratingColor(_riskRating(_riskScore())).withValues(alpha: 0.1),
+                  color: _ratingColor(
+                    _riskRating(_riskScore()),
+                  ).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _ratingColor(_riskRating(_riskScore())).withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: _ratingColor(
+                      _riskRating(_riskScore()),
+                    ).withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.speed_rounded, color: _ratingColor(_riskRating(_riskScore()))),
+                    Icon(
+                      Icons.speed_rounded,
+                      color: _ratingColor(_riskRating(_riskScore())),
+                    ),
                     GSpacing.hMd,
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Calculated Risk Score: ${_riskScore()}', style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: _ratingColor(_riskRating(_riskScore())))),
-                        Text('Rating: ${_riskRating(_riskScore()).toUpperCase()}', style: theme.textTheme.labelSmall?.copyWith(color: _ratingColor(_riskRating(_riskScore())))),
+                        Text(
+                          'Calculated Risk Score: ${_riskScore()}',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: _ratingColor(_riskRating(_riskScore())),
+                          ),
+                        ),
+                        Text(
+                          'Rating: ${_riskRating(_riskScore()).toUpperCase()}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: _ratingColor(_riskRating(_riskScore())),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -189,7 +300,11 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
               TextFormField(
                 controller: _mitigationCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Mitigation Strategy', prefixIcon: Icon(Icons.shield_outlined), alignLabelWithHint: true),
+                decoration: const InputDecoration(
+                  labelText: 'Mitigation Strategy',
+                  prefixIcon: Icon(Icons.shield_outlined),
+                  alignLabelWithHint: true,
+                ),
               ),
               GSpacing.vXl,
               SizedBox(
@@ -197,7 +312,17 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
                 height: 54,
                 child: FilledButton.icon(
                   onPressed: _isSubmitting ? null : () => _submit(context),
-                  icon: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.save_rounded),
+                  icon:
+                      _isSubmitting
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(Icons.save_rounded),
                   label: Text(_isSubmitting ? 'SAVING...' : 'REGISTER RISK'),
                 ),
               ),
@@ -205,16 +330,20 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
             ],
           ),
         );
-      }
+      },
     );
   }
 
   Color _ratingColor(String rating) {
     switch (rating) {
-      case 'Critical': return XMTheme.riskExtreme;
-      case 'High': return XMTheme.riskHigh;
-      case 'Medium': return XMTheme.riskMedium;
-      default: return XMTheme.riskLow;
+      case 'Critical':
+        return XMTheme.riskExtreme;
+      case 'High':
+        return XMTheme.riskHigh;
+      case 'Medium':
+        return XMTheme.riskMedium;
+      default:
+        return XMTheme.riskLow;
     }
   }
 }

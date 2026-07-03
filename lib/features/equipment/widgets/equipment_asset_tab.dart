@@ -73,7 +73,11 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
             },
           );
       if (mounted) {
-        UIUtils.showToast(context, 'Equipment registered', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Equipment registered',
+          type: ToastType.success,
+        );
         setState(() {
           _showForm = false;
           _nameCtrl.clear();
@@ -123,13 +127,17 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
             children: [
               Expanded(
                 child: TextField(
-                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  onChanged:
+                      (v) => setState(() => _searchQuery = v.toLowerCase()),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search, size: 20),
                     hintText: 'Search assets…',
                     isDense: true,
                     filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.3),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -154,7 +162,9 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
               children: [
                 Text(
                   'Register New Equipment',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 GSpacing.vMd,
                 TextFormField(
@@ -294,7 +304,10 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
                 siteId == null
                     ? null
                     : fs
-                        .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'equipment')
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'equipment',
+                        )
                         .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)
                         .limit(100)
@@ -320,9 +333,16 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.precision_manufacturing_outlined, size: 64, color: Theme.of(context).disabledColor),
+                      Icon(
+                        Icons.precision_manufacturing_outlined,
+                        size: 64,
+                        color: Theme.of(context).disabledColor,
+                      ),
                       GSpacing.vLg,
-                      Text('No equipment registered', style: Theme.of(context).textTheme.bodyLarge),
+                      Text(
+                        'No equipment registered',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ],
                   ),
                 );

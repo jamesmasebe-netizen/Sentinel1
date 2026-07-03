@@ -8,20 +8,23 @@ class ApplicationFormWidget extends ConsumerStatefulWidget {
   final JobRequisition requisition;
   final VoidCallback onBack;
 
-  const ApplicationFormWidget({super.key, 
+  const ApplicationFormWidget({
+    super.key,
     required this.requisition,
     required this.onBack,
   });
 
   @override
-  ConsumerState<ApplicationFormWidget> createState() => ApplicationFormWidgetState();
+  ConsumerState<ApplicationFormWidget> createState() =>
+      ApplicationFormWidgetState();
 }
 
 class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _resumeUrlController = TextEditingController(); // Simulating file upload
+  final _resumeUrlController =
+      TextEditingController(); // Simulating file upload
 
   bool _isSubmitting = false;
 
@@ -38,12 +41,21 @@ class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
         requisitionId: widget.requisition.id,
         name: _nameController.text,
         email: _emailController.text,
-        resumeUrl: _resumeUrlController.text.isEmpty ? 'https://example.com/resume.pdf' : _resumeUrlController.text,
+        resumeUrl:
+            _resumeUrlController.text.isEmpty
+                ? 'https://example.com/resume.pdf'
+                : _resumeUrlController.text,
         stage: 'Applied',
         appliedDate: DateTime.now(),
       );
 
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'candidates').add(candidate.toFirestore());
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'candidates',
+          )
+          .add(candidate.toFirestore());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -53,9 +65,9 @@ class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {
@@ -86,7 +98,10 @@ class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
                   Expanded(
                     child: Text(
                       'Apply for ${widget.requisition.title}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -99,7 +114,8 @@ class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
                   labelText: 'Full Name',
                   border: OutlineInputBorder(),
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator:
+                    (val) => val == null || val.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -108,7 +124,8 @@ class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
                   labelText: 'Email Address',
                   border: OutlineInputBorder(),
                 ),
-                validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                validator:
+                    (val) => val == null || val.isEmpty ? 'Required' : null,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
@@ -128,9 +145,13 @@ class ApplicationFormWidgetState extends ConsumerState<ApplicationFormWidget> {
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
                 onPressed: _isSubmitting ? null : _submitApplication,
-                child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Submit Application', style: TextStyle(fontSize: 18)),
+                child:
+                    _isSubmitting
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                          'Submit Application',
+                          style: TextStyle(fontSize: 18),
+                        ),
               ),
             ],
           ),

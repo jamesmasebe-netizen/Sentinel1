@@ -24,7 +24,10 @@ class UIIndexer {
       'screen_name': screenName,
       'device_info': {
         'platform': theme.platform.name,
-        'screen_size': {'w': media.size.width.round(), 'h': media.size.height.round()},
+        'screen_size': {
+          'w': media.size.width.round(),
+          'h': media.size.height.round(),
+        },
         'pixel_ratio': media.devicePixelRatio,
         'padding': {'t': media.padding.top, 'b': media.padding.bottom},
       },
@@ -53,7 +56,11 @@ class UIIndexer {
     };
   }
 
-  Map<String, dynamic> _traverse(Element element, String? parentId, List<Map<String, dynamic>> flatList) {
+  Map<String, dynamic> _traverse(
+    Element element,
+    String? parentId,
+    List<Map<String, dynamic>> flatList,
+  ) {
     final id = _uuid.v4();
     final widget = element.widget;
     final children = <Map<String, dynamic>>[];
@@ -91,12 +98,8 @@ class UIIndexer {
       children.add(_traverse(child, id, flatList));
     });
 
-    return {
-      ...elementData,
-      'children': children,
-    };
+    return {...elementData, 'children': children};
   }
-
 
   Map<String, dynamic> _textStyleToMap(TextStyle? style) {
     if (style == null) return {};

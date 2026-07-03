@@ -31,7 +31,11 @@ class _HazardFormSheetState extends ConsumerState<HazardFormSheet> {
 
   Future<void> _submitHazard() async {
     if (_titleController.text.isEmpty || _descriptionController.text.isEmpty) {
-      UIUtils.showToast(context, 'Please fill all required fields', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill all required fields',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -53,10 +57,18 @@ class _HazardFormSheetState extends ConsumerState<HazardFormSheet> {
       };
 
       final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(tenantId: widget.tenantId, collection: 'hazards', data: data);
+      await firestoreService.createDocument(
+        tenantId: widget.tenantId,
+        collection: 'hazards',
+        data: data,
+      );
 
       if (mounted) {
-        UIUtils.showToast(context, 'Hazard reported successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Hazard reported successfully',
+          type: ToastType.success,
+        );
         Navigator.pop(context); // Close side sheet
       }
     } catch (e) {
@@ -97,7 +109,10 @@ class _HazardFormSheetState extends ConsumerState<HazardFormSheet> {
               labelText: 'Severity *',
               prefixIcon: Icon(Icons.priority_high_rounded),
             ),
-            items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            items:
+                _severities
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
             onChanged: (v) => setState(() => _severity = v!),
           ),
           GSpacing.vMd,
@@ -115,9 +130,14 @@ class _HazardFormSheetState extends ConsumerState<HazardFormSheet> {
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: _isSubmitting ? null : _submitHazard,
-              icon: _isSubmitting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.report_problem_rounded),
+              icon:
+                  _isSubmitting
+                      ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.report_problem_rounded),
               label: Text(_isSubmitting ? 'Reporting...' : 'Report Hazard'),
             ),
           ),

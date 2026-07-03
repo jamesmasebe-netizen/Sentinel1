@@ -23,7 +23,12 @@ class TrainingLMSTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Training Enrollments', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Training Enrollments',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               FilledButton.icon(
                 onPressed: () {
                   // Show assign course dialog
@@ -35,11 +40,15 @@ class TrainingLMSTab extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'training_enrollments')
-                .where('employeeId', isEqualTo: employeeId)
-                .orderBy('assignedAt', descending: true)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'training_enrollments',
+                    )
+                    .where('employeeId', isEqualTo: employeeId)
+                    .orderBy('assignedAt', descending: true)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -50,7 +59,11 @@ class TrainingLMSTab extends ConsumerWidget {
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
                       children: [
-                        Icon(Icons.history_edu, size: 48, color: XMTheme.secondaryLight.withValues(alpha: 0.3)),
+                        Icon(
+                          Icons.history_edu,
+                          size: 48,
+                          color: XMTheme.secondaryLight.withValues(alpha: 0.3),
+                        ),
                         const SizedBox(height: 16),
                         const Text('No training enrollments found.'),
                       ],
@@ -65,7 +78,8 @@ class TrainingLMSTab extends ConsumerWidget {
                 itemCount: snapshot.data!.docs.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                  final data =
+                      snapshot.data!.docs[index].data() as Map<String, dynamic>;
                   final isCompleted = data['status'] == 'Completed';
 
                   return GCard(
@@ -76,12 +90,18 @@ class TrainingLMSTab extends ConsumerWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: isCompleted ? XMTheme.success.withValues(alpha: 0.1) : XMTheme.primary.withValues(alpha: 0.1),
+                            color:
+                                isCompleted
+                                    ? XMTheme.success.withValues(alpha: 0.1)
+                                    : XMTheme.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            isCompleted ? Icons.check_circle : Icons.play_circle_fill,
-                            color: isCompleted ? XMTheme.success : XMTheme.primary,
+                            isCompleted
+                                ? Icons.check_circle
+                                : Icons.play_circle_fill,
+                            color:
+                                isCompleted ? XMTheme.success : XMTheme.primary,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -89,20 +109,39 @@ class TrainingLMSTab extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(data['courseName'] ?? 'Unknown Course', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(
+                                data['courseName'] ?? 'Unknown Course',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Assigned: ${data['assignedAt'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(data['assignedAt'])) : 'Unknown'}', style: TextStyle(color: XMTheme.secondaryLight, fontSize: 13)),
+                              Text(
+                                'Assigned: ${data['assignedAt'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(data['assignedAt'])) : 'Unknown'}',
+                                style: TextStyle(
+                                  color: XMTheme.secondaryLight,
+                                  fontSize: 13,
+                                ),
+                              ),
                               if (isCompleted && data['completedAt'] != null)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
-                                  child: Text('Completed: ${DateFormat('MMM d, yyyy').format(DateTime.parse(data['completedAt']))}', style: const TextStyle(color: XMTheme.success, fontSize: 12)),
+                                  child: Text(
+                                    'Completed: ${DateFormat('MMM d, yyyy').format(DateTime.parse(data['completedAt']))}',
+                                    style: const TextStyle(
+                                      color: XMTheme.success,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
                             ],
                           ),
                         ),
                         GStatusTag(
                           label: data['status'] ?? 'In Progress',
-                          color: isCompleted ? XMTheme.success : XMTheme.warning,
+                          color:
+                              isCompleted ? XMTheme.success : XMTheme.warning,
                         ),
                       ],
                     ),

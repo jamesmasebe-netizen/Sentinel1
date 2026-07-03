@@ -25,7 +25,7 @@ class CrmService {
     if (_tenantId == null) {
       return Stream.value([]);
     }
-    
+
     return _firestoreService.streamCollection<Deal>(
       collection: _collection,
       tenantId: _tenantId,
@@ -37,7 +37,7 @@ class CrmService {
 
   Future<void> createDeal(Deal deal) async {
     if (_tenantId == null) return;
-    
+
     await _firestoreService.createDocument(
       tenantId: _tenantId,
       collection: _collection,

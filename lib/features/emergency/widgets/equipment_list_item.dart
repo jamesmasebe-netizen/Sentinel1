@@ -23,9 +23,10 @@ class EquipmentListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = data['status'] == 'Operational'
-        ? XMTheme.success
-        : data['status'] == 'Out of Service'
+    final statusColor =
+        data['status'] == 'Operational'
+            ? XMTheme.success
+            : data['status'] == 'Out of Service'
             ? XMTheme.error
             : XMTheme.warning;
 
@@ -54,7 +55,9 @@ class EquipmentListItem extends StatelessWidget {
                 children: [
                   Text(
                     data['equipmentType'] ?? 'Unknown Item',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   GSpacing.vSm,
                   Text(
@@ -66,10 +69,7 @@ class EquipmentListItem extends StatelessWidget {
                 ],
               ),
             ),
-            GStatusTag(
-              label: data['status'] ?? 'Unknown',
-              color: statusColor,
-            ),
+            GStatusTag(label: data['status'] ?? 'Unknown', color: statusColor),
           ],
         ),
       ),

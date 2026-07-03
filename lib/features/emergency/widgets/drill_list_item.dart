@@ -32,17 +32,18 @@ class DrillListItem extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+            color: Theme.of(
+              context,
+            ).colorScheme.errorContainer.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            _drillIcon(data['drillType']),
-            color: XMTheme.error,
-          ),
+          child: Icon(_drillIcon(data['drillType']), color: XMTheme.error),
         ),
         title: Text(
           '${data['drillType']} Drill',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +64,10 @@ class DrillListItem extends StatelessWidget {
             ),
           ],
         ),
-        trailing: Icon(Icons.chevron_right, color: Theme.of(context).disabledColor),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: Theme.of(context).disabledColor,
+        ),
       ),
     );
   }

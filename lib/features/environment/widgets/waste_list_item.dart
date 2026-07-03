@@ -9,7 +9,9 @@ class WasteListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color = XMTheme.info;
-    if (data['wasteType'] == 'Hazardous' || data['wasteType'] == 'Medical') color = XMTheme.error;
+    if (data['wasteType'] == 'Hazardous' || data['wasteType'] == 'Medical') {
+      color = XMTheme.error;
+    }
     if (data['wasteType'] == 'Recyclable') color = XMTheme.success;
 
     return GCard(
@@ -19,17 +21,27 @@ class WasteListItem extends StatelessWidget {
           Container(
             width: 4,
             height: 40,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           GSpacing.hMd,
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${data['wasteType']} • ${data['quantity']} ${data['unit']}',
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                Text('${data['transporterName'] ?? ""} → ${data['disposalFacility'] ?? ""}',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  '${data['wasteType']} • ${data['quantity']} ${data['unit']}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  '${data['transporterName'] ?? ""} → ${data['disposalFacility'] ?? ""}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
           ),

@@ -12,7 +12,8 @@ class PPEComplianceScreen extends ConsumerStatefulWidget {
   const PPEComplianceScreen({super.key});
 
   @override
-  ConsumerState<PPEComplianceScreen> createState() => _PPEComplianceScreenState();
+  ConsumerState<PPEComplianceScreen> createState() =>
+      _PPEComplianceScreenState();
 }
 
 class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
@@ -28,23 +29,30 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
     if (siteId == null) return const Center(child: Text('No site assigned'));
 
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'ppe_compliance')
-          .where('siteId', isEqualTo: siteId)
-          .snapshots(),
+      stream:
+          firestore
+              .tenantCollection(
+                ref.watch(currentTenantIdProvider) ?? "",
+                'ppe_compliance',
+              )
+              .where('siteId', isEqualTo: siteId)
+              .snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
-        final records = docs.map((d) => d.data() as Map<String, dynamic>).toList();
+        final records =
+            docs.map((d) => d.data() as Map<String, dynamic>).toList();
 
-        final upcoming = records.where((r) {
-          if (r['status'] != 'Compliant') return false;
-          try {
-            final expiry = DateTime.parse(r['expiryDate']);
-            final diff = expiry.difference(DateTime.now()).inDays;
-            return diff > 0 && diff <= 30;
-          } catch (_) {
-            return false;
-          }
-        }).toList();
+        final upcoming =
+            records.where((r) {
+              if (r['status'] != 'Compliant') return false;
+              try {
+                final expiry = DateTime.parse(r['expiryDate']);
+                final diff = expiry.difference(DateTime.now()).inDays;
+                return diff > 0 && diff <= 30;
+              } catch (_) {
+                return false;
+              }
+            }).toList();
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -54,21 +62,33 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
               GHeader(
                 title: 'PPE Compliance',
                 subtitle: 'Track equipment assignments and expiry alerts',
-                trailing: canIssue ? FilledButton.icon(
-                  onPressed: () => setState(() => _showForm = !_showForm),
-                  icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
-                  label: Text(_showForm ? 'Cancel' : 'Log'),
-                ) : null,
+                trailing:
+                    canIssue
+                        ? FilledButton.icon(
+                          onPressed:
+                              () => setState(() => _showForm = !_showForm),
+                          icon: Icon(
+                            _showForm ? Icons.close : Icons.add,
+                            size: 18,
+                          ),
+                          label: Text(_showForm ? 'Cancel' : 'Log'),
+                        )
+                        : null,
               ),
               GSpacing.vMd,
 
               PPEDashboard(records: records, upcoming: upcoming),
 
-              if (_showForm) PPEIssuanceForm(tenantId: ref.read(currentTenantIdProvider)!, 
-                onCancel: () => setState(() => _showForm = false),
-              ),
+              if (_showForm)
+                PPEIssuanceForm(
+                  tenantId: ref.read(currentTenantIdProvider)!,
+                  onCancel: () => setState(() => _showForm = false),
+                ),
 
-              Text('Compliance Log', style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                'Compliance Log',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               GSpacing.vSm,
               PPEInspectionsList(
                 records: records,

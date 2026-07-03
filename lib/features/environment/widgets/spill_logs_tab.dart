@@ -15,8 +15,6 @@ class SpillLogsTab extends ConsumerStatefulWidget {
 }
 
 class _SpillLogsTabState extends ConsumerState<SpillLogsTab> {
-
-
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
@@ -28,13 +26,17 @@ class _SpillLogsTabState extends ConsumerState<SpillLogsTab> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Spill Logs', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Spill Logs',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'Log Spill Incident',
-                  builder: (ctx) => const SpillForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Log Spill Incident',
+                      builder: (ctx) => const SpillForm(),
+                    ),
                 icon: const Icon(Icons.water_drop_outlined, size: 18),
                 label: const Text('Log Spill'),
               ),
@@ -43,17 +45,23 @@ class _SpillLogsTabState extends ConsumerState<SpillLogsTab> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'environmental_spills')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'environmental_spills',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(50)
+                        .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return const Center(child: Text('No spill records logged'));
+              if (docs.isEmpty) {
+                return const Center(child: Text('No spill records logged'));
+              }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,

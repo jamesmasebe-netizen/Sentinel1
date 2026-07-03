@@ -33,19 +33,21 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'emergency_equipment',
-        data: {
-          'equipmentType': _equipType,
-          'location': _equipLocCtrl.text.trim(),
-          'nextInspectionDate': _inspDateCtrl.text.trim(),
-          'status': _equipStatus,
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'emergency_equipment',
+            data: {
+              'equipmentType': _equipType,
+              'location': _equipLocCtrl.text.trim(),
+              'nextInspectionDate': _inspDateCtrl.text.trim(),
+              'status': _equipStatus,
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         UIUtils.showToast(context, 'Equipment added', type: ToastType.success);
         widget.onCancel();
@@ -70,7 +72,9 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
           children: [
             Text(
               'Add Equipment',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             GSpacing.vMd,
             Row(
@@ -79,13 +83,18 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
                   child: DropdownButtonFormField<String>(
                     value: _equipType,
                     decoration: const InputDecoration(labelText: 'Type'),
-                    items: [
-                      'Extinguisher',
-                      'First Aid Kit',
-                      'Spill Kit',
-                      'AED',
-                      'Other',
-                    ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    items:
+                        [
+                              'Extinguisher',
+                              'First Aid Kit',
+                              'Spill Kit',
+                              'AED',
+                              'Other',
+                            ]
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
+                            .toList(),
                     onChanged: (v) => setState(() => _equipType = v!),
                   ),
                 ),
@@ -94,11 +103,12 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
                   child: DropdownButtonFormField<String>(
                     value: _equipStatus,
                     decoration: const InputDecoration(labelText: 'Status'),
-                    items: [
-                      'Operational',
-                      'Needs Inspection',
-                      'Out of Service',
-                    ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    items:
+                        ['Operational', 'Needs Inspection', 'Out of Service']
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
+                            .toList(),
                     onChanged: (v) => setState(() => _equipStatus = v!),
                   ),
                 ),

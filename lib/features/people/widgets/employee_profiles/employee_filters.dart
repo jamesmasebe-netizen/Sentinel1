@@ -45,14 +45,18 @@ class EmployeeFilters extends StatelessWidget {
                       vertical: 8,
                     ),
                   ),
-                  items: ['All', 'Active', 'On Leave', 'Inactive', 'Terminated']
-                      .map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s, style: const TextStyle(fontSize: 13)),
-                        ),
-                      )
-                      .toList(),
+                  items:
+                      ['All', 'Active', 'On Leave', 'Inactive', 'Terminated']
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
                   onChanged: onStatusChanged,
                 ),
               ),
@@ -68,14 +72,25 @@ class EmployeeFilters extends StatelessWidget {
                       vertical: 8,
                     ),
                   ),
-                  items: ['All', 'Operations', 'Safety', 'Engineering', 'Admin', 'HR']
-                      .map(
-                        (s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s, style: const TextStyle(fontSize: 13)),
-                        ),
-                      )
-                      .toList(),
+                  items:
+                      [
+                            'All',
+                            'Operations',
+                            'Safety',
+                            'Engineering',
+                            'Admin',
+                            'HR',
+                          ]
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
                   onChanged: onDeptChanged,
                 ),
               ),

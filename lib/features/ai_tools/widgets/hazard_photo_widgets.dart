@@ -28,10 +28,7 @@ class HazardPhotoHeader extends StatelessWidget {
               children: [
                 const Text(
                   'AI Hazard Photo Analysis',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                 ),
                 Text(
                   'Powered by Gemini Vision — identifies hazards, non-compliances & corrective actions',
@@ -66,26 +63,16 @@ class AIHazardReport extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.analytics,
-                size: 16,
-                color: XMTheme.secondary,
-              ),
+              const Icon(Icons.analytics, size: 16, color: XMTheme.secondary),
               const SizedBox(width: 8),
               const Text(
                 'AI Hazard Report',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
               ),
             ],
           ),
           const Divider(height: 16),
-          Text(
-            result,
-            style: const TextStyle(fontSize: 13, height: 1.5),
-          ),
+          Text(result, style: const TextStyle(fontSize: 13, height: 1.5)),
         ],
       ),
     );
@@ -105,7 +92,9 @@ class EmptyPhotoView extends StatelessWidget {
             Icon(
               Icons.add_a_photo,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 12),
             const Text('Take or upload a photo of your work area'),

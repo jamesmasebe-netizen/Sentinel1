@@ -26,23 +26,28 @@ class BBSObservationsScreen extends ConsumerWidget {
           title: 'BBS Observations',
           subtitle: 'Behavioral safety and interventions',
           trailing: FilledButton.icon(
-            onPressed: () => UIUtils.showSideSheet(
-              context: context,
-              title: 'New Observation',
-              builder: (ctx) => const BBSObservationForm(),
-            ),
+            onPressed:
+                () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'New Observation',
+                  builder: (ctx) => const BBSObservationForm(),
+                ),
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('New Observation'),
           ),
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'bbs_observations')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .limit(50)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'bbs_observations',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(50)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -53,9 +58,18 @@ class BBSObservationsScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.visibility_outlined, size: 48, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.visibility_outlined,
+                        size: 48,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                      ),
                       GSpacing.vMd,
-                      Text('No observations found', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        'No observations found',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 );

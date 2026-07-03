@@ -130,13 +130,16 @@ class _EmployeeState extends ConsumerState<EmployeeProfilesScreen> {
               children: [
                 Text(
                   'Personnel Directory',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 FilledButton.icon(
                   onPressed: () => setState(() => _showForm = !_showForm),
-                  icon: Icon(_showForm ? Icons.close : Icons.person_add, size: 18),
+                  icon: Icon(
+                    _showForm ? Icons.close : Icons.person_add,
+                    size: 18,
+                  ),
                   label: Text(_showForm ? 'Cancel' : 'Add Employee'),
                 ),
               ],

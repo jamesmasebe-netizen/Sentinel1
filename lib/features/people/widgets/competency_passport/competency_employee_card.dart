@@ -5,10 +5,7 @@ import '../../../../core/widgets/ds_widgets.dart';
 class CompetencyEmployeeCard extends StatelessWidget {
   final MapEntry<String, List<Map<String, dynamic>>> entry;
 
-  const CompetencyEmployeeCard({
-    super.key,
-    required this.entry,
-  });
+  const CompetencyEmployeeCard({super.key, required this.entry});
 
   String _formatDate(String iso) {
     try {
@@ -36,12 +33,8 @@ class CompetencyEmployeeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allValid = entry.value.every(
-      (c) => c['status'] == 'Valid',
-    );
-    final hasExpired = entry.value.any(
-      (c) => c['status'] == 'Expired',
-    );
+    final allValid = entry.value.every((c) => c['status'] == 'Valid');
+    final hasExpired = entry.value.any((c) => c['status'] == 'Expired');
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -79,8 +72,7 @@ class CompetencyEmployeeCard extends StatelessWidget {
               GSpacing.hMd,
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       entry.key,
@@ -93,26 +85,25 @@ class CompetencyEmployeeCard extends StatelessWidget {
                       '${entry.value.length} certifications',
                       style: TextStyle(
                         fontSize: 11,
-                        color:
-                            Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
               GStatusTag(
-                label: allValid
-                      ? 'COMPLIANT'
-                      : hasExpired
-                      ? 'NON-COMPLIANT'
-                      : 'ACTION NEEDED',
-                color: (allValid
-                          ? XMTheme.success
-                          : hasExpired
-                          ? XMTheme.error
-                          : XMTheme.warning),
+                label:
+                    allValid
+                        ? 'COMPLIANT'
+                        : hasExpired
+                        ? 'NON-COMPLIANT'
+                        : 'ACTION NEEDED',
+                color:
+                    (allValid
+                        ? XMTheme.success
+                        : hasExpired
+                        ? XMTheme.error
+                        : XMTheme.warning),
               ),
             ],
           ),
@@ -128,16 +119,13 @@ class CompetencyEmployeeCard extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       color: _statusColor(status),
-                      borderRadius: BorderRadius.circular(
-                        2,
-                      ),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                   GSpacing.hMd,
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           cert['certification'] ?? '',
@@ -149,29 +137,26 @@ class CompetencyEmployeeCard extends StatelessWidget {
                         Row(
                           children: [
                             if (cert['issuer'] != null &&
-                                cert['issuer']
-                                    .toString()
-                                    .isNotEmpty)
+                                cert['issuer'].toString().isNotEmpty)
                               Text(
                                 '${cert['issuer']}',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color:
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                            if (cert['expiryDate'] !=
-                                null) ...[
+                            if (cert['expiryDate'] != null) ...[
                               Text(
                                 ' • Exp: ${_formatDate(cert['expiryDate'])}',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color:
-                                      Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -180,10 +165,7 @@ class CompetencyEmployeeCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  GStatusTag(
-                    label: status,
-                    color: _statusColor(status),
-                  ),
+                  GStatusTag(label: status, color: _statusColor(status)),
                 ],
               ),
             );

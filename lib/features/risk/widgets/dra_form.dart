@@ -33,7 +33,11 @@ class _DRAFormState extends ConsumerState<DRAForm> {
 
   Future<void> _submit(BuildContext formCtx) async {
     if (_taskCtrl.text.isEmpty || _hazards.isEmpty || _controls.isEmpty) {
-      UIUtils.showToast(context, 'Please fill task, hazards & controls', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill task, hazards & controls',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -59,7 +63,10 @@ class _DRAFormState extends ConsumerState<DRAForm> {
           );
       if (formCtx.mounted) {
         Navigator.pop(formCtx);
-        UIUtils.showToast(context, 'Dynamic Risk Assessment submitted successfully');
+        UIUtils.showToast(
+          context,
+          'Dynamic Risk Assessment submitted successfully',
+        );
         _taskCtrl.clear();
         _locCtrl.clear();
         _hazards = [];
@@ -67,7 +74,9 @@ class _DRAFormState extends ConsumerState<DRAForm> {
         _isSafe = false;
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -85,7 +94,9 @@ class _DRAFormState extends ConsumerState<DRAForm> {
             children: [
               Text(
                 'Assessment Details',
-                style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               GSpacing.vMd,
               TextFormField(
@@ -107,7 +118,9 @@ class _DRAFormState extends ConsumerState<DRAForm> {
               GSpacing.vLg,
               Text(
                 'Hazards Identified',
-                style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               GSpacing.vSm,
               Row(
@@ -145,11 +158,20 @@ class _DRAFormState extends ConsumerState<DRAForm> {
                         .entries
                         .map(
                           (e) => Chip(
-                            label: Text(e.value, style: const TextStyle(fontSize: 12)),
-                            onDeleted: () => setLocalState(() => _hazards.removeAt(e.key)),
-                            backgroundColor: theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+                            label: Text(
+                              e.value,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            onDeleted:
+                                () => setLocalState(
+                                  () => _hazards.removeAt(e.key),
+                                ),
+                            backgroundColor: theme.colorScheme.errorContainer
+                                .withValues(alpha: 0.3),
                             side: BorderSide.none,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         )
                         .toList(),
@@ -157,7 +179,9 @@ class _DRAFormState extends ConsumerState<DRAForm> {
               GSpacing.vLg,
               Text(
                 'Controls Applied',
-                style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               GSpacing.vSm,
               Row(
@@ -195,11 +219,20 @@ class _DRAFormState extends ConsumerState<DRAForm> {
                         .entries
                         .map(
                           (e) => Chip(
-                            label: Text(e.value, style: const TextStyle(fontSize: 12)),
-                            onDeleted: () => setLocalState(() => _controls.removeAt(e.key)),
-                            backgroundColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                            label: Text(
+                              e.value,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                            onDeleted:
+                                () => setLocalState(
+                                  () => _controls.removeAt(e.key),
+                                ),
+                            backgroundColor: theme.colorScheme.primaryContainer
+                                .withValues(alpha: 0.3),
                             side: BorderSide.none,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         )
                         .toList(),
@@ -208,9 +241,14 @@ class _DRAFormState extends ConsumerState<DRAForm> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 decoration: BoxDecoration(
-                  color: _isSafe 
-                      ? theme.colorScheme.primaryContainer.withValues(alpha: 0.1)
-                      : theme.colorScheme.errorContainer.withValues(alpha: 0.05),
+                  color:
+                      _isSafe
+                          ? theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.1,
+                          )
+                          : theme.colorScheme.errorContainer.withValues(
+                            alpha: 0.05,
+                          ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: CheckboxListTile(
@@ -219,12 +257,17 @@ class _DRAFormState extends ConsumerState<DRAForm> {
                     'I confirm it is safe to proceed with the task',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: _isSafe ? theme.colorScheme.primary : theme.colorScheme.error,
+                      color:
+                          _isSafe
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.error,
                     ),
                   ),
                   value: _isSafe,
                   onChanged: (v) => setLocalState(() => _isSafe = v!),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
               GSpacing.vXl,
@@ -232,23 +275,31 @@ class _DRAFormState extends ConsumerState<DRAForm> {
                 width: double.infinity,
                 height: 54,
                 child: FilledButton.icon(
-                  onPressed: (_isSubmitting || !_isSafe) ? null : () => _submit(context),
+                  onPressed:
+                      (_isSubmitting || !_isSafe)
+                          ? null
+                          : () => _submit(context),
                   icon:
                       _isSubmitting
                           ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                           : const Icon(Icons.check_circle_outline_rounded),
-                  label: Text(_isSubmitting ? 'SUBMITTING...' : 'COMPLETE ASSESSMENT'),
+                  label: Text(
+                    _isSubmitting ? 'SUBMITTING...' : 'COMPLETE ASSESSMENT',
+                  ),
                 ),
               ),
               GSpacing.vXl,
             ],
           ),
         );
-      }
+      },
     );
   }
 }

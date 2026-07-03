@@ -4,17 +4,24 @@ import '../../../core/providers/app_providers.dart';
 import '../models/employee.dart';
 import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
-final employeesCollectionProvider = Provider<CollectionReference<Employee>>((ref) {
+final employeesCollectionProvider = Provider<CollectionReference<Employee>>((
+  ref,
+) {
   final firestore = ref.watch(firestoreProvider);
-  return firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'employees').withConverter<Employee>(
-        fromFirestore: (snapshot, _) => Employee.fromMap(snapshot.data()!, snapshot.id),
+  return firestore
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'employees')
+      .withConverter<Employee>(
+        fromFirestore:
+            (snapshot, _) => Employee.fromMap(snapshot.data()!, snapshot.id),
         toFirestore: (employee, _) => employee.toMap(),
       );
 });
 
 final employeesProvider = StreamProvider<List<Employee>>((ref) {
   final collection = ref.watch(employeesCollectionProvider);
-  return collection.snapshots().map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  return collection.snapshots().map(
+    (snapshot) => snapshot.docs.map((doc) => doc.data()).toList(),
+  );
 });
 
 class EmployeeService {
@@ -24,10 +31,10 @@ class EmployeeService {
   EmployeeService(this._firestore, this._tenantId);
 
   Future<void> updateEmployee(Employee employee) async {
-    await _firestore.tenantCollection(_tenantId, 'employees').doc(employee.id).set(
-          employee.toMap(),
-          SetOptions(merge: true),
-        );
+    await _firestore
+        .tenantCollection(_tenantId, 'employees')
+        .doc(employee.id)
+        .set(employee.toMap(), SetOptions(merge: true));
   }
 
   Future<String> createEmployee(Employee employee) async {
@@ -38,7 +45,11 @@ class EmployeeService {
   }
 
   Future<void> seedDummyEmployeesIfEmpty() async {
-    final query = await _firestore.tenantCollection(_tenantId, 'employees').limit(1).get();
+    final query =
+        await _firestore
+            .tenantCollection(_tenantId, 'employees')
+            .limit(1)
+            .get();
     if (query.docs.isEmpty) {
       final dummies = [
         Employee(
@@ -78,5 +89,8 @@ class EmployeeService {
 }
 
 final employeeServiceProvider = Provider<EmployeeService>((ref) {
-  return EmployeeService(ref.watch(firestoreProvider), ref.watch(currentTenantIdProvider) ?? '');
+  return EmployeeService(
+    ref.watch(firestoreProvider),
+    ref.watch(currentTenantIdProvider) ?? '',
+  );
 });

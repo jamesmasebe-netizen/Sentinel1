@@ -7,7 +7,11 @@ class DocListItem extends StatelessWidget {
   final Map<String, dynamic> data;
   final bool showExpiryContext;
 
-  const DocListItem({super.key, required this.data, this.showExpiryContext = false});
+  const DocListItem({
+    super.key,
+    required this.data,
+    this.showExpiryContext = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +39,10 @@ class DocListItem extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(statusIcon, color: statusColor, size: 22),
           ),
           GSpacing.hMd,
@@ -43,9 +50,21 @@ class DocListItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(data['title'] ?? 'Untitled Doc', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  data['title'] ?? 'Untitled Doc',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 GSpacing.vSm,
-                Text('${data['documentType']} • ${data['referenceNumber'] ?? "No Ref"}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(
+                  '${data['documentType']} • ${data['referenceNumber'] ?? "No Ref"}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),
@@ -53,13 +72,22 @@ class DocListItem extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              GStatusTag(label: days < 0 ? 'EXPIRED' : '${days}d', color: statusColor),
+              GStatusTag(
+                label: days < 0 ? 'EXPIRED' : '${days}d',
+                color: statusColor,
+              ),
               if (showExpiryContext)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    UIUtils.formatTimestamp(data['expiryDate']).split(',').first,
-                    style: theme.textTheme.labelSmall?.copyWith(fontSize: 9, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold),
+                    UIUtils.formatTimestamp(
+                      data['expiryDate'],
+                    ).split(',').first,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 9,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
             ],

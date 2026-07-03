@@ -21,7 +21,7 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
     final theme = Theme.of(context);
     final siteId = ref.watch(currentTenantIdProvider);
     final fs = ref.watch(firestoreProvider);
-    
+
     return Column(
       children: [
         Padding(
@@ -32,7 +32,9 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
               hintText: 'Search by document title or reference...',
               filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              fillColor: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.3,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(28),
                 borderSide: BorderSide.none,
@@ -46,7 +48,10 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
                 siteId == null
                     ? null
                     : fs
-                        .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'compliance_docs')
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'compliance_docs',
+                        )
                         .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)
                         .limit(100)
@@ -57,30 +62,42 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
               }
               var docs = snap.data?.docs ?? [];
               if (_searchQuery.isNotEmpty) {
-                docs = docs.where((d) {
-                  final data = d.data() as Map<String, dynamic>;
-                  final title = (data['title'] ?? '').toString().toLowerCase();
-                  final ref = (data['referenceNumber'] ?? '').toString().toLowerCase();
-                  return title.contains(_searchQuery) || ref.contains(_searchQuery);
-                }).toList();
+                docs =
+                    docs.where((d) {
+                      final data = d.data() as Map<String, dynamic>;
+                      final title =
+                          (data['title'] ?? '').toString().toLowerCase();
+                      final ref =
+                          (data['referenceNumber'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                      return title.contains(_searchQuery) ||
+                          ref.contains(_searchQuery);
+                    }).toList();
               }
-              
+
               if (docs.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.folder_off_outlined, size: 64, color: theme.colorScheme.outline),
+                      Icon(
+                        Icons.folder_off_outlined,
+                        size: 64,
+                        color: theme.colorScheme.outline,
+                      ),
                       GSpacing.vMd,
                       Text(
                         'No matching documents found',
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 );
               }
-              
+
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,

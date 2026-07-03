@@ -45,7 +45,9 @@ class PerformanceReviewScreen extends ConsumerWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   title: Text('Review for Employee: ${review.employeeId}'),
-                  subtitle: Text('Score: ${review.score.toStringAsFixed(1)}/5.0\nPeriod: ${review.reviewPeriod}'),
+                  subtitle: Text(
+                    'Score: ${review.score.toStringAsFixed(1)}/5.0\nPeriod: ${review.reviewPeriod}',
+                  ),
                   isThreeLine: true,
                   trailing: const Icon(Icons.star),
                 ),
@@ -64,10 +66,12 @@ class _PerformanceReviewForm extends ConsumerStatefulWidget {
   const _PerformanceReviewForm();
 
   @override
-  ConsumerState<_PerformanceReviewForm> createState() => _PerformanceReviewFormState();
+  ConsumerState<_PerformanceReviewForm> createState() =>
+      _PerformanceReviewFormState();
 }
 
-class _PerformanceReviewFormState extends ConsumerState<_PerformanceReviewForm> {
+class _PerformanceReviewFormState
+    extends ConsumerState<_PerformanceReviewForm> {
   final _formKey = GlobalKey<FormState>();
   String? _employeeId;
   String? _reviewerId;
@@ -79,7 +83,11 @@ class _PerformanceReviewFormState extends ConsumerState<_PerformanceReviewForm> 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_employeeId == null || _reviewerId == null) {
-      UIUtils.showToast(context, 'Please select both employee and reviewer', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please select both employee and reviewer',
+        type: ToastType.error,
+      );
       return;
     }
     _formKey.currentState!.save();
@@ -92,8 +100,14 @@ class _PerformanceReviewFormState extends ConsumerState<_PerformanceReviewForm> 
       final siteId = ref.read(currentTenantIdProvider);
       if (siteId == null) throw Exception('No site ID found');
 
-      final docRef = FirebaseFirestore.instance.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'performance_reviews').doc();
-      
+      final docRef =
+          FirebaseFirestore.instance
+              .tenantCollection(
+                ref.watch(currentTenantIdProvider) ?? "",
+                'performance_reviews',
+              )
+              .doc();
+
       final review = PerformanceReview(
         id: docRef.id,
         employeeId: _employeeId!,
@@ -108,12 +122,20 @@ class _PerformanceReviewFormState extends ConsumerState<_PerformanceReviewForm> 
       await docRef.set(review.toFirestore());
 
       if (mounted) {
-        UIUtils.showToast(context, 'Review submitted successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Review submitted successfully',
+          type: ToastType.success,
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to submit review: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to submit review: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) {
@@ -155,9 +177,13 @@ class _PerformanceReviewFormState extends ConsumerState<_PerformanceReviewForm> 
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Review Period', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Review Period',
+                border: OutlineInputBorder(),
+              ),
               initialValue: _reviewPeriod,
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
               onSaved: (val) => _reviewPeriod = val ?? '',
             ),
             const SizedBox(height: 16),
@@ -179,17 +205,26 @@ class _PerformanceReviewFormState extends ConsumerState<_PerformanceReviewForm> 
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Feedback', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Feedback',
+                border: OutlineInputBorder(),
+              ),
               maxLines: 4,
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
               onSaved: (val) => _feedback = val ?? '',
             ),
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _isLoading ? null : _submit,
-              child: _isLoading 
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Text('Submit Review'),
+              child:
+                  _isLoading
+                      ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Text('Submit Review'),
             ),
           ],
         ),

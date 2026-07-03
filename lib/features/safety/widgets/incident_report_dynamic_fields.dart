@@ -3,7 +3,7 @@ import '../../../config/theme.dart';
 
 class IncidentReportDynamicFields extends StatelessWidget {
   final String type;
-  
+
   // Injury
   final TextEditingController bodyPartController;
   final String treatmentType;
@@ -62,9 +62,10 @@ class IncidentReportDynamicFields extends StatelessWidget {
                 labelText: 'Treatment Type',
                 prefixIcon: Icon(Icons.medical_services),
               ),
-              items: _treatments
-                  .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                  .toList(),
+              items:
+                  _treatments
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
               onChanged: (v) => onTreatmentTypeChanged(v!),
             ),
           ],
@@ -97,9 +98,12 @@ class IncidentReportDynamicFields extends StatelessWidget {
                   child: DropdownButtonFormField<String>(
                     value: envUnit,
                     decoration: const InputDecoration(labelText: 'Unit'),
-                    items: ['Liters', 'Gallons', 'kg', 'Tonnes']
-                        .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                        .toList(),
+                    items:
+                        ['Liters', 'Gallons', 'kg', 'Tonnes']
+                            .map(
+                              (u) => DropdownMenuItem(value: u, child: Text(u)),
+                            )
+                            .toList(),
                     onChanged: (v) => onEnvUnitChanged(v!),
                   ),
                 ),

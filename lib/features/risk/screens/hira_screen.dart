@@ -13,18 +13,13 @@ class HiraScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
 
-  const HiraScreen({
-    super.key,
-    this.initialSearch,
-    this.highlightId,
-  });
+  const HiraScreen({super.key, this.initialSearch, this.highlightId});
 
   @override
   ConsumerState<HiraScreen> createState() => _HiraScreenState();
 }
 
 class _HiraScreenState extends ConsumerState<HiraScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -33,13 +28,16 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -59,14 +57,21 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Row(
             children: [
-              Text('Assessment History', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                'Assessment History',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New HIRA Assessment',
-                  builder: (ctx) => const HiraForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New HIRA Assessment',
+                      builder: (ctx) => const HiraForm(),
+                    ),
                 icon: const Icon(Icons.add_rounded, size: 18),
                 label: const Text('Add Assessment'),
               ),
@@ -77,12 +82,16 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
         // ─── Assessment List ───
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'risk_assessments')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .limit(50)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'risk_assessments',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(50)
+                    .snapshots(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -93,9 +102,18 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.assessment_outlined, size: 64, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.assessment_outlined,
+                        size: 64,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                      ),
                       GSpacing.vMd,
-                      Text('No HIRA records found', style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        'No HIRA records found',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -105,10 +123,7 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
                 itemCount: docs.length,
                 itemBuilder: (context, i) {
                   final d = docs[i].data() as Map<String, dynamic>;
-                  return HiraCard(
-                    d: d,
-                    onTap: () => _showDetails(context, d),
-                  );
+                  return HiraCard(d: d, onTap: () => _showDetails(context, d));
                 },
               );
             },
@@ -121,15 +136,19 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
   void _showDetails(BuildContext context, Map<String, dynamic> data) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(data['title'] ?? data['task'] ?? 'Details'),
-        content: Text('Prepared by: ${data['preparedBy'] ?? data['assessorId'] ?? 'Unknown'}\nRisk Score: ${data['riskScore'] ?? 0}'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: Text(data['title'] ?? data['task'] ?? 'Details'),
+            content: Text(
+              'Prepared by: ${data['preparedBy'] ?? data['assessorId'] ?? 'Unknown'}\nRisk Score: ${data['riskScore'] ?? 0}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
     );
   }
 }
-
-

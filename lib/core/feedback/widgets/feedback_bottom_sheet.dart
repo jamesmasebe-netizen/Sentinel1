@@ -38,7 +38,9 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
@@ -51,7 +53,8 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
           children: [
             GHeader(
               title: 'Developer Feedback',
-              subtitle: 'Snapshot captured for ${widget.snapshot['screen_name']}',
+              subtitle:
+                  'Snapshot captured for ${widget.snapshot['screen_name']}',
             ),
             GSpacing.vMd,
             TextField(
@@ -59,9 +62,13 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: 'Describe the bug or request a feature...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               ),
             ),
             GSpacing.vLg,
@@ -76,19 +83,26 @@ class _FeedbackBottomSheetState extends State<FeedbackBottomSheet> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: widget.isUploading
-                        ? null
-                        : () {
-                            widget.onSubmit(_controller.text);
-                          },
-                    icon: widget.isUploading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.send_rounded),
-                    label: Text(widget.isUploading ? 'Uploading...' : 'Submit to AI'),
+                    onPressed:
+                        widget.isUploading
+                            ? null
+                            : () {
+                              widget.onSubmit(_controller.text);
+                            },
+                    icon:
+                        widget.isUploading
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                            : const Icon(Icons.send_rounded),
+                    label: Text(
+                      widget.isUploading ? 'Uploading...' : 'Submit to AI',
+                    ),
                   ),
                 ),
               ],

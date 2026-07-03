@@ -39,42 +39,72 @@ class OperationsHubModules extends StatelessWidget {
             subtitle: 'Project management, SHEQ metrics, and Gantt charts.',
             icon: Icons.account_tree_rounded,
             color: XMTheme.primary,
-            onTap: () => _openModule(context, 'Project Management', const ProjectDashboardScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Project Management',
+                  const ProjectDashboardScreen(),
+                ),
           ),
           ModuleCard(
             title: 'Action Tracker',
             subtitle: 'Manage CAPA, tasks, and operational items.',
             icon: Icons.checklist_rounded,
             color: XMTheme.info,
-            onTap: () => _openModule(context, 'Action Tracker', const ActionTrackerScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Action Tracker',
+                  const ActionTrackerScreen(),
+                ),
           ),
           ModuleCard(
             title: 'Property Portfolio',
             subtitle: 'Manage facilities and real-estate assets.',
             icon: Icons.domain_rounded,
             color: XMTheme.secondary,
-            onTap: () => _openModule(context, 'Property Portfolio', const PropertyHubScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Property Portfolio',
+                  const PropertyHubScreen(),
+                ),
           ),
           ModuleCard(
             title: 'Environmental',
             subtitle: 'Compliance, waste, and emissions tracking.',
             icon: Icons.eco_rounded,
             color: XMTheme.success,
-            onTap: () => _openModule(context, 'Environmental', const EnvironmentalScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Environmental',
+                  const EnvironmentalScreen(),
+                ),
           ),
           ModuleCard(
             title: 'Contractors',
             subtitle: 'Vendor compliance and permit management.',
             icon: Icons.engineering_rounded,
             color: XMTheme.warning,
-            onTap: () => _openModule(context, 'Contractors', const ContractorManagementScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Contractors',
+                  const ContractorManagementScreen(),
+                ),
           ),
           ModuleCard(
             title: 'Gateways & Integrations',
             subtitle: 'Manage external API connections and webhooks.',
             icon: Icons.hub_rounded,
             color: Colors.deepPurple,
-            onTap: () => _openModule(context, 'Integrations', const IntegrationsHubScreen()),
+            onTap:
+                () => _openModule(
+                  context,
+                  'Integrations',
+                  const IntegrationsHubScreen(),
+                ),
           ),
         ]),
       ),

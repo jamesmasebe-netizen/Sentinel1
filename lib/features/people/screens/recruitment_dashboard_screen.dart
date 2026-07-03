@@ -9,10 +9,12 @@ class RecruitmentDashboardScreen extends ConsumerStatefulWidget {
   const RecruitmentDashboardScreen({super.key});
 
   @override
-  ConsumerState<RecruitmentDashboardScreen> createState() => _RecruitmentDashboardScreenState();
+  ConsumerState<RecruitmentDashboardScreen> createState() =>
+      _RecruitmentDashboardScreenState();
 }
 
-class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboardScreen> {
+class _RecruitmentDashboardScreenState
+    extends ConsumerState<RecruitmentDashboardScreen> {
   String? _selectedRequisitionId;
 
   final List<String> _stages = [
@@ -24,11 +26,18 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
     'Rejected',
   ];
 
-  Future<void> _updateCandidateStage(Candidate candidate, String newStage) async {
+  Future<void> _updateCandidateStage(
+    Candidate candidate,
+    String newStage,
+  ) async {
     if (candidate.stage == newStage) return;
-    
-    await ref.read(firestoreProvider)
-        .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'candidates')
+
+    await ref
+        .read(firestoreProvider)
+        .tenantCollection(
+          ref.watch(currentTenantIdProvider) ?? "",
+          'candidates',
+        )
         .doc(candidate.id)
         .update({'stage': newStage});
   }
@@ -38,9 +47,7 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
     final requisitionsAsync = ref.watch(jobRequisitionsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recruitment Dashboard'),
-      ),
+      appBar: AppBar(title: const Text('Recruitment Dashboard')),
       body: Column(
         children: [
           Padding(
@@ -62,12 +69,13 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
                   isExpanded: true,
                   hint: const Text('Select Job Requisition'),
                   value: _selectedRequisitionId,
-                  items: requisitions.map((req) {
-                    return DropdownMenuItem(
-                      value: req.id,
-                      child: Text('${req.title} (${req.department})'),
-                    );
-                  }).toList(),
+                  items:
+                      requisitions.map((req) {
+                        return DropdownMenuItem(
+                          value: req.id,
+                          child: Text('${req.title} (${req.department})'),
+                        );
+                      }).toList(),
                   onChanged: (val) {
                     setState(() {
                       _selectedRequisitionId = val;
@@ -80,9 +88,10 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
             ),
           ),
           Expanded(
-            child: _selectedRequisitionId == null
-                ? const Center(child: Text('Please select a requisition.'))
-                : _buildKanbanBoard(),
+            child:
+                _selectedRequisitionId == null
+                    ? const Center(child: Text('Please select a requisition.'))
+                    : _buildKanbanBoard(),
           ),
         ],
       ),
@@ -90,7 +99,9 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
   }
 
   Widget _buildKanbanBoard() {
-    final candidatesAsync = ref.watch(candidatesProvider(_selectedRequisitionId!));
+    final candidatesAsync = ref.watch(
+      candidatesProvider(_selectedRequisitionId!),
+    );
 
     return candidatesAsync.when(
       data: (candidates) {
@@ -98,10 +109,12 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
           scrollDirection: Axis.horizontal,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: _stages.map((stage) {
-              final stageCandidates = candidates.where((c) => c.stage == stage).toList();
-              return _buildKanbanColumn(stage, stageCandidates);
-            }).toList(),
+            children:
+                _stages.map((stage) {
+                  final stageCandidates =
+                      candidates.where((c) => c.stage == stage).toList();
+                  return _buildKanbanColumn(stage, stageCandidates);
+                }).toList(),
           ),
         );
       },
@@ -125,7 +138,9 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
               color: Colors.blueGrey.shade700,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(8.0)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8.0),
+              ),
             ),
             child: Text(
               '$stage (${candidates.length})',
@@ -154,7 +169,10 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
                           width: 234,
                           padding: const EdgeInsets.all(12.0),
                           color: Colors.white,
-                          child: Text(candidate.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          child: Text(
+                            candidate.name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ),
                       childWhenDragging: Opacity(
@@ -181,12 +199,20 @@ class _RecruitmentDashboardScreenState extends ConsumerState<RecruitmentDashboar
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(candidate.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              candidate.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 4),
-            Text(candidate.email, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(
+              candidate.email,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
             const SizedBox(height: 8),
-            Text('Applied: ${candidate.appliedDate.toLocal().toString().split(' ')[0]}',
-                style: const TextStyle(fontSize: 12)),
+            Text(
+              'Applied: ${candidate.appliedDate.toLocal().toString().split(' ')[0]}',
+              style: const TextStyle(fontSize: 12),
+            ),
           ],
         ),
       ),

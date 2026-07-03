@@ -41,7 +41,11 @@ class AuditLogService {
   AuditLogService(this._firestore);
 
   /// Logs an action to the tenant's audit_logs collection.
-  Future<void> logAction(String action, Map<String, dynamic> metadata, String tenantId) async {
+  Future<void> logAction(
+    String action,
+    Map<String, dynamic> metadata,
+    String tenantId,
+  ) async {
     if (tenantId.isEmpty) return;
 
     final entry = AuditLogEntry(

@@ -27,7 +27,12 @@ class WorkflowTab extends ConsumerWidget {
         final isPending = stage.status == 'Pending';
 
         return Opacity(
-          opacity: isPending && index > 0 && project.stages[index-1].status != 'Completed' ? 0.5 : 1.0,
+          opacity:
+              isPending &&
+                      index > 0 &&
+                      project.stages[index - 1].status != 'Completed'
+                  ? 0.5
+                  : 1.0,
           child: GCard(
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
@@ -38,12 +43,28 @@ class WorkflowTab extends ConsumerWidget {
                   height: 32,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isCompleted ? XMTheme.success : (isPending ? Colors.grey.shade300 : XMTheme.primary),
+                    color:
+                        isCompleted
+                            ? XMTheme.success
+                            : (isPending
+                                ? Colors.grey.shade300
+                                : XMTheme.primary),
                   ),
                   child: Center(
-                    child: isCompleted
-                       ? const Icon(Icons.check, color: Colors.white, size: 16)
-                       : Text('${stage.order}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child:
+                        isCompleted
+                            ? const Icon(
+                              Icons.check,
+                              color: Colors.white,
+                              size: 16,
+                            )
+                            : Text(
+                              '${stage.order}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                   ),
                 ),
                 GSpacing.hMd,
@@ -51,28 +72,47 @@ class WorkflowTab extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(stage.stageName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        stage.stageName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       if (stage.requiresSafetyClearance) ...[
                         GSpacing.vXs,
                         const Row(
                           children: [
                             Icon(Icons.lock, size: 12, color: XMTheme.error),
                             SizedBox(width: 4),
-                            Text('Requires Safety Clearance', style: TextStyle(color: XMTheme.error, fontSize: 12)),
+                            Text(
+                              'Requires Safety Clearance',
+                              style: TextStyle(
+                                color: XMTheme.error,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
-                        )
-                      ]
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 if (!isCompleted)
                   FilledButton.icon(
-                    onPressed: () => _showApprovalDialog(context, project, stage, ref),
+                    onPressed:
+                        () => _showApprovalDialog(context, project, stage, ref),
                     icon: const Icon(Icons.verified, size: 16),
                     label: const Text('Approve'),
                   )
                 else
-                  Text('Approved by ${stage.approvedBy}', style: const TextStyle(color: XMTheme.success, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Approved by ${stage.approvedBy}',
+                    style: const TextStyle(
+                      color: XMTheme.success,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -81,7 +121,12 @@ class WorkflowTab extends ConsumerWidget {
     );
   }
 
-  void _showApprovalDialog(BuildContext context, Project project, ProjectStage stage, WidgetRef ref) {
+  void _showApprovalDialog(
+    BuildContext context,
+    Project project,
+    ProjectStage stage,
+    WidgetRef ref,
+  ) {
     String? selectedApproverId;
     showDialog(
       context: context,
@@ -110,46 +155,71 @@ class WorkflowTab extends ConsumerWidget {
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  onPressed: selectedApproverId == null ? null : () {
-                    Navigator.pop(ctx);
-                    final emps = ref.read(employeesProvider).valueOrNull;
-                    String approverName = selectedApproverId!;
-                    if (emps != null) {
-                      try {
-                        approverName = emps.firstWhere((e) => e.id == selectedApproverId).fullName;
-                      } catch (_) {}
-                    }
-                    _handleStageApproval(context, project, stage, approverName, ref);
-                  },
+                  onPressed:
+                      selectedApproverId == null
+                          ? null
+                          : () {
+                            Navigator.pop(ctx);
+                            final emps =
+                                ref.read(employeesProvider).valueOrNull;
+                            String approverName = selectedApproverId!;
+                            if (emps != null) {
+                              try {
+                                approverName =
+                                    emps
+                                        .firstWhere(
+                                          (e) => e.id == selectedApproverId,
+                                        )
+                                        .fullName;
+                              } catch (_) {}
+                            }
+                            _handleStageApproval(
+                              context,
+                              project,
+                              stage,
+                              approverName,
+                              ref,
+                            );
+                          },
                   child: const Text('Approve'),
                 ),
               ],
             );
-          }
+          },
         );
-      }
+      },
     );
   }
 
-  void _handleStageApproval(BuildContext context, Project project, ProjectStage stage, String approverId, WidgetRef ref) async {
+  void _handleStageApproval(
+    BuildContext context,
+    Project project,
+    ProjectStage stage,
+    String approverId,
+    WidgetRef ref,
+  ) async {
     final service = ref.read(projectServiceProvider);
 
     try {
       UIUtils.showToast(context, 'Validating compliance...');
       await service.approveStage(project.id, stage.id, approverId);
       if (context.mounted) {
-         UIUtils.showToast(context, 'Stage approved successfully.', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Stage approved successfully.',
+          type: ToastType.success,
+        );
       }
     } catch (e) {
       if (context.mounted) {
-         UIUtils.showToast(context, e.toString(), type: ToastType.error);
+        UIUtils.showToast(context, e.toString(), type: ToastType.error);
 
-         // Trigger Action Item automatically on failure
-         service.triggerSafetyActionItem(
-           project,
-           'Stage Clearance Failed - ${stage.stageName}',
-           e.toString()
-         );
+        // Trigger Action Item automatically on failure
+        service.triggerSafetyActionItem(
+          project,
+          'Stage Clearance Failed - ${stage.stageName}',
+          e.toString(),
+        );
       }
     }
   }

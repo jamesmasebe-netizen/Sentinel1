@@ -24,20 +24,27 @@ class EmergencyBroadcastTab extends StatelessWidget {
           GSpacing.vLg,
           Text(
             'Emergency Broadcast',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           GSpacing.vSm,
           Text(
             'Send push notifications and SMS alerts to all personnel on site immediately.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           GSpacing.vLg,
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: () {
-                UIUtils.showToast(context, 'Broadcast system initialized. Configure in FCM.');
+                UIUtils.showToast(
+                  context,
+                  'Broadcast system initialized. Configure in FCM.',
+                );
               },
               icon: const Icon(Icons.send),
               label: const Text('Initialize Test Broadcast'),

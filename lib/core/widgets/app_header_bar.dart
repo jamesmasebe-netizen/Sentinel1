@@ -71,11 +71,18 @@ class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              showSearch(context: context, delegate: GlobalSearchDelegate(ref.read(currentTenantIdProvider) ?? ""));
+              showSearch(
+                context: context,
+                delegate: GlobalSearchDelegate(
+                  ref.read(currentTenantIdProvider) ?? "",
+                ),
+              );
             },
           ),
         syncStatus.when(
-          data: (status) => SyncIndicator(status: status, pendingCount: pendingCount),
+          data:
+              (status) =>
+                  SyncIndicator(status: status, pendingCount: pendingCount),
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
@@ -96,26 +103,31 @@ class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
           },
         ),
         profile.when(
-          data: (p) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GestureDetector(
-              onTap: () => _showProfileMenu(context, ref),
-              child: CircleAvatar(
-                radius: 16,
-                backgroundColor: XMTheme.primaryLight.withValues(alpha: 0.3),
-                backgroundImage: p?.photoURL != null ? NetworkImage(p!.photoURL!) : null,
-                child: p?.photoURL == null
-                    ? Text(
-                        (p?.displayName ?? 'U')[0].toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: XMTheme.primaryDark,
-                        ),
-                      )
-                    : null,
+          data:
+              (p) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GestureDetector(
+                  onTap: () => _showProfileMenu(context, ref),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: XMTheme.primaryLight.withValues(
+                      alpha: 0.3,
+                    ),
+                    backgroundImage:
+                        p?.photoURL != null ? NetworkImage(p!.photoURL!) : null,
+                    child:
+                        p?.photoURL == null
+                            ? Text(
+                              (p?.displayName ?? 'U')[0].toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: XMTheme.primaryDark,
+                              ),
+                            )
+                            : null,
+                  ),
+                ),
               ),
-            ),
-          ),
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
         ),
@@ -126,39 +138,39 @@ class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
   void _showProfileMenu(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Profile Options'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Edit Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                UIUtils.showToast(context, 'Edit profile opened');
-              },
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Profile Options'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: const Text('Edit Profile'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    UIUtils.showToast(context, 'Edit profile opened');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: const Text('Settings'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    UIUtils.showToast(context, 'Settings opened');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Logout'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    ref.read(sessionManagerProvider).endSession();
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                UIUtils.showToast(context, 'Settings opened');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                Navigator.pop(context);
-                ref.read(sessionManagerProvider).endSession();
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }
-

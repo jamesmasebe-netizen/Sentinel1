@@ -108,7 +108,11 @@ class FirestoreService {
     required String documentId,
     required T Function(DocumentSnapshot) fromFirestore,
   }) async {
-    final doc = await _firestore.tenantCollection(tenantId, collection).doc(documentId).get();
+    final doc =
+        await _firestore
+            .tenantCollection(tenantId, collection)
+            .doc(documentId)
+            .get();
     return doc.exists ? fromFirestore(doc) : null;
   }
 
@@ -122,7 +126,11 @@ class FirestoreService {
     String? documentId,
   }) async {
     final fullPath = _firestore.tenantCollection(tenantId, collection).path;
-    await _auditLog.logAction('CREATE', {'collection': fullPath, 'data': data, 'documentId': documentId}, tenantId);
+    await _auditLog.logAction('CREATE', {
+      'collection': fullPath,
+      'data': data,
+      'documentId': documentId,
+    }, tenantId);
     return _offlineSync.queueOperation(
       operation: OfflineOperation.create,
       collection: fullPath,
@@ -139,7 +147,11 @@ class FirestoreService {
     required Map<String, dynamic> data,
   }) async {
     final fullPath = _firestore.tenantCollection(tenantId, collection).path;
-    await _auditLog.logAction('UPDATE', {'collection': fullPath, 'documentId': documentId, 'data': data}, tenantId);
+    await _auditLog.logAction('UPDATE', {
+      'collection': fullPath,
+      'documentId': documentId,
+      'data': data,
+    }, tenantId);
     return _offlineSync.queueOperation(
       operation: OfflineOperation.update,
       collection: fullPath,
@@ -155,7 +167,10 @@ class FirestoreService {
     required String documentId,
   }) async {
     final fullPath = _firestore.tenantCollection(tenantId, collection).path;
-    await _auditLog.logAction('DELETE', {'collection': fullPath, 'documentId': documentId}, tenantId);
+    await _auditLog.logAction('DELETE', {
+      'collection': fullPath,
+      'documentId': documentId,
+    }, tenantId);
     return _offlineSync.queueOperation(
       operation: OfflineOperation.delete,
       collection: fullPath,
@@ -172,7 +187,10 @@ class FirestoreService {
     required String collection,
     required Map<String, dynamic> data,
   }) async {
-    await _auditLog.logAction('DIRECT_CREATE', {'collection': collection, 'data': data}, tenantId);
+    await _auditLog.logAction('DIRECT_CREATE', {
+      'collection': collection,
+      'data': data,
+    }, tenantId);
     return _firestore.tenantCollection(tenantId, collection).add(data);
   }
 
@@ -183,26 +201,49 @@ class FirestoreService {
     required String documentId,
     required Map<String, dynamic> data,
   }) async {
-    await _auditLog.logAction('DIRECT_UPDATE', {'collection': collection, 'documentId': documentId, 'data': data}, tenantId);
-    await _firestore.tenantCollection(tenantId, collection).doc(documentId).update(data);
+    await _auditLog.logAction('DIRECT_UPDATE', {
+      'collection': collection,
+      'documentId': documentId,
+      'data': data,
+    }, tenantId);
+    await _firestore
+        .tenantCollection(tenantId, collection)
+        .doc(documentId)
+        .update(data);
   }
 
   /// Batch write for multiple operations
-  Future<void> batchWrite({required String tenantId, required List<BatchOperation> operations}) async {
+  Future<void> batchWrite({
+    required String tenantId,
+    required List<BatchOperation> operations,
+  }) async {
     final batch = _firestore.batch();
     for (final op in operations) {
-      final ref = _firestore.tenantCollection(tenantId, op.collection).doc(op.documentId);
+      final ref = _firestore
+          .tenantCollection(tenantId, op.collection)
+          .doc(op.documentId);
       switch (op.type) {
         case BatchOpType.set:
-          await _auditLog.logAction('BATCH_SET', {'collection': op.collection, 'documentId': op.documentId, 'data': op.data}, tenantId);
+          await _auditLog.logAction('BATCH_SET', {
+            'collection': op.collection,
+            'documentId': op.documentId,
+            'data': op.data,
+          }, tenantId);
           batch.set(ref, op.data);
           break;
         case BatchOpType.update:
-          await _auditLog.logAction('BATCH_UPDATE', {'collection': op.collection, 'documentId': op.documentId, 'data': op.data}, tenantId);
+          await _auditLog.logAction('BATCH_UPDATE', {
+            'collection': op.collection,
+            'documentId': op.documentId,
+            'data': op.data,
+          }, tenantId);
           batch.update(ref, op.data);
           break;
         case BatchOpType.delete:
-          await _auditLog.logAction('BATCH_DELETE', {'collection': op.collection, 'documentId': op.documentId}, tenantId);
+          await _auditLog.logAction('BATCH_DELETE', {
+            'collection': op.collection,
+            'documentId': op.documentId,
+          }, tenantId);
           batch.delete(ref);
           break;
       }

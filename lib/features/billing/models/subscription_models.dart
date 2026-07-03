@@ -1,10 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum SubscriptionTier {
-  free,
-  pro,
-  enterprise,
-}
+enum SubscriptionTier { free, pro, enterprise }
 
 extension SubscriptionTierX on SubscriptionTier {
   String get name {
@@ -86,8 +82,10 @@ class TenantSubscription {
       'tier': tier.name,
       'status': status,
       if (stripeCustomerId != null) 'stripeCustomerId': stripeCustomerId,
-      if (stripeSubscriptionId != null) 'stripeSubscriptionId': stripeSubscriptionId,
-      if (currentPeriodEnd != null) 'currentPeriodEnd': Timestamp.fromDate(currentPeriodEnd!),
+      if (stripeSubscriptionId != null)
+        'stripeSubscriptionId': stripeSubscriptionId,
+      if (currentPeriodEnd != null)
+        'currentPeriodEnd': Timestamp.fromDate(currentPeriodEnd!),
     };
   }
 

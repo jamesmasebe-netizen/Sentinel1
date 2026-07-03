@@ -28,11 +28,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         if (mounted) {
           setState(() {
             if (event is HighRiskIncidentReportedEvent) {
-              _latestAlert = 'ALERT (Safety): High Risk Incident ${event.incidentId} reported on project ${event.projectId}';
+              _latestAlert =
+                  'ALERT (Safety): High Risk Incident ${event.incidentId} reported on project ${event.projectId}';
             } else if (event is EmployeeTerminatedEvent) {
-              _latestAlert = 'UPDATE (HR): Employee ${event.employeeName} terminated. Related clearances flagged.';
+              _latestAlert =
+                  'UPDATE (HR): Employee ${event.employeeName} terminated. Related clearances flagged.';
             } else {
-              _latestAlert = 'EVENT (${event.sourceModule}): System update received.';
+              _latestAlert =
+                  'EVENT (${event.sourceModule}): System update received.';
             }
           });
           // Auto clear after 10 seconds
@@ -52,7 +55,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    
     final screenWidth = MediaQuery.of(context).size.width;
     int crossAxisCount = 1;
     if (screenWidth > 1200) {
@@ -73,7 +75,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               isSeeding: _isSeeding,
               onSeedData: () => _seedData(context),
             ),
-            
+
             if (_latestAlert != null)
               Container(
                 margin: const EdgeInsets.only(top: 24),
@@ -84,7 +86,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.onErrorContainer),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -96,13 +101,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, color: Theme.of(context).colorScheme.onErrorContainer),
+                      icon: Icon(
+                        Icons.close,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
                       onPressed: () => setState(() => _latestAlert = null),
                     ),
                   ],
                 ),
               ),
-              
+
             GSpacing.vXl,
 
             // 9 Charts Grid
@@ -132,5 +140,4 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     }
   }
-
 }

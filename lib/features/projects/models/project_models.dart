@@ -106,8 +106,10 @@ class ProjectTask {
       'isMilestone': isMilestone,
       'assignedToName': assignedToName,
       'assignedToAvatar': assignedToAvatar,
-      'baselineStart': baselineStart != null ? Timestamp.fromDate(baselineStart!) : null,
-      'baselineEnd': baselineEnd != null ? Timestamp.fromDate(baselineEnd!) : null,
+      'baselineStart':
+          baselineStart != null ? Timestamp.fromDate(baselineStart!) : null,
+      'baselineEnd':
+          baselineEnd != null ? Timestamp.fromDate(baselineEnd!) : null,
       'parentId': parentId,
       'taskType': taskType,
     };
@@ -117,7 +119,8 @@ class ProjectTask {
 /// Represents a Stage in the PRINCE2 methodology for a Project.
 class ProjectStage {
   final String id;
-  final String stageName; // e.g., 'Starting up a Project', 'Initiating a Project'
+  final String
+  stageName; // e.g., 'Starting up a Project', 'Initiating a Project'
   final int order;
   final String status; // 'Pending', 'In Progress', 'Completed', 'Blocked'
   final String? approvedBy; // User ID of the approver
@@ -179,9 +182,10 @@ class Project {
   final String fallbackContactContact;
 
   // Linked Entities
-  
+
   // Calculated & Aggregated Safety Fields
-  final String overallRiskLevel; // Auto-calculated based on tasks/NCRs/Safety File
+  final String
+  overallRiskLevel; // Auto-calculated based on tasks/NCRs/Safety File
   final double safetyFileScore; // 0.0 to 100.0, acts as compliance lock
   final int totalNcrs; // Number of Non-Conformance Reports linked
 
@@ -255,11 +259,13 @@ class Project {
       targetEndDate: targetEndDate ?? this.targetEndDate,
       budget: budget ?? this.budget,
       actualSpend: actualSpend ?? this.actualSpend,
-      estimatedCostAtCompletion: estimatedCostAtCompletion ?? this.estimatedCostAtCompletion,
+      estimatedCostAtCompletion:
+          estimatedCostAtCompletion ?? this.estimatedCostAtCompletion,
       projectLead: projectLead ?? this.projectLead,
       projectLeadContact: projectLeadContact ?? this.projectLeadContact,
       fallbackContact: fallbackContact ?? this.fallbackContact,
-      fallbackContactContact: fallbackContactContact ?? this.fallbackContactContact,
+      fallbackContactContact:
+          fallbackContactContact ?? this.fallbackContactContact,
       overallRiskLevel: overallRiskLevel ?? this.overallRiskLevel,
       safetyFileScore: safetyFileScore ?? this.safetyFileScore,
       totalNcrs: totalNcrs ?? this.totalNcrs,
@@ -276,15 +282,23 @@ class Project {
 
     // Parse Stages
     final stagesList = (data['stages'] as List<dynamic>?) ?? [];
-    final parsedStages = stagesList.asMap().entries.map((entry) {
-      return ProjectStage.fromMap(entry.value as Map<String, dynamic>, 'stage_${entry.key}');
-    }).toList();
+    final parsedStages =
+        stagesList.asMap().entries.map((entry) {
+          return ProjectStage.fromMap(
+            entry.value as Map<String, dynamic>,
+            'stage_${entry.key}',
+          );
+        }).toList();
 
     // Parse Tasks
     final tasksList = (data['tasks'] as List<dynamic>?) ?? [];
-    final parsedTasks = tasksList.asMap().entries.map((entry) {
-      return ProjectTask.fromMap(entry.value as Map<String, dynamic>, 'task_${entry.key}');
-    }).toList();
+    final parsedTasks =
+        tasksList.asMap().entries.map((entry) {
+          return ProjectTask.fromMap(
+            entry.value as Map<String, dynamic>,
+            'task_${entry.key}',
+          );
+        }).toList();
 
     return Project(
       id: doc.id,
@@ -294,10 +308,12 @@ class Project {
       description: data['description'] ?? '',
       category: data['category'] ?? 'Maintenance',
       startDate: (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      targetEndDate: (data['targetEndDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      targetEndDate:
+          (data['targetEndDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       budget: (data['budget'] as num?)?.toDouble() ?? 0.0,
       actualSpend: (data['actualSpend'] as num?)?.toDouble() ?? 0.0,
-      estimatedCostAtCompletion: (data['estimatedCostAtCompletion'] as num?)?.toDouble() ?? 0.0,
+      estimatedCostAtCompletion:
+          (data['estimatedCostAtCompletion'] as num?)?.toDouble() ?? 0.0,
       projectLead: data['projectLead'] ?? '',
       projectLeadContact: data['projectLeadContact'] ?? '',
       fallbackContact: data['fallbackContact'] ?? '',
@@ -335,7 +351,10 @@ class Project {
       'status': status,
       'stages': stages.map((s) => s.toMap()).toList(),
       'tasks': tasks.map((t) => t.toMap()).toList(),
-      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'createdAt':
+          createdAt != null
+              ? Timestamp.fromDate(createdAt!)
+              : FieldValue.serverTimestamp(),
       'createdBy': createdBy,
     };
   }
@@ -367,7 +386,7 @@ class Project {
 
     final plannedProgress = (elapsedDuration / totalDuration).clamp(0.0, 1.0);
     if (plannedProgress == 0.0) return 1.0;
-    
+
     // SPI = Earned Value / Planned Value
     // We can simplify this to: overallProgress / plannedProgress
     return overallProgress / plannedProgress;
@@ -405,7 +424,8 @@ class ProjectNCR {
       description: data['description'] ?? '',
       severity: data['severity'] ?? 'Major',
       status: data['status'] ?? 'Open',
-      reportedDate: (data['reportedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      reportedDate:
+          (data['reportedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       reportedBy: data['reportedBy'],
     );
   }

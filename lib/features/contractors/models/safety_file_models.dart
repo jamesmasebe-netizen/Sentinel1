@@ -63,8 +63,11 @@ class Finding {
       reviewerName: data['reviewerName'] ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       modifiedBy: data['modifiedBy'] ?? '',
-      modifiedAt: (data['modifiedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      statusHistory: List<Map<String, dynamic>>.from(data['statusHistory'] ?? []),
+      modifiedAt:
+          (data['modifiedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      statusHistory: List<Map<String, dynamic>>.from(
+        data['statusHistory'] ?? [],
+      ),
     );
   }
 

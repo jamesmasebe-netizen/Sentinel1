@@ -18,10 +18,13 @@ class Employee360ProfileScreen extends ConsumerStatefulWidget {
   const Employee360ProfileScreen({super.key, required this.employeeId});
 
   @override
-  ConsumerState<Employee360ProfileScreen> createState() => _Employee360ProfileScreenState();
+  ConsumerState<Employee360ProfileScreen> createState() =>
+      _Employee360ProfileScreenState();
 }
 
-class _Employee360ProfileScreenState extends ConsumerState<Employee360ProfileScreen> with SingleTickerProviderStateMixin {
+class _Employee360ProfileScreenState
+    extends ConsumerState<Employee360ProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -39,33 +42,54 @@ class _Employee360ProfileScreenState extends ConsumerState<Employee360ProfileScr
   Future<void> _terminateEmployee(String employeeName) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Terminate Employee?'),
-        content: Text('Are you sure you want to terminate $employeeName? This will revoke access and fire a global event.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: const Text('Terminate'),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Terminate Employee?'),
+            content: Text(
+              'Are you sure you want to terminate $employeeName? This will revoke access and fire a global event.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Terminate'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'employees').doc(widget.employeeId).update({
-        'status': 'Terminated',
-        'terminatedAt': DateTime.now().toIso8601String(),
-      });
-      ref.read(appEventBusProvider).fire(
-        EmployeeTerminatedEvent(
-          employeeId: widget.employeeId,
-          employeeName: employeeName,
-        ),
-      );
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'employees',
+          )
+          .doc(widget.employeeId)
+          .update({
+            'status': 'Terminated',
+            'terminatedAt': DateTime.now().toIso8601String(),
+          });
+      ref
+          .read(appEventBusProvider)
+          .fire(
+            EmployeeTerminatedEvent(
+              employeeId: widget.employeeId,
+              employeeName: employeeName,
+            ),
+          );
       if (mounted) {
-        UIUtils.showToast(context, 'Employee terminated', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Employee terminated',
+          type: ToastType.success,
+        );
       }
     }
   }
@@ -91,7 +115,14 @@ class _Employee360ProfileScreenState extends ConsumerState<Employee360ProfileScr
         ),
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'employees').doc(widget.employeeId).snapshots(),
+        stream:
+            firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'employees',
+                )
+                .doc(widget.employeeId)
+                .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -130,7 +161,11 @@ class _Employee360ProfileScreenState extends ConsumerState<Employee360ProfileScr
                 backgroundColor: XMTheme.primary.withValues(alpha: 0.1),
                 child: Text(
                   (emp['fullName'] ?? 'U')[0].toUpperCase(),
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: XMTheme.primary),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: XMTheme.primary,
+                  ),
                 ),
               ),
               const SizedBox(width: 24),
@@ -138,46 +173,95 @@ class _Employee360ProfileScreenState extends ConsumerState<Employee360ProfileScr
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(emp['fullName'] ?? '', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      emp['fullName'] ?? '',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 4),
-                    Text('${emp['jobTitle'] ?? ''} • ${emp['department'] ?? ''}', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: XMTheme.secondaryLight)),
+                    Text(
+                      '${emp['jobTitle'] ?? ''} • ${emp['department'] ?? ''}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: XMTheme.secondaryLight,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        GStatusTag(label: emp['status'] ?? 'Active', color: emp['status'] == 'Active' ? XMTheme.success : XMTheme.error),
+                        GStatusTag(
+                          label: emp['status'] ?? 'Active',
+                          color:
+                              emp['status'] == 'Active'
+                                  ? XMTheme.success
+                                  : XMTheme.error,
+                        ),
                         if (emp['status'] != 'Terminated') ...[
                           const SizedBox(width: 16),
                           OutlinedButton.icon(
-                            onPressed: () => _terminateEmployee(emp['fullName'] ?? 'Employee'),
-                            icon: const Icon(Icons.person_off, size: 16, color: XMTheme.error),
-                            label: const Text('Terminate', style: TextStyle(color: XMTheme.error)),
+                            onPressed:
+                                () => _terminateEmployee(
+                                  emp['fullName'] ?? 'Employee',
+                                ),
+                            icon: const Icon(
+                              Icons.person_off,
+                              size: 16,
+                              color: XMTheme.error,
+                            ),
+                            label: const Text(
+                              'Terminate',
+                              style: TextStyle(color: XMTheme.error),
+                            ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: XMTheme.error),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 0,
+                              ),
                             ),
-                          )
+                          ),
                         ],
-                      ]
-                    )
+                      ],
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 32),
-          Text('Contact & Identification', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Contact & Identification',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 16),
           GCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
-                DetailRow(icon: Icons.badge, label: 'Employee Code', value: emp['employeeCode'] ?? ''),
+                DetailRow(
+                  icon: Icons.badge,
+                  label: 'Employee Code',
+                  value: emp['employeeCode'] ?? '',
+                ),
                 const Divider(height: 1),
-                DetailRow(icon: Icons.credit_card, label: 'ID Number', value: emp['idNumber'] ?? ''),
+                DetailRow(
+                  icon: Icons.credit_card,
+                  label: 'ID Number',
+                  value: emp['idNumber'] ?? '',
+                ),
                 const Divider(height: 1),
-                DetailRow(icon: Icons.email, label: 'Email Address', value: emp['email'] ?? ''),
+                DetailRow(
+                  icon: Icons.email,
+                  label: 'Email Address',
+                  value: emp['email'] ?? '',
+                ),
                 const Divider(height: 1),
-                DetailRow(icon: Icons.phone, label: 'Phone Number', value: emp['phone'] ?? ''),
+                DetailRow(
+                  icon: Icons.phone,
+                  label: 'Phone Number',
+                  value: emp['phone'] ?? '',
+                ),
               ],
             ),
           ),

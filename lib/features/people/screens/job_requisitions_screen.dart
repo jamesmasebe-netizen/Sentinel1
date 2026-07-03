@@ -10,7 +10,8 @@ class JobRequisitionsScreen extends ConsumerStatefulWidget {
   const JobRequisitionsScreen({super.key});
 
   @override
-  ConsumerState<JobRequisitionsScreen> createState() => _JobRequisitionsScreenState();
+  ConsumerState<JobRequisitionsScreen> createState() =>
+      _JobRequisitionsScreenState();
 }
 
 class _JobRequisitionsScreenState extends ConsumerState<JobRequisitionsScreen> {
@@ -47,7 +48,9 @@ class _JobRequisitionsScreenState extends ConsumerState<JobRequisitionsScreen> {
               return ListTile(
                 title: Text(req.title),
                 subtitle: Text('${req.department} • Status: ${req.status}'),
-                trailing: Text(req.postedDate.toLocal().toString().split(' ')[0]),
+                trailing: Text(
+                  req.postedDate.toLocal().toString().split(' ')[0],
+                ),
               );
             },
           );
@@ -63,10 +66,12 @@ class _CreateRequisitionDialog extends ConsumerStatefulWidget {
   const _CreateRequisitionDialog();
 
   @override
-  ConsumerState<_CreateRequisitionDialog> createState() => _CreateRequisitionDialogState();
+  ConsumerState<_CreateRequisitionDialog> createState() =>
+      _CreateRequisitionDialogState();
 }
 
-class _CreateRequisitionDialogState extends ConsumerState<_CreateRequisitionDialog> {
+class _CreateRequisitionDialogState
+    extends ConsumerState<_CreateRequisitionDialog> {
   final _titleController = TextEditingController();
   final _departmentController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -87,7 +92,13 @@ class _CreateRequisitionDialogState extends ConsumerState<_CreateRequisitionDial
       siteId: siteId,
     );
 
-    await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'job_requisitions').add(req.toFirestore());
+    await ref
+        .read(firestoreProvider)
+        .tenantCollection(
+          ref.watch(currentTenantIdProvider) ?? "",
+          'job_requisitions',
+        )
+        .add(req.toFirestore());
     if (mounted) Navigator.pop(context);
   }
 
@@ -113,7 +124,10 @@ class _CreateRequisitionDialogState extends ConsumerState<_CreateRequisitionDial
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-            const Text('Hiring Manager', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Hiring Manager',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             EmployeeSelector(
               value: _selectedManagerId,
               onChanged: (val) {
@@ -143,10 +157,7 @@ class _CreateRequisitionDialogState extends ConsumerState<_CreateRequisitionDial
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(
-          onPressed: _saveRequisition,
-          child: const Text('Save'),
-        ),
+        ElevatedButton(onPressed: _saveRequisition, child: const Text('Save')),
       ],
     );
   }

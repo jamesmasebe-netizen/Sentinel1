@@ -7,11 +7,12 @@ import '../../../core/services/integrations_service.dart';
 
 class IntegrationConfigForm extends ConsumerStatefulWidget {
   final IntegrationConfig? config;
-  
+
   const IntegrationConfigForm({super.key, this.config});
 
   @override
-  ConsumerState<IntegrationConfigForm> createState() => _IntegrationConfigFormState();
+  ConsumerState<IntegrationConfigForm> createState() =>
+      _IntegrationConfigFormState();
 }
 
 class _IntegrationConfigFormState extends ConsumerState<IntegrationConfigForm> {
@@ -56,9 +57,13 @@ class _IntegrationConfigFormState extends ConsumerState<IntegrationConfigForm> {
       );
 
       await ref.read(integrationsServiceProvider).saveIntegration(newConfig);
-      
+
       if (mounted) {
-        UIUtils.showToast(context, 'Integration saved', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Integration saved',
+          type: ToastType.success,
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -80,28 +85,50 @@ class _IntegrationConfigFormState extends ConsumerState<IntegrationConfigForm> {
           children: [
             TextFormField(
               initialValue: _name,
-              decoration: const InputDecoration(labelText: 'Integration Name', border: OutlineInputBorder()),
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              decoration: const InputDecoration(
+                labelText: 'Integration Name',
+                border: OutlineInputBorder(),
+              ),
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
               onSaved: (val) => _name = val!.trim(),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _type,
-              decoration: const InputDecoration(labelText: 'Integration Type', border: OutlineInputBorder()),
-              items: _integrationTypes.map((t) => DropdownMenuItem(value: t, child: Text(t.toUpperCase()))).toList(),
+              decoration: const InputDecoration(
+                labelText: 'Integration Type',
+                border: OutlineInputBorder(),
+              ),
+              items:
+                  _integrationTypes
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t.toUpperCase()),
+                        ),
+                      )
+                      .toList(),
               onChanged: (val) => setState(() => _type = val!),
             ),
             const SizedBox(height: 16),
             TextFormField(
               initialValue: _webhookUrl,
-              decoration: const InputDecoration(labelText: 'Webhook URL', border: OutlineInputBorder()),
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              decoration: const InputDecoration(
+                labelText: 'Webhook URL',
+                border: OutlineInputBorder(),
+              ),
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
               onSaved: (val) => _webhookUrl = val!.trim(),
             ),
             const SizedBox(height: 16),
             TextFormField(
               initialValue: _apiKey,
-              decoration: const InputDecoration(labelText: 'API Key / Bearer Token (Optional)', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'API Key / Bearer Token (Optional)',
+                border: OutlineInputBorder(),
+              ),
               obscureText: true,
               onSaved: (val) => _apiKey = val?.trim() ?? '',
             ),
@@ -121,14 +148,19 @@ class _IntegrationConfigFormState extends ConsumerState<IntegrationConfigForm> {
               const Divider(),
               TextButton.icon(
                 onPressed: () async {
-                  await ref.read(integrationsServiceProvider).deleteIntegration(ref.read(currentTenantIdProvider) ?? "", widget.config!.id);
+                  await ref
+                      .read(integrationsServiceProvider)
+                      .deleteIntegration(
+                        ref.read(currentTenantIdProvider) ?? "",
+                        widget.config!.id,
+                      );
                   if (mounted) Navigator.pop(context);
                 },
                 icon: const Icon(Icons.delete),
                 label: const Text('Delete Integration'),
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
               ),
-            ]
+            ],
           ],
         ),
       ),

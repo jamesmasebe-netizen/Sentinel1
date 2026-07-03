@@ -23,7 +23,10 @@ final propertyProjectsProvider =
     StreamProvider.family<List<PropertyProject>, String>((ref, propertyId) {
       final firestore = ref.watch(firestoreProvider);
       return firestore
-          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_projects')
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'property_projects',
+          )
           .where('propertyId', isEqualTo: propertyId)
           .snapshots()
           .map(
@@ -38,7 +41,10 @@ final propertyUtilitiesProvider =
     StreamProvider.family<List<UtilityUsage>, String>((ref, propertyId) {
       final firestore = ref.watch(firestoreProvider);
       return firestore
-          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_utilities')
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'property_utilities',
+          )
           .where('propertyId', isEqualTo: propertyId)
           .snapshots()
           .map(
@@ -53,7 +59,10 @@ final propertyAppointmentsProvider =
     StreamProvider.family<List<LegalAppointment>, String>((ref, propertyId) {
       final firestore = ref.watch(firestoreProvider);
       return firestore
-          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'legal_appointments')
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'legal_appointments',
+          )
           .where('propertyId', isEqualTo: propertyId)
           .snapshots()
           .map(
@@ -70,7 +79,10 @@ final propertyLeasesProvider = StreamProvider.family<List<LeaseInfo>, String>((
 ) {
   final firestore = ref.watch(firestoreProvider);
   return firestore
-      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_leases')
+      .tenantCollection(
+        ref.watch(currentTenantIdProvider) ?? "",
+        'property_leases',
+      )
       .where('propertyId', isEqualTo: propertyId)
       .snapshots()
       .map(
@@ -85,7 +97,10 @@ final propertyAssetsProvider = StreamProvider.family<List<AssetInfo>, String>((
 ) {
   final firestore = ref.watch(firestoreProvider);
   return firestore
-      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'property_assets')
+      .tenantCollection(
+        ref.watch(currentTenantIdProvider) ?? "",
+        'property_assets',
+      )
       .where('propertyId', isEqualTo: propertyId)
       .snapshots()
       .map(

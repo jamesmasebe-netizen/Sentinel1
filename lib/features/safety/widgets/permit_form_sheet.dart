@@ -38,8 +38,15 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
   }
 
   Future<void> _submitPermit() async {
-    if (_descriptionController.text.isEmpty || _locationController.text.isEmpty || _validFrom == null || _validTo == null) {
-      UIUtils.showToast(context, 'Please fill all required fields', type: ToastType.error);
+    if (_descriptionController.text.isEmpty ||
+        _locationController.text.isEmpty ||
+        _validFrom == null ||
+        _validTo == null) {
+      UIUtils.showToast(
+        context,
+        'Please fill all required fields',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -63,10 +70,18 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
       };
 
       final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(tenantId: ref.read(currentTenantIdProvider) ?? '', collection: 'permits', data: data);
+      await firestoreService.createDocument(
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
+        collection: 'permits',
+        data: data,
+      );
 
       if (mounted) {
-        UIUtils.showToast(context, 'Permit request submitted successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Permit request submitted successfully',
+          type: ToastType.success,
+        );
         Navigator.pop(context); // Close side sheet
       }
     } catch (e) {
@@ -95,9 +110,17 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
               labelText: 'Permit Type *',
               prefixIcon: Icon(Icons.category_rounded),
             ),
-            items: ['Hot Work', 'Working at Height', 'Confined Space', 'Excavation', 'Electrical', 'Other']
-                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                .toList(),
+            items:
+                [
+                      'Hot Work',
+                      'Working at Height',
+                      'Confined Space',
+                      'Excavation',
+                      'Electrical',
+                      'Other',
+                    ]
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .toList(),
             onChanged: (v) => setState(() => _type = v!),
           ),
           GSpacing.vMd,
@@ -118,13 +141,17 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
             ),
           ),
           GSpacing.vMd,
-          
+
           // Date pickers
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.play_circle_outline),
             title: const Text('Valid From *'),
-            subtitle: Text(_validFrom != null ? _formatDateTime(_validFrom!) : 'Tap to select'),
+            subtitle: Text(
+              _validFrom != null
+                  ? _formatDateTime(_validFrom!)
+                  : 'Tap to select',
+            ),
             onTap: () async {
               final date = await showDatePicker(
                 context: context,
@@ -133,9 +160,18 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
                 lastDate: DateTime.now().add(const Duration(days: 365)),
               );
               if (date != null && context.mounted) {
-                final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
                 if (time != null && context.mounted) {
-                  final full = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                  final full = DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    time.hour,
+                    time.minute,
+                  );
                   setState(() => _validFrom = full);
                 }
               }
@@ -145,7 +181,9 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.stop_circle_outlined),
             title: const Text('Valid To *'),
-            subtitle: Text(_validTo != null ? _formatDateTime(_validTo!) : 'Tap to select'),
+            subtitle: Text(
+              _validTo != null ? _formatDateTime(_validTo!) : 'Tap to select',
+            ),
             onTap: () async {
               final initial = _validFrom ?? DateTime.now();
               final date = await showDatePicker(
@@ -155,9 +193,18 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
                 lastDate: initial.add(const Duration(days: 365)),
               );
               if (date != null && context.mounted) {
-                final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
                 if (time != null && context.mounted) {
-                  final full = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                  final full = DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    time.hour,
+                    time.minute,
+                  );
                   setState(() => _validTo = full);
                 }
               }
@@ -177,9 +224,14 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: _isSubmitting ? null : _submitPermit,
-              icon: _isSubmitting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.send_rounded),
+              icon:
+                  _isSubmitting
+                      ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.send_rounded),
               label: Text(_isSubmitting ? 'Submitting...' : 'Submit Request'),
             ),
           ),

@@ -13,9 +13,21 @@ class MandatoryTrainingChart extends ConsumerWidget {
       data: (trainingMap) {
         final theme = Theme.of(context);
         final items = [
-          {'label': 'First Aid Level 1', 'percent': trainingMap['First Aid']!.toInt(), 'color': XMTheme.secondary},
-          {'label': 'Fire Fighting', 'percent': trainingMap['Fire Fighting']!.toInt(), 'color': XMTheme.warning},
-          {'label': 'SHE Rep', 'percent': trainingMap['SHE Rep']!.toInt(), 'color': XMTheme.success},
+          {
+            'label': 'First Aid Level 1',
+            'percent': trainingMap['First Aid']!.toInt(),
+            'color': XMTheme.secondary,
+          },
+          {
+            'label': 'Fire Fighting',
+            'percent': trainingMap['Fire Fighting']!.toInt(),
+            'color': XMTheme.warning,
+          },
+          {
+            'label': 'SHE Rep',
+            'percent': trainingMap['SHE Rep']!.toInt(),
+            'color': XMTheme.success,
+          },
         ];
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -64,7 +76,8 @@ class MandatoryTrainingChart extends ConsumerWidget {
               }).toList(),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }

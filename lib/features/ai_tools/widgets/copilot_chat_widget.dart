@@ -31,7 +31,8 @@ class _CopilotChatWidgetState extends ConsumerState<CopilotChatWidget> {
     super.initState();
     _messages.add(
       ChatMessage(
-        text: 'Hello! I am your AI Copilot for the ${widget.moduleContext} module. How can I help you today?',
+        text:
+            'Hello! I am your AI Copilot for the ${widget.moduleContext} module. How can I help you today?',
         isUser: false,
       ),
     );
@@ -58,7 +59,10 @@ class _CopilotChatWidgetState extends ConsumerState<CopilotChatWidget> {
     final copilotService = ref.read(copilotServiceProvider(widget.tenantId));
 
     try {
-      final responseText = await copilotService.askCopilot(text, widget.moduleContext);
+      final responseText = await copilotService.askCopilot(
+        text,
+        widget.moduleContext,
+      );
       if (mounted) {
         setState(() {
           _messages.add(ChatMessage(text: responseText, isUser: false));
@@ -103,22 +107,30 @@ class _CopilotChatWidgetState extends ConsumerState<CopilotChatWidget> {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
-              children: widget.quickPrompts.map(
-                (q) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ActionChip(
-                    label: Text(q, style: const TextStyle(fontSize: 11)),
-                    onPressed: () {
-                      _ctrl.text = q;
-                      _send();
-                    },
-                    backgroundColor: XMTheme.secondary.withValues(alpha: 0.08),
-                    side: BorderSide(
-                      color: XMTheme.secondary.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ),
-              ).toList(),
+              children:
+                  widget.quickPrompts
+                      .map(
+                        (q) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(
+                              q,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            onPressed: () {
+                              _ctrl.text = q;
+                              _send();
+                            },
+                            backgroundColor: XMTheme.secondary.withValues(
+                              alpha: 0.08,
+                            ),
+                            side: BorderSide(
+                              color: XMTheme.secondary.withValues(alpha: 0.3),
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
           ),
         Expanded(

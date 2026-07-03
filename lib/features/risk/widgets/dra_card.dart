@@ -10,8 +10,14 @@ class DRACard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hazards = (data['hazardsIdentified'] as List?)?.map((e) => e.toString()).toList() ?? [];
-    final controls = (data['controlsApplied'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    final hazards =
+        (data['hazardsIdentified'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+    final controls =
+        (data['controlsApplied'] as List?)?.map((e) => e.toString()).toList() ??
+        [];
     final isSafe = data['isSafeToProceed'] == true;
 
     return GCard(
@@ -24,50 +30,110 @@ class DRACard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: (isSafe ? XMTheme.success : XMTheme.error).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(isSafe ? Icons.check_circle_rounded : Icons.cancel_rounded, color: isSafe ? XMTheme.success : XMTheme.error, size: 22),
+                decoration: BoxDecoration(
+                  color: (isSafe ? XMTheme.success : XMTheme.error).withValues(
+                    alpha: 0.1,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isSafe ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                  color: isSafe ? XMTheme.success : XMTheme.error,
+                  size: 22,
+                ),
               ),
               GSpacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(data['taskDescription'] ?? 'Untitled Assessment', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      data['taskDescription'] ?? 'Untitled Assessment',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     GSpacing.vXs,
-                    Text(UIUtils.formatTimestamp(data['createdAt']), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      UIUtils.formatTimestamp(data['createdAt']),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              GStatusTag(label: isSafe ? 'SAFE' : 'UNSAFE', color: isSafe ? XMTheme.success : XMTheme.error),
+              GStatusTag(
+                label: isSafe ? 'SAFE' : 'UNSAFE',
+                color: isSafe ? XMTheme.success : XMTheme.error,
+              ),
             ],
           ),
           GSpacing.vMd,
-          if (data['location'] != null && data['location'].toString().isNotEmpty) ...[
+          if (data['location'] != null &&
+              data['location'].toString().isNotEmpty) ...[
             Row(
               children: [
-                Icon(Icons.location_on_rounded, size: 14, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.location_on_rounded,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
                 GSpacing.hSm,
-                Text(data['location'], style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                Text(
+                  data['location'],
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
             GSpacing.vMd,
           ],
           const Divider(height: 1, thickness: 0.5),
           GSpacing.vMd,
-          Text('HAZARDS IDENTIFIED', style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.error, letterSpacing: 1.1)),
+          Text(
+            'HAZARDS IDENTIFIED',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.error,
+              letterSpacing: 1.1,
+            ),
+          ),
           GSpacing.vSm,
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: hazards.map((h) => _TinyBadge(label: h, color: theme.colorScheme.error)).toList(),
+            children:
+                hazards
+                    .map(
+                      (h) =>
+                          _TinyBadge(label: h, color: theme.colorScheme.error),
+                    )
+                    .toList(),
           ),
           GSpacing.vMd,
-          Text('CONTROLS APPLIED', style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary, letterSpacing: 1.1)),
+          Text(
+            'CONTROLS APPLIED',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+              letterSpacing: 1.1,
+            ),
+          ),
           GSpacing.vSm,
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: controls.map((c) => _TinyBadge(label: c, color: theme.colorScheme.primary)).toList(),
+            children:
+                controls
+                    .map(
+                      (c) => _TinyBadge(
+                        label: c,
+                        color: theme.colorScheme.primary,
+                      ),
+                    )
+                    .toList(),
           ),
         ],
       ),
@@ -92,7 +158,11 @@ class _TinyBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

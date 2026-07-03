@@ -33,11 +33,15 @@ class EmployeePPEProfileSheet extends ConsumerWidget {
     final firestore = ref.watch(firestoreProvider);
 
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore
-          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'ppe_compliance')
-          .where('siteId', isEqualTo: siteId)
-          .where('employeeName', isEqualTo: employeeName)
-          .snapshots(),
+      stream:
+          firestore
+              .tenantCollection(
+                ref.watch(currentTenantIdProvider) ?? "",
+                'ppe_compliance',
+              )
+              .where('siteId', isEqualTo: siteId)
+              .where('employeeName', isEqualTo: employeeName)
+              .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -48,7 +52,12 @@ class EmployeePPEProfileSheet extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Active Equipment Logs', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Active Equipment Logs',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 12),
               if (docs.isEmpty)
                 const Text('No logged equipment for this employee.')
@@ -58,33 +67,54 @@ class EmployeePPEProfileSheet extends ConsumerWidget {
                   final status = r['status'] ?? 'Unknown';
                   Color statusColor;
                   switch (status) {
-                    case 'Compliant': statusColor = XMTheme.success;
-                    case 'Non-Compliant': statusColor = XMTheme.error;
-                    case 'Expired': statusColor = XMTheme.warning;
-                    default: statusColor = XMTheme.statusDraft;
+                    case 'Compliant':
+                      statusColor = XMTheme.success;
+                    case 'Non-Compliant':
+                      statusColor = XMTheme.error;
+                    case 'Expired':
+                      statusColor = XMTheme.warning;
+                    default:
+                      statusColor = XMTheme.statusDraft;
                   }
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
-                      title: Text(r['ppeType'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        r['ppeType'] ?? 'Unknown',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       subtitle: Text('Expires: ${_fmtDate(r['expiryDate'])}'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           GStatusTag(label: status, color: statusColor),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: XMTheme.error),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: XMTheme.error,
+                            ),
                             onPressed: () async {
                               final confirm = await UIUtils.showConfirmDialog(
                                 context: context,
                                 title: 'Delete Record',
-                                content: 'Are you sure you want to delete this PPE record?',
+                                content:
+                                    'Are you sure you want to delete this PPE record?',
                                 isDestructive: true,
                               );
                               if (confirm) {
-                                await firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'ppe_compliance').doc(doc.id).delete();
+                                await firestore
+                                    .tenantCollection(
+                                      ref.watch(currentTenantIdProvider) ?? "",
+                                      'ppe_compliance',
+                                    )
+                                    .doc(doc.id)
+                                    .delete();
                                 if (context.mounted) {
-                                  UIUtils.showToast(context, 'Record deleted', type: ToastType.success);
+                                  UIUtils.showToast(
+                                    context,
+                                    'Record deleted',
+                                    type: ToastType.success,
+                                  );
                                 }
                               }
                             },

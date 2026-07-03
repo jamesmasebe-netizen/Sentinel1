@@ -16,9 +16,7 @@ class OHSAppointmentsScreen extends ConsumerWidget {
     final appointmentsAsync = ref.watch(ohsAppointmentsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('OHS Legal Appointments'),
-      ),
+      appBar: AppBar(title: const Text('OHS Legal Appointments')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           UIUtils.showSideSheet(
@@ -44,11 +42,16 @@ class OHSAppointmentsScreen extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 8.0),
                 child: ListTile(
                   title: Text(appt.appointeeName),
-                  subtitle: Text('${appt.statutoryReference}\nAppointed: ${UIUtils.formatDate(appt.appointedDate)}'),
+                  subtitle: Text(
+                    '${appt.statutoryReference}\nAppointed: ${UIUtils.formatDate(appt.appointedDate)}',
+                  ),
                   isThreeLine: true,
                   trailing: Chip(
                     label: Text(appt.status),
-                    backgroundColor: appt.status == 'Active' ? Colors.green.shade100 : Colors.grey.shade300,
+                    backgroundColor:
+                        appt.status == 'Active'
+                            ? Colors.green.shade100
+                            : Colors.grey.shade300,
                   ),
                 ),
               );
@@ -83,18 +86,19 @@ class _OHSAppointmentFormState extends ConsumerState<OHSAppointmentForm> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final siteId = ref.read(currentTenantIdProvider);
       if (siteId == null) throw Exception('No site selected');
-      
+
       final employees = ref.read(employeesProvider).valueOrNull ?? [];
       final employee = employees.firstWhere((e) => e.id == _selectedEmployeeId);
-      
-      final customId = 'OHS-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-      
+
+      final customId =
+          'OHS-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
       final appt = OHSAppointment(
         id: customId,
         appointeeId: employee.id,
@@ -104,16 +108,31 @@ class _OHSAppointmentFormState extends ConsumerState<OHSAppointmentForm> {
         status: 'Active',
         siteId: siteId,
       );
-      
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'ohs_appointments').doc(customId).set(appt.toFirestore());
-      
+
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'ohs_appointments',
+          )
+          .doc(customId)
+          .set(appt.toFirestore());
+
       if (mounted) {
-        UIUtils.showToast(context, 'Appointment saved successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Appointment saved successfully',
+          type: ToastType.success,
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to save appointment: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to save appointment: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -132,7 +151,8 @@ class _OHSAppointmentFormState extends ConsumerState<OHSAppointmentForm> {
               value: _selectedEmployeeId,
               label: 'Select Appointee',
               onChanged: (val) => setState(() => _selectedEmployeeId = val),
-              validator: (val) => val == null ? 'Please select an employee' : null,
+              validator:
+                  (val) => val == null ? 'Please select an employee' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -142,7 +162,8 @@ class _OHSAppointmentFormState extends ConsumerState<OHSAppointmentForm> {
                 hintText: 'e.g. OHS Act 16.2 Assignee',
                 border: OutlineInputBorder(),
               ),
-              validator: (val) => val == null || val.isEmpty ? 'Required field' : null,
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required field' : null,
             ),
             const Spacer(),
             UIUtils.buildFormButtons(

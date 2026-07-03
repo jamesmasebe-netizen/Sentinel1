@@ -10,7 +10,8 @@ class LeaveApplicationForm extends ConsumerStatefulWidget {
   const LeaveApplicationForm({super.key});
 
   @override
-  ConsumerState<LeaveApplicationForm> createState() => _LeaveApplicationFormState();
+  ConsumerState<LeaveApplicationForm> createState() =>
+      _LeaveApplicationFormState();
 }
 
 class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
@@ -22,7 +23,13 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
   final _reasonCtrl = TextEditingController();
   bool _isLoading = false;
 
-  final _leaveTypes = ['Annual', 'Sick', 'Maternity', 'OHS Mandatory', 'Unpaid'];
+  final _leaveTypes = [
+    'Annual',
+    'Sick',
+    'Maternity',
+    'OHS Mandatory',
+    'Unpaid',
+  ];
 
   @override
   void dispose() {
@@ -31,7 +38,10 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
   }
 
   Future<void> _selectDate(BuildContext context, bool isStart) async {
-    final initialDate = isStart ? (_startDate ?? DateTime.now()) : (_endDate ?? _startDate ?? DateTime.now());
+    final initialDate =
+        isStart
+            ? (_startDate ?? DateTime.now())
+            : (_endDate ?? _startDate ?? DateTime.now());
     final date = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -55,19 +65,24 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_startDate == null || _endDate == null) {
-      UIUtils.showToast(context, 'Please select both start and end dates', type: ToastType.warning);
+      UIUtils.showToast(
+        context,
+        'Please select both start and end dates',
+        type: ToastType.warning,
+      );
       return;
     }
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final siteId = ref.read(currentTenantIdProvider);
       final user = ref.read(userProfileProvider).valueOrNull;
       if (siteId == null) throw Exception('No site selected');
-      
-      final customId = 'LV-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-      
+
+      final customId =
+          'LV-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
       final req = LeaveRequest(
         id: customId,
         employeeId: user?.uid ?? 'unknown',
@@ -80,16 +95,31 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
         reason: _reasonCtrl.text.trim(),
         siteId: siteId,
       );
-      
-      await ref.read(firestoreProvider).tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'leave_requests').doc(customId).set(req.toFirestore());
-      
+
+      await ref
+          .read(firestoreProvider)
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'leave_requests',
+          )
+          .doc(customId)
+          .set(req.toFirestore());
+
       if (mounted) {
-        UIUtils.showToast(context, 'Leave applied successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Leave applied successfully',
+          type: ToastType.success,
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to apply leave: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to apply leave: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -110,7 +140,10 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
                 labelText: 'Leave Type',
                 border: OutlineInputBorder(),
               ),
-              items: _leaveTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+              items:
+                  _leaveTypes
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
               onChanged: (val) => setState(() => _leaveType = val!),
             ),
             const SizedBox(height: 16),
@@ -118,7 +151,8 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
               value: _managerId,
               label: 'Select Manager for Approval',
               onChanged: (val) => setState(() => _managerId = val),
-              validator: (val) => val == null ? 'Please select a manager' : null,
+              validator:
+                  (val) => val == null ? 'Please select a manager' : null,
             ),
             const SizedBox(height: 16),
             Row(
@@ -131,7 +165,11 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
                         labelText: 'Start Date',
                         border: OutlineInputBorder(),
                       ),
-                      child: Text(_startDate == null ? 'Select Date' : UIUtils.formatDate(_startDate!)),
+                      child: Text(
+                        _startDate == null
+                            ? 'Select Date'
+                            : UIUtils.formatDate(_startDate!),
+                      ),
                     ),
                   ),
                 ),
@@ -144,7 +182,11 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
                         labelText: 'End Date',
                         border: OutlineInputBorder(),
                       ),
-                      child: Text(_endDate == null ? 'Select Date' : UIUtils.formatDate(_endDate!)),
+                      child: Text(
+                        _endDate == null
+                            ? 'Select Date'
+                            : UIUtils.formatDate(_endDate!),
+                      ),
                     ),
                   ),
                 ),

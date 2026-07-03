@@ -106,6 +106,4 @@ class _PropertyDetailsScreenState extends ConsumerState<PropertyDetailsScreen>
       error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
     );
   }
-
 }
-

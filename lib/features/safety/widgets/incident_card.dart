@@ -43,18 +43,33 @@ class IncidentCard extends ConsumerWidget {
                   color: getSevColor(severity).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Icon(Icons.report_problem, color: getSevColor(severity), size: 18),
+                child: Icon(
+                  Icons.report_problem,
+                  color: getSevColor(severity),
+                  size: 18,
+                ),
               ),
               GSpacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       '${type.toString().replaceAll('_', ' ')} • ${isAnonymous ? "Anonymous" : reporter}',
-                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -67,13 +82,28 @@ class IncidentCard extends ConsumerWidget {
             spacing: 12,
             runSpacing: 8,
             children: [
-              MiniInfo(icon: Icons.warning_amber_rounded, label: severity, color: getSevColor(severity)),
-              if (data['location'] != null && data['location'].toString().isNotEmpty)
-                MiniInfo(icon: Icons.location_on_outlined, label: data['location']),
+              MiniInfo(
+                icon: Icons.warning_amber_rounded,
+                label: severity,
+                color: getSevColor(severity),
+              ),
+              if (data['location'] != null &&
+                  data['location'].toString().isNotEmpty)
+                MiniInfo(
+                  icon: Icons.location_on_outlined,
+                  label: data['location'],
+                ),
               if (dateStr.isNotEmpty)
-                MiniInfo(icon: Icons.access_time_rounded, label: UIUtils.formatTimestamp(dateStr)),
+                MiniInfo(
+                  icon: Icons.access_time_rounded,
+                  label: UIUtils.formatTimestamp(dateStr),
+                ),
               if (data['totalCost'] != null && (data['totalCost'] as num) > 0)
-                MiniInfo(icon: Icons.attach_money_rounded, label: 'R${data['totalCost']}', color: XMTheme.warning),
+                MiniInfo(
+                  icon: Icons.attach_money_rounded,
+                  label: 'R${data['totalCost']}',
+                  color: XMTheme.warning,
+                ),
             ],
           ),
           if (status != 'Closed') ...[
@@ -85,13 +115,19 @@ class IncidentCard extends ConsumerWidget {
                   TextButton.icon(
                     onPressed: () => onStatusUpdate('Investigating'),
                     icon: const Icon(Icons.search, size: 16),
-                    label: const Text('Investigate', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Investigate',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 if (status == 'Investigating')
                   TextButton.icon(
                     onPressed: () => onStatusUpdate('Resolved'),
                     icon: const Icon(Icons.check, size: 16),
-                    label: const Text('Resolve', style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      'Resolve',
+                      style: TextStyle(fontSize: 12),
+                    ),
                   ),
                 if (status == 'Resolved')
                   TextButton.icon(

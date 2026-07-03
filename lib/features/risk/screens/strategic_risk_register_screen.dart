@@ -26,7 +26,6 @@ class StrategicRiskRegisterScreen extends ConsumerStatefulWidget {
 
 class _StrategicRiskRegisterScreenState
     extends ConsumerState<StrategicRiskRegisterScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -35,13 +34,16 @@ class _StrategicRiskRegisterScreenState
     }
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-                UIUtils.showSideSheet(
+        UIUtils.showSideSheet(
           context: context,
           title: 'Item Details',
-          builder: (ctx) => Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text('Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)'),
-          ),
+          builder:
+              (ctx) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
+                ),
+              ),
         );
       });
     }
@@ -61,14 +63,24 @@ class _StrategicRiskRegisterScreenState
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: Row(
             children: [
-              Text('Corporate Risks', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                'Corporate Risks',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New Strategic Risk',
-                  builder: (ctx) => StrategicRiskForm(tenantId: ref.read(currentTenantIdProvider) ?? ''),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New Strategic Risk',
+                      builder:
+                          (ctx) => StrategicRiskForm(
+                            tenantId: ref.read(currentTenantIdProvider) ?? '',
+                          ),
+                    ),
                 icon: const Icon(Icons.shield_rounded, size: 18),
                 label: const Text('Add Risk'),
               ),
@@ -79,12 +91,16 @@ class _StrategicRiskRegisterScreenState
         // ─── List ───
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'strategic_risks')
-                .where('siteId', isEqualTo: siteId)
-                .orderBy('createdAt', descending: true)
-                .limit(50)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'strategic_risks',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .orderBy('createdAt', descending: true)
+                    .limit(50)
+                    .snapshots(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -95,9 +111,18 @@ class _StrategicRiskRegisterScreenState
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.shield_outlined, size: 64, color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 64,
+                        color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                      ),
                       GSpacing.vMd,
-                      Text('No strategic risks registered', style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        'No strategic risks registered',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -117,4 +142,3 @@ class _StrategicRiskRegisterScreenState
     );
   }
 }
-

@@ -6,7 +6,12 @@ class OHStatChip extends StatelessWidget {
   final String count;
   final Color color;
 
-  const OHStatChip({super.key, required this.label, required this.count, required this.color});
+  const OHStatChip({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +26,26 @@ class OHStatChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           GSpacing.hMd,
-          Text(label, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
           GSpacing.hSm,
-          Text(count, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          Text(
+            count,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

@@ -54,7 +54,8 @@ class HiraHeatmapChart extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }

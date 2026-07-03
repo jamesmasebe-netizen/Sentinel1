@@ -24,11 +24,18 @@ class FindingListItem extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Doc: ${finding.documentId}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Doc: ${finding.documentId}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               GStatusTag(
                 label: finding.status.name.toUpperCase(),
-                color: finding.status == FindingStatus.verifiedClosed ? XMTheme.success :
-                       finding.status == FindingStatus.cancelled ? Colors.grey : XMTheme.warning,
+                color:
+                    finding.status == FindingStatus.verifiedClosed
+                        ? XMTheme.success
+                        : finding.status == FindingStatus.cancelled
+                        ? Colors.grey
+                        : XMTheme.warning,
               ),
             ],
           ),
@@ -36,7 +43,8 @@ class FindingListItem extends StatelessWidget {
           Text('Type: ${finding.type.name}'),
           Text('Description: ${finding.description}'),
           GSpacing.vMd,
-          if (finding.status != FindingStatus.verifiedClosed && finding.status != FindingStatus.cancelled)
+          if (finding.status != FindingStatus.verifiedClosed &&
+              finding.status != FindingStatus.cancelled)
             Align(
               alignment: Alignment.centerRight,
               child: TextButton.icon(
@@ -44,7 +52,7 @@ class FindingListItem extends StatelessWidget {
                 label: const Text('Update Status'),
                 onPressed: onUpdateTap,
               ),
-            )
+            ),
         ],
       ),
     );

@@ -11,12 +11,12 @@ class EmergencyEquipmentTab extends ConsumerStatefulWidget {
   const EmergencyEquipmentTab({super.key});
 
   @override
-  ConsumerState<EmergencyEquipmentTab> createState() => _EmergencyEquipmentTabState();
+  ConsumerState<EmergencyEquipmentTab> createState() =>
+      _EmergencyEquipmentTabState();
 }
 
 class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
   bool _showEquipForm = false;
-
 
   @override
   Widget build(BuildContext context) {
@@ -30,13 +30,14 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
             children: [
               Text(
                 'Safety Equipment',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => setState(() => _showEquipForm = !_showEquipForm),
+                onPressed:
+                    () => setState(() => _showEquipForm = !_showEquipForm),
                 icon: Icon(_showEquipForm ? Icons.close : Icons.add, size: 18),
                 label: Text(_showEquipForm ? 'Cancel' : 'Add Item'),
               ),
@@ -50,14 +51,18 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
 
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'emergency_equipment')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(100)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'emergency_equipment',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(100)
+                        .snapshots(),
             builder: (ctx, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -68,9 +73,16 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.build_outlined, size: 64, color: Theme.of(context).disabledColor),
+                      Icon(
+                        Icons.build_outlined,
+                        size: 64,
+                        color: Theme.of(context).disabledColor,
+                      ),
                       GSpacing.vLg,
-                      Text('No equipment found', style: Theme.of(context).textTheme.bodyLarge),
+                      Text(
+                        'No equipment found',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ],
                   ),
                 );

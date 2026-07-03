@@ -60,7 +60,11 @@ class _HiraFormState extends ConsumerState<HiraForm> {
 
   Future<void> _submit(BuildContext formCtx) async {
     if (_titleCtrl.text.isEmpty || _hazardCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Title and hazard are required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Title and hazard are required',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -97,7 +101,9 @@ class _HiraFormState extends ConsumerState<HiraForm> {
         _controlMeasure = '';
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -113,7 +119,13 @@ class _HiraFormState extends ConsumerState<HiraForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Assessment Core Details', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+              Text(
+                'Assessment Core Details',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               GSpacing.vMd,
               TextFormField(
                 controller: _titleCtrl,
@@ -144,15 +156,34 @@ class _HiraFormState extends ConsumerState<HiraForm> {
                 ),
               ),
               GSpacing.vLg,
-              Text('Risk Matrix Evaluation', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+              Text(
+                'Risk Matrix Evaluation',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               GSpacing.vMd,
               Row(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _likelihood,
-                      decoration: const InputDecoration(labelText: 'Likelihood'),
-                      items: _likelihoods.map((l) => DropdownMenuItem(value: l, child: Text(l, style: const TextStyle(fontSize: 13)))).toList(),
+                      decoration: const InputDecoration(
+                        labelText: 'Likelihood',
+                      ),
+                      items:
+                          _likelihoods
+                              .map(
+                                (l) => DropdownMenuItem(
+                                  value: l,
+                                  child: Text(
+                                    l,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setLocalState(() => _likelihood = v!),
                     ),
                   ),
@@ -161,7 +192,18 @@ class _HiraFormState extends ConsumerState<HiraForm> {
                     child: DropdownButtonFormField<String>(
                       value: _severity,
                       decoration: const InputDecoration(labelText: 'Severity'),
-                      items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                      items:
+                          _severities
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(
+                                    s,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                       onChanged: (v) => setLocalState(() => _severity = v!),
                     ),
                   ),
@@ -171,26 +213,57 @@ class _HiraFormState extends ConsumerState<HiraForm> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: HiraCard.getLevelColor(_riskLevel(_riskScore(_likelihood, _severity))).withValues(alpha: 0.05),
+                  color: HiraCard.getLevelColor(
+                    _riskLevel(_riskScore(_likelihood, _severity)),
+                  ).withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: HiraCard.getLevelColor(_riskLevel(_riskScore(_likelihood, _severity))).withValues(alpha: 0.2), width: 1.5),
+                  border: Border.all(
+                    color: HiraCard.getLevelColor(
+                      _riskLevel(_riskScore(_likelihood, _severity)),
+                    ).withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: HiraCard.getLevelColor(_riskLevel(_riskScore(_likelihood, _severity))).withValues(alpha: 0.1), shape: BoxShape.circle),
-                      child: Icon(Icons.speed_rounded, color: HiraCard.getLevelColor(_riskLevel(_riskScore(_likelihood, _severity))), size: 28),
+                      decoration: BoxDecoration(
+                        color: HiraCard.getLevelColor(
+                          _riskLevel(_riskScore(_likelihood, _severity)),
+                        ).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.speed_rounded,
+                        color: HiraCard.getLevelColor(
+                          _riskLevel(_riskScore(_likelihood, _severity)),
+                        ),
+                        size: 28,
+                      ),
                     ),
                     GSpacing.hMd,
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Calculated Risk Exposure', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
+                          Text(
+                            'Calculated Risk Exposure',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           GSpacing.vXs,
-                          Text('Score: ${_riskScore(_likelihood, _severity)} — ${_riskLevel(_riskScore(_likelihood, _severity)).toUpperCase()}',
-                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: HiraCard.getLevelColor(_riskLevel(_riskScore(_likelihood, _severity))))),
+                          Text(
+                            'Score: ${_riskScore(_likelihood, _severity)} — ${_riskLevel(_riskScore(_likelihood, _severity)).toUpperCase()}',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: HiraCard.getLevelColor(
+                                _riskLevel(_riskScore(_likelihood, _severity)),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -198,7 +271,13 @@ class _HiraFormState extends ConsumerState<HiraForm> {
                 ),
               ),
               GSpacing.vLg,
-              Text('Control Strategy', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+              Text(
+                'Control Strategy',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
               GSpacing.vMd,
               DropdownButtonFormField<String>(
                 value: _controlMeasure.isEmpty ? null : _controlMeasure,
@@ -206,10 +285,26 @@ class _HiraFormState extends ConsumerState<HiraForm> {
                   labelText: 'Primary Control Measure',
                   prefixIcon: Icon(Icons.shield_outlined),
                 ),
-                items: ['Elimination', 'Substitution', 'Engineering Controls', 'Administrative Controls', 'PPE']
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13))))
-                    .toList(),
-                onChanged: (v) => setLocalState(() => _controlMeasure = v ?? ''),
+                items:
+                    [
+                          'Elimination',
+                          'Substitution',
+                          'Engineering Controls',
+                          'Administrative Controls',
+                          'PPE',
+                        ]
+                        .map(
+                          (c) => DropdownMenuItem(
+                            value: c,
+                            child: Text(
+                              c,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                onChanged:
+                    (v) => setLocalState(() => _controlMeasure = v ?? ''),
               ),
               GSpacing.vXl,
               SizedBox(
@@ -217,10 +312,24 @@ class _HiraFormState extends ConsumerState<HiraForm> {
                 height: 56,
                 child: FilledButton.icon(
                   onPressed: _isSubmitting ? null : () => _submit(context),
-                  icon: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.save_rounded),
-                  label: Text(_isSubmitting ? 'PROCESSING...' : 'AUTHORIZE HIRA RECORD', style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1)),
+                  icon:
+                      _isSubmitting
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : const Icon(Icons.save_rounded),
+                  label: Text(
+                    _isSubmitting ? 'PROCESSING...' : 'AUTHORIZE HIRA RECORD',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
                 ),
               ),
               GSpacing.vXxl,

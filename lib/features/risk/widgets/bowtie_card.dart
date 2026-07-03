@@ -22,45 +22,96 @@ class BowTieCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: Icon(Icons.account_tree_rounded, size: 18, color: theme.colorScheme.primary),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.account_tree_rounded,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
               ),
               GSpacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(data['title'] ?? 'Untitled Analysis', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    Text(UIUtils.formatTimestamp(data['createdAt']), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      data['title'] ?? 'Untitled Analysis',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      UIUtils.formatTimestamp(data['createdAt']),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              GStatusTag(label: status.toUpperCase(), color: theme.colorScheme.primary),
+              GStatusTag(
+                label: status.toUpperCase(),
+                color: theme.colorScheme.primary,
+              ),
             ],
           ),
           GSpacing.vLg,
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+              color: theme.colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.2,
+              ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               children: [
-                _buildExpressiveRow(context, 'THREATS & PREVENTION', data['threats'], data['preventiveBarriers'], XMTheme.riskHigh, Icons.shield_rounded, true),
+                _buildExpressiveRow(
+                  context,
+                  'THREATS & PREVENTION',
+                  data['threats'],
+                  data['preventiveBarriers'],
+                  XMTheme.riskHigh,
+                  Icons.shield_rounded,
+                  true,
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(color: XMTheme.riskExtreme, borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: XMTheme.riskExtreme,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Text(
                       data['topEvent']?.toUpperCase() ?? 'TOP EVENT',
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
                     ),
                   ),
                 ),
-                _buildExpressiveRow(context, 'MITIGATION & RECOVERY', data['mitigationBarriers'], data['consequences'], XMTheme.success, Icons.healing_rounded, false),
+                _buildExpressiveRow(
+                  context,
+                  'MITIGATION & RECOVERY',
+                  data['mitigationBarriers'],
+                  data['consequences'],
+                  XMTheme.success,
+                  Icons.healing_rounded,
+                  false,
+                ),
               ],
             ),
           ),
@@ -69,7 +120,15 @@ class BowTieCard extends StatelessWidget {
     );
   }
 
-  Widget _buildExpressiveRow(BuildContext context, String title, String? val1, String? val2, Color color, IconData icon, bool isTop) {
+  Widget _buildExpressiveRow(
+    BuildContext context,
+    String title,
+    String? val1,
+    String? val2,
+    Color color,
+    IconData icon,
+    bool isTop,
+  ) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -79,13 +138,23 @@ class BowTieCard extends StatelessWidget {
           children: [
             Icon(icon, size: 14, color: color),
             GSpacing.hSm,
-            Text(title, style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: color, letterSpacing: 1.1)),
+            Text(
+              title,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: color,
+                letterSpacing: 1.1,
+              ),
+            ),
           ],
         ),
         GSpacing.vSm,
         Text(
           '${val1 ?? "N/A"} • ${val2 ?? "N/A"}',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface, height: 1.4),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            height: 1.4,
+          ),
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

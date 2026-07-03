@@ -49,7 +49,8 @@ class GCard extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      margin: margin ??
+      margin:
+          margin ??
           const EdgeInsets.symmetric(
             vertical: XMTheme.spacingSm,
             horizontal: XMTheme.spacingMd,
@@ -57,15 +58,16 @@ class GCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(radius ?? XMTheme.radiusXl),
-        border: showBorder
-            ? Border.fromBorderSide(
-                border ??
-                    BorderSide(
-                      color: theme.colorScheme.outlineVariant,
-                      width: 1,
-                    ),
-              )
-            : null,
+        border:
+            showBorder
+                ? Border.fromBorderSide(
+                  border ??
+                      BorderSide(
+                        color: theme.colorScheme.outlineVariant,
+                        width: 1,
+                      ),
+                )
+                : null,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius ?? XMTheme.radiusXl),

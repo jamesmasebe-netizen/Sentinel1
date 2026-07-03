@@ -26,25 +26,30 @@ class EmployeeSelector extends ConsumerWidget {
           return const Text('No records found');
         }
         return DropdownButtonFormField<String>(
-          value: value != null && employees.any((e) => e.id == value) ? value : null,
+          value:
+              value != null && employees.any((e) => e.id == value)
+                  ? value
+                  : null,
           decoration: InputDecoration(
             labelText: label,
             border: const OutlineInputBorder(),
           ),
-          items: employees.map((emp) {
-            return DropdownMenuItem(
-              value: emp.id,
-              child: Text('${emp.fullName} (${emp.jobTitle})'),
-            );
-          }).toList(),
+          items:
+              employees.map((emp) {
+                return DropdownMenuItem(
+                  value: emp.id,
+                  child: Text('${emp.fullName} (${emp.jobTitle})'),
+                );
+              }).toList(),
           onChanged: onChanged,
           validator: validator,
         );
       },
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.0),
-        child: Center(child: CircularProgressIndicator()),
-      ),
+      loading:
+          () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Center(child: CircularProgressIndicator()),
+          ),
       error: (e, st) => Text('Error loading employees: $e'),
     );
   }

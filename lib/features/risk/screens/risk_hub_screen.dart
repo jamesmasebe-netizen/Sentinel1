@@ -23,36 +23,64 @@ class RiskHubScreen extends ConsumerWidget {
     final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
 
-    final criticalRisksStream = siteId == null
-        ? Stream.value('0')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'hazards')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => s.docs.where((d) {
-                  final severity = d.data()['severity'] ?? '';
-                  return severity == 'Major' || severity == 'Critical';
-                }).length.toString());
+    final criticalRisksStream =
+        siteId == null
+            ? Stream.value('0')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'hazards',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map(
+                  (s) =>
+                      s.docs
+                          .where((d) {
+                            final severity = d.data()['severity'] ?? '';
+                            return severity == 'Major' ||
+                                severity == 'Critical';
+                          })
+                          .length
+                          .toString(),
+                );
 
-    final openAssessmentsStream = siteId == null
-        ? Stream.value('0')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dynamic_risk_assessments')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) => s.docs.where((d) => d.data()['status'] != 'Approved').length.toString());
+    final openAssessmentsStream =
+        siteId == null
+            ? Stream.value('0')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'dynamic_risk_assessments',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map(
+                  (s) =>
+                      s.docs
+                          .where((d) => d.data()['status'] != 'Approved')
+                          .length
+                          .toString(),
+                );
 
-    final controlStrengthStream = siteId == null
-        ? Stream.value('100%')
-        : firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dynamic_risk_assessments')
-            .where('siteId', isEqualTo: siteId)
-            .snapshots()
-            .map((s) {
-              if (s.docs.isEmpty) return '80%';
-              final approved = s.docs.where((d) => d.data()['status'] == 'Approved').length;
-              return '${((approved / s.docs.length) * 100).round()}%';
-            });
+    final controlStrengthStream =
+        siteId == null
+            ? Stream.value('100%')
+            : firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'dynamic_risk_assessments',
+                )
+                .where('siteId', isEqualTo: siteId)
+                .snapshots()
+                .map((s) {
+                  if (s.docs.isEmpty) return '80%';
+                  final approved =
+                      s.docs
+                          .where((d) => d.data()['status'] == 'Approved')
+                          .length;
+                  return '${((approved / s.docs.length) * 100).round()}%';
+                });
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -67,15 +95,15 @@ class RiskHubScreen extends ConsumerWidget {
                   Text(
                     'Risk Management Hub',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   GSpacing.vSm,
                   Text(
                     'Evaluate risk thresholds, baseline HIRA, bowtie analysis, and dynamic controls.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -128,56 +156,81 @@ class RiskHubScreen extends ConsumerWidget {
           SliverPadding(
             padding: const EdgeInsets.all(24),
             sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 400,
-                    mainAxisExtent: 140,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  delegate: SliverChildListDelegate([
-                    RiskModuleCard(
-                      title: 'Command Center',
-                      subtitle: 'Live risk posture and executive dashboard.',
-                      icon: Icons.dashboard_rounded,
-                      color: XMTheme.primary,
-                      onTap: () => _openModule(context, 'Risk Command Center', const RiskCommandCenterScreen()),
-                    ),
-                    RiskModuleCard(
-                      title: 'HIRA Register',
-                      subtitle: 'Baseline Hazard Identification & Risk Assessment.',
-                      icon: Icons.assessment_rounded,
-                      color: XMTheme.warning,
-                      onTap: () => _openModule(context, 'Baseline HIRA', const HiraScreen()),
-                    ),
-                    RiskModuleCard(
-                      title: 'Dynamic RA',
-                      subtitle: 'Continuous and task-specific risk evaluations.',
-                      icon: Icons.bolt_rounded,
-                      color: XMTheme.error,
-                      onTap: () => _openModule(context, 'Dynamic Risk Assessment', const DynamicRiskAssessmentScreen()),
-                    ),
-                    RiskModuleCard(
-                      title: 'Bow-Tie Analysis',
-                      subtitle: 'Visualize barriers, threats, and consequences.',
-                      icon: Icons.account_tree_rounded,
-                      color: XMTheme.info,
-                      onTap: () => _openModule(context, 'Bow-Tie Analysis', const BowtieScreen()),
-                    ),
-                    RiskModuleCard(
-                      title: 'Strategic Register',
-                      subtitle: 'High-level organizational risk tracking.',
-                      icon: Icons.list_alt_rounded,
-                      color: XMTheme.secondary,
-                      onTap: () => _openModule(context, 'Strategic Risk Register', const StrategicRiskRegisterScreen()),
-                    ),
-                  ]),
-                ),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 400,
+                mainAxisExtent: 140,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
               ),
-              const SliverToBoxAdapter(child: GSpacing.vXxl),
-            ],
+              delegate: SliverChildListDelegate([
+                RiskModuleCard(
+                  title: 'Command Center',
+                  subtitle: 'Live risk posture and executive dashboard.',
+                  icon: Icons.dashboard_rounded,
+                  color: XMTheme.primary,
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Risk Command Center',
+                        const RiskCommandCenterScreen(),
+                      ),
+                ),
+                RiskModuleCard(
+                  title: 'HIRA Register',
+                  subtitle: 'Baseline Hazard Identification & Risk Assessment.',
+                  icon: Icons.assessment_rounded,
+                  color: XMTheme.warning,
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Baseline HIRA',
+                        const HiraScreen(),
+                      ),
+                ),
+                RiskModuleCard(
+                  title: 'Dynamic RA',
+                  subtitle: 'Continuous and task-specific risk evaluations.',
+                  icon: Icons.bolt_rounded,
+                  color: XMTheme.error,
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Dynamic Risk Assessment',
+                        const DynamicRiskAssessmentScreen(),
+                      ),
+                ),
+                RiskModuleCard(
+                  title: 'Bow-Tie Analysis',
+                  subtitle: 'Visualize barriers, threats, and consequences.',
+                  icon: Icons.account_tree_rounded,
+                  color: XMTheme.info,
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Bow-Tie Analysis',
+                        const BowtieScreen(),
+                      ),
+                ),
+                RiskModuleCard(
+                  title: 'Strategic Register',
+                  subtitle: 'High-level organizational risk tracking.',
+                  icon: Icons.list_alt_rounded,
+                  color: XMTheme.secondary,
+                  onTap:
+                      () => _openModule(
+                        context,
+                        'Strategic Risk Register',
+                        const StrategicRiskRegisterScreen(),
+                      ),
+                ),
+              ]),
+            ),
           ),
-        );
-      }
+          const SliverToBoxAdapter(child: GSpacing.vXxl),
+        ],
+      ),
+    );
+  }
 
   void _openModule(BuildContext context, String title, Widget child) {
     UIUtils.showSideSheet(

@@ -9,60 +9,61 @@ class QuickActionsSheet {
   static void show(BuildContext context) {
     UIUtils.showAppBottomSheet(
       context: context,
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(XMTheme.spacingLg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Create New',
-              style: Theme.of(context).textTheme.titleLarge,
+      builder:
+          (context) => Padding(
+            padding: const EdgeInsets.all(XMTheme.spacingLg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Create New',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: XMTheme.spacingMd),
+                _QuickActionTile(
+                  icon: Icons.report_problem,
+                  color: XMTheme.error,
+                  title: 'Incident Report',
+                  subtitle: 'Log a safety incident or near-miss',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/safety');
+                  },
+                ),
+                _QuickActionTile(
+                  icon: Icons.assignment,
+                  color: XMTheme.warning,
+                  title: 'Permit to Work',
+                  subtitle: 'Create a new PTW request',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/safety');
+                  },
+                ),
+                _QuickActionTile(
+                  icon: Icons.warning,
+                  color: XMTheme.info,
+                  title: 'Hazard Observation',
+                  subtitle: 'Report a workplace hazard',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/safety');
+                  },
+                ),
+                _QuickActionTile(
+                  icon: Icons.monitor_heart,
+                  color: XMTheme.success,
+                  title: 'Health Check',
+                  subtitle: 'Log a medical or occupational health entry',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/people');
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: XMTheme.spacingMd),
-            _QuickActionTile(
-              icon: Icons.report_problem,
-              color: XMTheme.error,
-              title: 'Incident Report',
-              subtitle: 'Log a safety incident or near-miss',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/safety');
-              },
-            ),
-            _QuickActionTile(
-              icon: Icons.assignment,
-              color: XMTheme.warning,
-              title: 'Permit to Work',
-              subtitle: 'Create a new PTW request',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/safety');
-              },
-            ),
-            _QuickActionTile(
-              icon: Icons.warning,
-              color: XMTheme.info,
-              title: 'Hazard Observation',
-              subtitle: 'Report a workplace hazard',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/safety');
-              },
-            ),
-            _QuickActionTile(
-              icon: Icons.monitor_heart,
-              color: XMTheme.success,
-              title: 'Health Check',
-              subtitle: 'Log a medical or occupational health entry',
-              onTap: () {
-                Navigator.pop(context);
-                context.go('/people');
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 }

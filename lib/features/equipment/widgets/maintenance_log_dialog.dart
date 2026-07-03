@@ -19,25 +19,36 @@ class MaintenanceLogDialog extends StatelessWidget {
               color: XMTheme.warning.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.engineering_outlined, size: 80, color: XMTheme.warning),
+            child: const Icon(
+              Icons.engineering_outlined,
+              size: 80,
+              color: XMTheme.warning,
+            ),
           ),
           GSpacing.vLg,
           Text(
             'Maintenance Hub',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           GSpacing.vSm,
           Text(
             'View and manage work orders for on-site equipment maintenance.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           GSpacing.vLg,
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: () {
-                UIUtils.showToast(context, 'Connecting to Work Order Management...');
+                UIUtils.showToast(
+                  context,
+                  'Connecting to Work Order Management...',
+                );
               },
               icon: const Icon(Icons.open_in_new),
               label: const Text('Open Work Orders'),

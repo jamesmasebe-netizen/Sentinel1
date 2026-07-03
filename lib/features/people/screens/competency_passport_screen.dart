@@ -27,8 +27,6 @@ class _CompetencyPassportScreenState
   DateTime? _expiryDate;
   bool _isSubmitting = false;
 
-
-
   @override
   void dispose() {
     _employeeCtrl.dispose();
@@ -39,7 +37,11 @@ class _CompetencyPassportScreenState
 
   Future<void> _submit() async {
     if (_employeeCtrl.text.isEmpty || _certCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Please fill employee and certification', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill employee and certification',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -101,9 +103,9 @@ class _CompetencyPassportScreenState
               children: [
                 Text(
                   'Employee Certifications',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 FilledButton.icon(
                   onPressed: () => setState(() => _showForm = !_showForm),
@@ -130,7 +132,10 @@ class _CompetencyPassportScreenState
             child: StreamBuilder<QuerySnapshot>(
               stream:
                   firestore
-                      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'competency_passports')
+                      .tenantCollection(
+                        ref.watch(currentTenantIdProvider) ?? "",
+                        'competency_passports',
+                      )
                       .where('siteId', isEqualTo: siteId)
                       .orderBy('createdAt', descending: true)
                       .limit(100)
@@ -179,8 +184,5 @@ class _CompetencyPassportScreenState
         ],
       ),
     );
-
   }
-
-
 }

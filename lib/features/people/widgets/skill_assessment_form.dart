@@ -9,7 +9,8 @@ class SkillAssessmentForm extends ConsumerStatefulWidget {
   const SkillAssessmentForm({super.key, required this.onCancel});
 
   @override
-  ConsumerState<SkillAssessmentForm> createState() => _SkillAssessmentFormState();
+  ConsumerState<SkillAssessmentForm> createState() =>
+      _SkillAssessmentFormState();
 }
 
 class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
@@ -47,28 +48,38 @@ class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
 
   Future<void> _submit() async {
     if (_employeeCtrl.text.isEmpty || _skillCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Please fill employee and skill', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill employee and skill',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'skills_matrix',
-        data: {
-          'employeeName': _employeeCtrl.text.trim(),
-          'skill': _skillCtrl.text.trim(),
-          'proficiency': _proficiency,
-          'verifiedBy': _verifiedBy,
-          'lastAssessed': DateTime.now().toIso8601String(),
-          'siteId': profile.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'skills_matrix',
+            data: {
+              'employeeName': _employeeCtrl.text.trim(),
+              'skill': _skillCtrl.text.trim(),
+              'proficiency': _proficiency,
+              'verifiedBy': _verifiedBy,
+              'lastAssessed': DateTime.now().toIso8601String(),
+              'siteId': profile.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
-        UIUtils.showToast(context, 'Skill entry added', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Skill entry added',
+          type: ToastType.success,
+        );
         widget.onCancel();
       }
     } catch (e) {
@@ -90,9 +101,9 @@ class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
         children: [
           Text(
             'New Skill Assessment',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           GSpacing.vMd,
           TextFormField(

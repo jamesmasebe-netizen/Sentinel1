@@ -52,49 +52,63 @@ class IntegrationConfig {
 
 class IntegrationsService {
   final FirebaseFirestore _firestore;
-  
+
   IntegrationsService(this._firestore);
 
   Stream<List<IntegrationConfig>> watchIntegrations(String tenantId) {
     return _firestore
         .tenantCollection(tenantId, 'integrations')
         .snapshots()
-        .map((snap) => snap.docs.map((d) => IntegrationConfig.fromFirestore(d)).toList());
+        .map(
+          (snap) =>
+              snap.docs.map((d) => IntegrationConfig.fromFirestore(d)).toList(),
+        );
   }
 
   Future<void> saveIntegration(IntegrationConfig config) async {
-    final docRef = _firestore.tenantCollection(config.tenantId, 'integrations').doc(config.id.isEmpty ? null : config.id);
+    final docRef = _firestore
+        .tenantCollection(config.tenantId, 'integrations')
+        .doc(config.id.isEmpty ? null : config.id);
     await docRef.set(config.toFirestore());
   }
 
   Future<void> deleteIntegration(String tenantId, String id) async {
-    await _firestore.tenantCollection(tenantId, 'integrations').doc(id).delete();
+    await _firestore
+        .tenantCollection(tenantId, 'integrations')
+        .doc(id)
+        .delete();
   }
 
   /// Low-cost Gateway Push strategy: Send JSON data to a webhook endpoint
-  Future<bool> syncDataToGateway(String tenantId, String integrationType, Map<String, dynamic> payload) async {
+  Future<bool> syncDataToGateway(
+    String tenantId,
+    String integrationType,
+    Map<String, dynamic> payload,
+  ) async {
     try {
-      final snap = await _firestore
-          .tenantCollection(tenantId, 'integrations')
-          .where('type', isEqualTo: integrationType)
-          .where('isEnabled', isEqualTo: true)
-          .limit(1)
-          .get();
+      final snap =
+          await _firestore
+              .tenantCollection(tenantId, 'integrations')
+              .where('type', isEqualTo: integrationType)
+              .where('isEnabled', isEqualTo: true)
+              .limit(1)
+              .get();
 
       if (snap.docs.isEmpty) {
         // App acts independently if no gateway is configured or enabled.
-        return true; 
+        return true;
       }
 
       final config = IntegrationConfig.fromFirestore(snap.docs.first);
-      
+
       if (config.webhookUrl.isEmpty) return true;
 
       final response = await http.post(
         Uri.parse(config.webhookUrl),
         headers: {
           'Content-Type': 'application/json',
-          if (config.apiKey.isNotEmpty) 'Authorization': 'Bearer ${config.apiKey}',
+          if (config.apiKey.isNotEmpty)
+            'Authorization': 'Bearer ${config.apiKey}',
         },
         body: jsonEncode(payload),
       );

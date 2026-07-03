@@ -23,7 +23,8 @@ class ProjectDetailsScreen extends ConsumerStatefulWidget {
   const ProjectDetailsScreen({super.key, required this.projectId});
 
   @override
-  ConsumerState<ProjectDetailsScreen> createState() => _ProjectDetailsScreenState();
+  ConsumerState<ProjectDetailsScreen> createState() =>
+      _ProjectDetailsScreenState();
 }
 
 class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
@@ -37,13 +38,17 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
     return projectAsync.when(
       data: (project) {
         if (project == null) {
-           return const Scaffold(body: Center(child: Text('Project not found.')));
+          return const Scaffold(
+            body: Center(child: Text('Project not found.')),
+          );
         }
 
-        final isLeadOrAdmin = currentUser?.uid == project.projectLead ||
+        final isLeadOrAdmin =
+            currentUser?.uid == project.projectLead ||
             currentUser?.role == 'admin' ||
-            currentUser?.role == 'executive' || 
-            (currentUser?.uid == null && ref.watch(isMockLoggedInProvider)); // For testing
+            currentUser?.role == 'executive' ||
+            (currentUser?.uid == null &&
+                ref.watch(isMockLoggedInProvider)); // For testing
 
         final tabs = [
           const Tab(text: 'Overview'),
@@ -57,15 +62,14 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
         return DefaultTabController(
           length: tabs.length,
           child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+            backgroundColor:
+                Theme.of(context).colorScheme.surfaceContainerLowest,
             appBar: AppBar(
               title: const Text('Project Details'),
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerLowest,
               scrolledUnderElevation: 0,
-              bottom: TabBar(
-                isScrollable: true,
-                tabs: tabs,
-              ),
+              bottom: TabBar(isScrollable: true, tabs: tabs),
             ),
             floatingActionButton: _buildQuickAllocateFAB(context, project),
             body: TabBarView(
@@ -82,7 +86,9 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
           ),
         );
       },
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading:
+          () =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
     );
   }
@@ -101,50 +107,121 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Quick Allocate', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
+      builder:
+          (ctx) => Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _quickActionChip(ctx, Icons.engineering_rounded, 'Allocate Contractor', () {
-                  UIUtils.showSideSheet(context: context, title: 'Contractor Management', builder: (ctx) => const ContractorManagementScreen());
-                }),
-                _quickActionChip(ctx, Icons.attach_money_rounded, 'Add Expense / PO', () {
-                  showExpenseForm(context, project, ref);
-                }),
-                _quickActionChip(ctx, Icons.add_task_rounded, 'Add Project Task', () {
-                  UIUtils.showSideSheet(context: context, title: 'Project Timeline', builder: (ctx) => CustomGanttChart(tasks: project.tasks, projectId: project.id));
-                }),
-                _quickActionChip(ctx, Icons.warning_amber_rounded, 'Log Incident', () {
-                  UIUtils.showSideSheet(context: context, title: 'Report Incident', builder: (ctx) => IncidentReportForm(tenantId: ref.read(currentTenantIdProvider) ?? ''));
-                }),
-                _quickActionChip(ctx, Icons.gpp_maybe_rounded, 'Add Project Risk', () {
-                  UIUtils.showSideSheet(context: context, title: 'HIRA Risk Assessment', builder: (ctx) => const HiraScreen());
-                }),
-                _quickActionChip(ctx, Icons.task_alt_rounded, 'Add Permit (PTW)', () {
-                  UIUtils.showSideSheet(context: context, title: 'Permit to Work', builder: (ctx) => const PermitToWorkScreen());
-                }),
+                Text(
+                  'Quick Allocate',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    _quickActionChip(
+                      ctx,
+                      Icons.engineering_rounded,
+                      'Allocate Contractor',
+                      () {
+                        UIUtils.showSideSheet(
+                          context: context,
+                          title: 'Contractor Management',
+                          builder: (ctx) => const ContractorManagementScreen(),
+                        );
+                      },
+                    ),
+                    _quickActionChip(
+                      ctx,
+                      Icons.attach_money_rounded,
+                      'Add Expense / PO',
+                      () {
+                        showExpenseForm(context, project, ref);
+                      },
+                    ),
+                    _quickActionChip(
+                      ctx,
+                      Icons.add_task_rounded,
+                      'Add Project Task',
+                      () {
+                        UIUtils.showSideSheet(
+                          context: context,
+                          title: 'Project Timeline',
+                          builder:
+                              (ctx) => CustomGanttChart(
+                                tasks: project.tasks,
+                                projectId: project.id,
+                              ),
+                        );
+                      },
+                    ),
+                    _quickActionChip(
+                      ctx,
+                      Icons.warning_amber_rounded,
+                      'Log Incident',
+                      () {
+                        UIUtils.showSideSheet(
+                          context: context,
+                          title: 'Report Incident',
+                          builder:
+                              (ctx) => IncidentReportForm(
+                                tenantId:
+                                    ref.read(currentTenantIdProvider) ?? '',
+                              ),
+                        );
+                      },
+                    ),
+                    _quickActionChip(
+                      ctx,
+                      Icons.gpp_maybe_rounded,
+                      'Add Project Risk',
+                      () {
+                        UIUtils.showSideSheet(
+                          context: context,
+                          title: 'HIRA Risk Assessment',
+                          builder: (ctx) => const HiraScreen(),
+                        );
+                      },
+                    ),
+                    _quickActionChip(
+                      ctx,
+                      Icons.task_alt_rounded,
+                      'Add Permit (PTW)',
+                      () {
+                        UIUtils.showSideSheet(
+                          context: context,
+                          title: 'Permit to Work',
+                          builder: (ctx) => const PermitToWorkScreen(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
               ],
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
-  Widget _quickActionChip(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+  Widget _quickActionChip(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: () {
         Navigator.pop(context);
@@ -154,7 +231,9 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

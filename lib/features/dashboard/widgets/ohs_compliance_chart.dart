@@ -16,17 +16,25 @@ class OhsComplianceChart extends ConsumerWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CustomPaint(size: Size.infinite, painter: _LineChartPainter(value: val)),
+                child: CustomPaint(
+                  size: Size.infinite,
+                  painter: _LineChartPainter(value: val),
+                ),
               ),
             ),
             Text(
               'Current: ${val.toStringAsFixed(1)}%',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: XMTheme.success),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: XMTheme.success,
+              ),
             ),
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
@@ -63,10 +71,19 @@ class _LineChartPainter extends CustomPainter {
           ..color = XMTheme.success
           ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(0, size.height * 0.9), 4, dotPaint);
-    canvas.drawCircle(Offset(size.width * 0.6, size.height * (1.0 - (value / 100.0) * 0.7)), 4, dotPaint);
-    canvas.drawCircle(Offset(size.width, size.height * (1.0 - (value / 100.0) * 0.9)), 4, dotPaint);
+    canvas.drawCircle(
+      Offset(size.width * 0.6, size.height * (1.0 - (value / 100.0) * 0.7)),
+      4,
+      dotPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width, size.height * (1.0 - (value / 100.0) * 0.9)),
+      4,
+      dotPaint,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _LineChartPainter oldDelegate) => oldDelegate.value != value;
+  bool shouldRepaint(covariant _LineChartPainter oldDelegate) =>
+      oldDelegate.value != value;
 }

@@ -5,9 +5,9 @@ import '../../../../core/widgets/ds_widgets.dart';
 class EmployeeCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final VoidCallback onTap;
-  
+
   const EmployeeCard({super.key, required this.data, required this.onTap});
-  
+
   @override
   Widget build(BuildContext context) {
     final status = data['status'] ?? 'Active';

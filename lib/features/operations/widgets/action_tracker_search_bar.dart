@@ -35,14 +35,15 @@ class ActionTrackerSearchBar extends StatelessWidget {
           DropdownButton<String>(
             value: filterValue,
             underline: const SizedBox(),
-            items: ['All', 'Pending', 'In Progress', 'Open', 'Completed', 'Closed']
-                .map(
-                  (s) => DropdownMenuItem(
-                    value: s,
-                    child: Text(s, style: const TextStyle(fontSize: 13)),
-                  ),
-                )
-                .toList(),
+            items:
+                ['All', 'Pending', 'In Progress', 'Open', 'Completed', 'Closed']
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(s, style: const TextStyle(fontSize: 13)),
+                      ),
+                    )
+                    .toList(),
             onChanged: (v) {
               if (v != null) onFilterChanged(v);
             },

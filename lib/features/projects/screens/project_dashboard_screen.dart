@@ -12,10 +12,12 @@ class ProjectDashboardScreen extends ConsumerStatefulWidget {
   const ProjectDashboardScreen({super.key});
 
   @override
-  ConsumerState<ProjectDashboardScreen> createState() => _ProjectDashboardScreenState();
+  ConsumerState<ProjectDashboardScreen> createState() =>
+      _ProjectDashboardScreenState();
 }
 
-class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen> {
+class _ProjectDashboardScreenState
+    extends ConsumerState<ProjectDashboardScreen> {
   String _searchQuery = '';
   String _statusFilter = 'All';
 
@@ -26,11 +28,12 @@ class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen>
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (ctx) => const NewProjectDialog(),
-        ),
+        onPressed:
+            () => showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => const NewProjectDialog(),
+            ),
         backgroundColor: XMTheme.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
@@ -47,23 +50,36 @@ class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen>
 
           projectsAsync.when(
             data: (projects) {
-              final activeProjects = projects.where((p) => p.status != 'Completed').toList();
-              final avgSafetyScore = projects.isEmpty
-                  ? 0.0
-                  : projects.fold(0.0, (s, p) => s + p.safetyFileScore) / projects.length;
-              final highRiskCount = projects
-                  .where((p) =>
-                      ref.watch(projectRiskLevelProvider(p)) == 'Critical' ||
-                      ref.watch(projectRiskLevelProvider(p)) == 'High')
-                  .length;
+              final activeProjects =
+                  projects.where((p) => p.status != 'Completed').toList();
+              final avgSafetyScore =
+                  projects.isEmpty
+                      ? 0.0
+                      : projects.fold(0.0, (s, p) => s + p.safetyFileScore) /
+                          projects.length;
+              final highRiskCount =
+                  projects
+                      .where(
+                        (p) =>
+                            ref.watch(projectRiskLevelProvider(p)) ==
+                                'Critical' ||
+                            ref.watch(projectRiskLevelProvider(p)) == 'High',
+                      )
+                      .length;
               final totalBudget = projects.fold(0.0, (s, p) => s + p.budget);
               final totalNcrs = projects.fold(0, (s, p) => s + p.totalNcrs);
-              final onTrackCount = projects
-                  .where((p) => p.overallProgress >= 0.5 && p.status == 'Active')
-                  .length;
+              final onTrackCount =
+                  projects
+                      .where(
+                        (p) => p.overallProgress >= 0.5 && p.status == 'Active',
+                      )
+                      .length;
 
               return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 sliver: SliverToBoxAdapter(
                   child: Column(
                     children: [
@@ -88,27 +104,40 @@ class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen>
                 ),
               );
             },
-            loading: () => const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator())),
-            error: (e, _) => SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
+            loading:
+                () => const SliverToBoxAdapter(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+            error:
+                (e, _) =>
+                    SliverToBoxAdapter(child: Center(child: Text('Error: $e'))),
           ),
 
           projectsAsync.when(
             data: (projects) {
               var filtered = projects;
               if (_searchQuery.isNotEmpty) {
-                filtered = filtered
-                    .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-                    .toList();
+                filtered =
+                    filtered
+                        .where(
+                          (p) => p.name.toLowerCase().contains(
+                            _searchQuery.toLowerCase(),
+                          ),
+                        )
+                        .toList();
               }
               if (_statusFilter != 'All') {
-                filtered = filtered.where((p) => p.status == _statusFilter).toList();
+                filtered =
+                    filtered.where((p) => p.status == _statusFilter).toList();
               }
 
               if (filtered.isEmpty) {
                 return const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(48.0),
-                    child: Center(child: Text('No projects found matching criteria.')),
+                    child: Center(
+                      child: Text('No projects found matching criteria.'),
+                    ),
                   ),
                 );
               }
@@ -116,23 +145,23 @@ class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen>
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final project = filtered[index];
-                      final riskLevel = ref.watch(projectRiskLevelProvider(project));
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final project = filtered[index];
+                    final riskLevel = ref.watch(
+                      projectRiskLevelProvider(project),
+                    );
 
-                      return ProjectListItem(
-                        project: project,
-                        riskLevel: riskLevel,
-                      );
-                    },
-                    childCount: filtered.length,
-                  ),
+                    return ProjectListItem(
+                      project: project,
+                      riskLevel: riskLevel,
+                    );
+                  }, childCount: filtered.length),
                 ),
               );
             },
             loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error:
+                (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -159,10 +188,14 @@ class _ProjectDashboardScreenState extends ConsumerState<ProjectDashboardScreen>
           flex: 1,
           child: DropdownButtonFormField<String>(
             value: _statusFilter,
-            decoration: const InputDecoration(isDense: true, labelText: 'Status'),
-            items: ['All', 'Draft', 'Active', 'On Hold', 'Completed']
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
+            decoration: const InputDecoration(
+              isDense: true,
+              labelText: 'Status',
+            ),
+            items:
+                ['All', 'Draft', 'Active', 'On Hold', 'Completed']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
             onChanged: (v) => setState(() => _statusFilter = v!),
           ),
         ),

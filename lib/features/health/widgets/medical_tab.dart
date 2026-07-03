@@ -18,8 +18,6 @@ class MedicalsTab extends ConsumerStatefulWidget {
 }
 
 class _MedicalsTabState extends ConsumerState<MedicalsTab> {
-
-
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
@@ -37,22 +35,35 @@ class _MedicalsTabState extends ConsumerState<MedicalsTab> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      const OHStatChip(label: 'Fit', count: '85%', color: XMTheme.success),
+                      const OHStatChip(
+                        label: 'Fit',
+                        count: '85%',
+                        color: XMTheme.success,
+                      ),
                       GSpacing.hMd,
-                      const OHStatChip(label: 'Restricted', count: '12%', color: XMTheme.warning),
+                      const OHStatChip(
+                        label: 'Restricted',
+                        count: '12%',
+                        color: XMTheme.warning,
+                      ),
                       GSpacing.hMd,
-                      const OHStatChip(label: 'Unfit', count: '3%', color: XMTheme.error),
+                      const OHStatChip(
+                        label: 'Unfit',
+                        count: '3%',
+                        color: XMTheme.error,
+                      ),
                     ],
                   ),
                 ),
               ),
               GSpacing.hMd,
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New Medical Record',
-                  builder: (ctx) => const MedicalForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New Medical Record',
+                      builder: (ctx) => const MedicalForm(),
+                    ),
                 icon: const Icon(Icons.add_rounded, size: 20),
                 label: const Text('Add Record'),
               ),
@@ -61,14 +72,18 @@ class _MedicalsTabState extends ConsumerState<MedicalsTab> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'medical_records')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(100)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'medical_records',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(100)
+                        .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
               if (snap.connectionState == ConnectionState.waiting) {
@@ -79,9 +94,16 @@ class _MedicalsTabState extends ConsumerState<MedicalsTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.monitor_heart_outlined, size: 48, color: Theme.of(context).disabledColor),
+                      Icon(
+                        Icons.monitor_heart_outlined,
+                        size: 48,
+                        color: Theme.of(context).disabledColor,
+                      ),
                       GSpacing.vMd,
-                      Text('No medical records found', style: Theme.of(context).textTheme.bodyLarge),
+                      Text(
+                        'No medical records found',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ],
                   ),
                 );
@@ -101,5 +123,3 @@ class _MedicalsTabState extends ConsumerState<MedicalsTab> {
     );
   }
 }
-
-

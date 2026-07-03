@@ -19,14 +19,19 @@ final coursesProvider = StreamProvider<List<Course>>((ref) {
 final enrollmentsProvider = StreamProvider<List<Enrollment>>((ref) {
   final firestore = ref.watch(firestoreProvider);
   final profile = ref.watch(userProfileProvider).valueOrNull;
-  
+
   if (profile == null) return Stream.value([]);
-  
+
   return firestore
       .tenantCollection("", 'enrollments')
       .where('employeeId', isEqualTo: profile.uid)
       .snapshots()
-      .map((snap) => snap.docs.map((doc) => Enrollment.fromMap(doc.data(), doc.id)).toList());
+      .map(
+        (snap) =>
+            snap.docs
+                .map((doc) => Enrollment.fromMap(doc.data(), doc.id))
+                .toList(),
+      );
 });
 
 void _seedDummyCourses(FirebaseFirestore firestore) {
@@ -51,7 +56,8 @@ void _seedDummyCourses(FirebaseFirestore firestore) {
     },
     {
       'title': 'First Aid & CPR',
-      'description': 'Emergency response and first aid procedures for the workplace.',
+      'description':
+          'Emergency response and first aid procedures for the workplace.',
       'thumbnailUrl': 'https://via.placeholder.com/300x150',
       'instructor': 'Dr. Alan Grant',
       'category': 'Health',
@@ -61,6 +67,9 @@ void _seedDummyCourses(FirebaseFirestore firestore) {
   ];
 
   for (var i = 0; i < dummyCourses.length; i++) {
-    firestore.tenantCollection("", 'courses').doc('CRS-00${i + 1}').set(dummyCourses[i]);
+    firestore
+        .tenantCollection("", 'courses')
+        .doc('CRS-00${i + 1}')
+        .set(dummyCourses[i]);
   }
 }

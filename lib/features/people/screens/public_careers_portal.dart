@@ -10,7 +10,8 @@ class PublicCareersPortal extends ConsumerStatefulWidget {
   const PublicCareersPortal({super.key});
 
   @override
-  ConsumerState<PublicCareersPortal> createState() => _PublicCareersPortalState();
+  ConsumerState<PublicCareersPortal> createState() =>
+      _PublicCareersPortalState();
 }
 
 class _PublicCareersPortalState extends ConsumerState<PublicCareersPortal> {
@@ -21,7 +22,10 @@ class _PublicCareersPortalState extends ConsumerState<PublicCareersPortal> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Sentinel Careers', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Sentinel Careers',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -29,9 +33,10 @@ class _PublicCareersPortalState extends ConsumerState<PublicCareersPortal> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 800),
-          child: _selectedRequisition == null
-              ? _buildJobList()
-              : _buildApplicationForm(_selectedRequisition!),
+          child:
+              _selectedRequisition == null
+                  ? _buildJobList()
+                  : _buildApplicationForm(_selectedRequisition!),
         ),
       ),
     );
@@ -40,7 +45,14 @@ class _PublicCareersPortalState extends ConsumerState<PublicCareersPortal> {
   Widget _buildJobList() {
     final firestore = ref.watch(firestoreProvider);
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'job_requisitions').where('status', isEqualTo: 'Open').snapshots(),
+      stream:
+          firestore
+              .tenantCollection(
+                ref.watch(currentTenantIdProvider) ?? "",
+                'job_requisitions',
+              )
+              .where('status', isEqualTo: 'Open')
+              .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return const Center(child: Text('Error loading open positions.'));
@@ -52,7 +64,10 @@ class _PublicCareersPortalState extends ConsumerState<PublicCareersPortal> {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
           return const Center(
-            child: Text('No open positions at the moment. Please check back later.', style: TextStyle(fontSize: 18)),
+            child: Text(
+              'No open positions at the moment. Please check back later.',
+              style: TextStyle(fontSize: 18),
+            ),
           );
         }
 
@@ -66,18 +81,34 @@ class _PublicCareersPortalState extends ConsumerState<PublicCareersPortal> {
               elevation: 2.0,
               child: ListTile(
                 contentPadding: const EdgeInsets.all(16.0),
-                title: Text(req.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                title: Text(
+                  req.title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 8),
-                    Text('Department: ${req.department}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Text(
+                      'Department: ${req.department}',
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
                     const SizedBox(height: 8),
-                    Text(req.description, maxLines: 3, overflow: TextOverflow.ellipsis),
+                    Text(
+                      req.description,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
                 trailing: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () {
                     setState(() {
                       _selectedRequisition = req;

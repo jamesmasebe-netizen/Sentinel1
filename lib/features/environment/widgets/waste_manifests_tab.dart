@@ -15,8 +15,6 @@ class WasteManifestsTab extends ConsumerStatefulWidget {
 }
 
 class _WasteManifestsTabState extends ConsumerState<WasteManifestsTab> {
-
-
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
@@ -28,13 +26,17 @@ class _WasteManifestsTabState extends ConsumerState<WasteManifestsTab> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Waste Manifests', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                'Waste Manifests',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New Waste Manifest',
-                  builder: (ctx) => const WasteForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New Waste Manifest',
+                      builder: (ctx) => const WasteForm(),
+                    ),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Manifest'),
               ),
@@ -43,17 +45,23 @@ class _WasteManifestsTabState extends ConsumerState<WasteManifestsTab> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'waste_manifests')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'waste_manifests',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(50)
+                        .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return const Center(child: Text('No waste manifests logged'));
+              if (docs.isEmpty) {
+                return const Center(child: Text('No waste manifests logged'));
+              }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,

@@ -51,9 +51,10 @@ class Enrollment {
       employeeId: map['employeeId'] ?? '',
       progressPercentage: (map['progressPercentage'] ?? 0.0).toDouble(),
       status: map['status'] ?? 'Not Started',
-      enrollmentDate: map['enrollmentDate'] != null 
-          ? DateTime.parse(map['enrollmentDate']) 
-          : DateTime.now(),
+      enrollmentDate:
+          map['enrollmentDate'] != null
+              ? DateTime.parse(map['enrollmentDate'])
+              : DateTime.now(),
     );
   }
 }

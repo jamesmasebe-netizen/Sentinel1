@@ -20,7 +20,11 @@ class OperationsHubScreen extends ConsumerWidget {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          UIUtils.showSideSheet(context: context, title: 'Action Tracker', builder: (ctx) => const ActionTrackerScreen());
+          UIUtils.showSideSheet(
+            context: context,
+            title: 'Action Tracker',
+            builder: (ctx) => const ActionTrackerScreen(),
+          );
         },
         backgroundColor: XMTheme.primary,
         foregroundColor: Colors.white,

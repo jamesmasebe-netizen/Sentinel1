@@ -15,8 +15,6 @@ class FirstAidTab extends ConsumerStatefulWidget {
 }
 
 class _FirstAidTabState extends ConsumerState<FirstAidTab> {
-
-
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
@@ -32,34 +30,51 @@ class _FirstAidTabState extends ConsumerState<FirstAidTab> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('First Aid Log', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  Text('Incident treatment records', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  Text(
+                    'First Aid Log',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'Incident treatment records',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: () => UIUtils.showSideSheet(
-                  context: context,
-                  title: 'New First Aid Incident',
-                  builder: (ctx) => const FirstAidForm(),
-                ),
+                onPressed:
+                    () => UIUtils.showSideSheet(
+                      context: context,
+                      title: 'New First Aid Incident',
+                      builder: (ctx) => const FirstAidForm(),
+                    ),
                 icon: const Icon(Icons.medical_services_rounded, size: 20),
                 label: const Text('Log Entry'),
-                style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error),
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                ),
               ),
             ],
           ),
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'first_aid_log')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : fs
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'first_aid_log',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(50)
+                        .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
               if (docs.isEmpty) {
@@ -80,5 +95,3 @@ class _FirstAidTabState extends ConsumerState<FirstAidTab> {
     );
   }
 }
-
-

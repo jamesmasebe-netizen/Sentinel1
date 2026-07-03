@@ -24,7 +24,7 @@ class EmployeeTerminatedEvent extends AppEvent {
 class HighRiskIncidentReportedEvent extends AppEvent {
   final String incidentId;
   final String projectId;
-  
+
   HighRiskIncidentReportedEvent({
     required this.incidentId,
     required this.projectId,
@@ -45,7 +45,7 @@ class AppEventBus {
   void fire(AppEvent event) {
     _controller.add(event);
   }
-  
+
   void dispose() {
     _controller.close();
   }

@@ -11,7 +11,8 @@ class PublicCareersScreen extends ConsumerStatefulWidget {
   const PublicCareersScreen({super.key});
 
   @override
-  ConsumerState<PublicCareersScreen> createState() => _PublicCareersScreenState();
+  ConsumerState<PublicCareersScreen> createState() =>
+      _PublicCareersScreenState();
 }
 
 class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
@@ -25,15 +26,22 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
         actions: [
           TextButton(
             onPressed: () => context.go('/login'),
-            child: const Text('Employee Login', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Employee Login',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'job_requisitions')
-            .where('status', isEqualTo: 'Published')
-            .snapshots(),
+        stream:
+            _firestore
+                .tenantCollection(
+                  ref.watch(currentTenantIdProvider) ?? "",
+                  'job_requisitions',
+                )
+                .where('status', isEqualTo: 'Published')
+                .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -64,57 +72,81 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                   padding: EdgeInsets.all(32.0),
                   child: Column(
                     children: [
-                      Text('Join Our Team', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Join Our Team',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       SizedBox(height: 8),
-                      Text('Explore opportunities to build the future with us.'),
+                      Text(
+                        'Explore opportunities to build the future with us.',
+                      ),
                     ],
                   ),
                 ),
               ),
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final job = jobs[index].data() as Map<String, dynamic>;
-                    return Center(
-                      child: Container(
-                        constraints: const BoxConstraints(maxWidth: 800),
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(job['jobTitle'] ?? 'Unknown', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                                    FilledButton(
-                                      onPressed: () {
-                                        UIUtils.showSideSheet(
-                                          context: context,
-                                          title: 'Apply: ${job['jobTitle']}',
-                                          builder: (ctx) => JobApplicationForm(jobId: jobs[index].id, jobTitle: job['jobTitle']),
-                                        );
-                                      },
-                                      child: const Text('Apply Now'),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final job = jobs[index].data() as Map<String, dynamic>;
+                  return Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 800),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    job['jobTitle'] ?? 'Unknown',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text('${job['department'] ?? ''} • ${job['location'] ?? ''} • ${job['employmentType'] ?? ''}'),
-                                const SizedBox(height: 16),
-                                const Text('Requirements:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text(job['requirements'] ?? 'Not specified'),
-                              ],
-                            ),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () {
+                                      UIUtils.showSideSheet(
+                                        context: context,
+                                        title: 'Apply: ${job['jobTitle']}',
+                                        builder:
+                                            (ctx) => JobApplicationForm(
+                                              jobId: jobs[index].id,
+                                              jobTitle: job['jobTitle'],
+                                            ),
+                                      );
+                                    },
+                                    child: const Text('Apply Now'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${job['department'] ?? ''} • ${job['location'] ?? ''} • ${job['employmentType'] ?? ''}',
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Requirements:',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text(job['requirements'] ?? 'Not specified'),
+                            ],
                           ),
                         ),
                       ),
-                    );
-                  },
-                  childCount: jobs.length,
-                ),
+                    ),
+                  );
+                }, childCount: jobs.length),
               ),
             ],
           );

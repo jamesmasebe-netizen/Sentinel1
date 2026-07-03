@@ -5,7 +5,6 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/offline_sync_service.dart';
 import '../services/audit_log_service.dart';
-import '../services/crashlytics_service.dart';
 import '../models/user_profile.dart';
 
 // ─── Core Service Providers ───
@@ -88,30 +87,34 @@ final userProfileProvider = StreamProvider<UserProfile?>((ref) async* {
 final authClaimsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final user = ref.watch(authStateProvider).valueOrNull;
   if (user == null) return {};
-  
+
   // Force refresh to get the latest claims if updated recently
   final idTokenResult = await user.getIdTokenResult(true);
   return idTokenResult.claims ?? {};
 });
 
 final tenantIdClaimProvider = Provider<AsyncValue<String?>>((ref) {
-  return ref.watch(authClaimsProvider).whenData((claims) => claims['tenantId'] as String?);
+  return ref
+      .watch(authClaimsProvider)
+      .whenData((claims) => claims['tenantId'] as String?);
 });
 
 final roleClaimProvider = Provider<AsyncValue<String?>>((ref) {
-  return ref.watch(authClaimsProvider).whenData((claims) => claims['role'] as String?);
+  return ref
+      .watch(authClaimsProvider)
+      .whenData((claims) => claims['role'] as String?);
 });
 
 /// Current tenant ID (used for all Firestore queries)
 final currentTenantIdProvider = Provider<String?>((ref) {
   final isMocked = ref.watch(isMockLoggedInProvider);
   if (isMocked) return 'sentinel-dev';
-  
+
   final claims = ref.watch(authClaimsProvider).valueOrNull ?? {};
   if (claims.containsKey('tenantId')) {
     return claims['tenantId'] as String?;
   }
-  
+
   // Fallback to profile
   final profile = ref.watch(userProfileProvider);
   return profile.whenOrNull(data: (p) => p?.tenantId);

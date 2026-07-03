@@ -23,7 +23,12 @@ class OHSAppointmentsTab extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Legal Appointments (OHS Act 85 of 1993)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Legal Appointments (OHS Act 85 of 1993)',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               FilledButton.icon(
                 onPressed: () {
                   // Show appoint dialog
@@ -35,11 +40,15 @@ class OHSAppointmentsTab extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'ohs_appointments')
-                .where('assigneeId', isEqualTo: employeeId)
-                .orderBy('appointedAt', descending: true)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'ohs_appointments',
+                    )
+                    .where('assigneeId', isEqualTo: employeeId)
+                    .orderBy('appointedAt', descending: true)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -50,9 +59,15 @@ class OHSAppointmentsTab extends ConsumerWidget {
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
                       children: [
-                        Icon(Icons.shield_outlined, size: 48, color: XMTheme.secondaryLight.withValues(alpha: 0.3)),
+                        Icon(
+                          Icons.shield_outlined,
+                          size: 48,
+                          color: XMTheme.secondaryLight.withValues(alpha: 0.3),
+                        ),
                         const SizedBox(height: 16),
-                        const Text('No legal appointments found for this employee.'),
+                        const Text(
+                          'No legal appointments found for this employee.',
+                        ),
                       ],
                     ),
                   ),
@@ -65,7 +80,8 @@ class OHSAppointmentsTab extends ConsumerWidget {
                 itemCount: snapshot.data!.docs.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                  final data =
+                      snapshot.data!.docs[index].data() as Map<String, dynamic>;
                   final isRevoked = data['status'] == 'Revoked';
 
                   return GCard(
@@ -73,7 +89,10 @@ class OHSAppointmentsTab extends ConsumerWidget {
                     child: Row(
                       children: [
                         CircleAvatar(
-                          backgroundColor: isRevoked ? XMTheme.error.withValues(alpha: 0.1) : XMTheme.primary.withValues(alpha: 0.1),
+                          backgroundColor:
+                              isRevoked
+                                  ? XMTheme.error.withValues(alpha: 0.1)
+                                  : XMTheme.primary.withValues(alpha: 0.1),
                           child: Icon(
                             isRevoked ? Icons.block : Icons.verified_user,
                             color: isRevoked ? XMTheme.error : XMTheme.primary,
@@ -84,11 +103,29 @@ class OHSAppointmentsTab extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(data['appointmentType'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(
+                                data['appointmentType'] ?? 'Unknown',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Section: ${data['section'] ?? ''}', style: TextStyle(color: XMTheme.secondaryLight, fontSize: 13)),
+                              Text(
+                                'Section: ${data['section'] ?? ''}',
+                                style: TextStyle(
+                                  color: XMTheme.secondaryLight,
+                                  fontSize: 13,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text('Appointed: ${data['appointedAt'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(data['appointedAt'])) : 'Unknown'}', style: TextStyle(color: XMTheme.secondaryLight, fontSize: 12)),
+                              Text(
+                                'Appointed: ${data['appointedAt'] != null ? DateFormat('MMM d, yyyy').format(DateTime.parse(data['appointedAt'])) : 'Unknown'}',
+                                style: TextStyle(
+                                  color: XMTheme.secondaryLight,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ),

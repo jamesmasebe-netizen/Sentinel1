@@ -29,7 +29,11 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
 
   Future<void> _submitRecord() async {
     if (_empNameCtrl.text.isEmpty || _courseCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Please fill in required fields', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill in required fields',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -37,29 +41,33 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
       final status = _expiry.isAfter(DateTime.now()) ? 'Active' : 'Expired';
-      
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'training_records',
-        data: {
-          'employeeName': _empNameCtrl.text.trim(),
-          'idNumber': _idNumCtrl.text.trim(),
-          'courseName': _courseCtrl.text.trim(),
-          'dateCompleted': _completed.toIso8601String(),
-          'expiryDate': _expiry.toIso8601String(),
-          'status': status,
-          'authorId': profile.uid,
-          'siteId': profile.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
-      
+
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'training_records',
+            data: {
+              'employeeName': _empNameCtrl.text.trim(),
+              'idNumber': _idNumCtrl.text.trim(),
+              'courseName': _courseCtrl.text.trim(),
+              'dateCompleted': _completed.toIso8601String(),
+              'expiryDate': _expiry.toIso8601String(),
+              'status': status,
+              'authorId': profile.uid,
+              'siteId': profile.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
+
       if (mounted) {
         Navigator.pop(context); // Close side sheet
         UIUtils.showToast(context, 'Training record added successfully');
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -99,7 +107,10 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
                   ),
                 ),
                 GSpacing.vLg,
-                const Text('Certification Dates', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Certification Dates',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 GSpacing.vMd,
                 Row(
                   children: [
@@ -117,8 +128,12 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
                           }
                         },
                         child: InputDecorator(
-                          decoration: const InputDecoration(labelText: 'Completed'),
-                          child: Text('${_completed.day}/${_completed.month}/${_completed.year}'),
+                          decoration: const InputDecoration(
+                            labelText: 'Completed',
+                          ),
+                          child: Text(
+                            '${_completed.day}/${_completed.month}/${_completed.year}',
+                          ),
                         ),
                       ),
                     ),
@@ -130,15 +145,21 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
                             context: context,
                             initialDate: _expiry,
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 3650)),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 3650),
+                            ),
                           );
                           if (d != null) {
                             setState(() => _expiry = d);
                           }
                         },
                         child: InputDecorator(
-                          decoration: const InputDecoration(labelText: 'Expiry'),
-                          child: Text('${_expiry.day}/${_expiry.month}/${_expiry.year}'),
+                          decoration: const InputDecoration(
+                            labelText: 'Expiry',
+                          ),
+                          child: Text(
+                            '${_expiry.day}/${_expiry.month}/${_expiry.year}',
+                          ),
                         ),
                       ),
                     ),

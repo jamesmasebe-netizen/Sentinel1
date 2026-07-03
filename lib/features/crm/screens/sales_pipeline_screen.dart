@@ -26,7 +26,7 @@ class SalesPipelineScreen extends ConsumerWidget {
               label: const Text('New Deal'),
               onPressed: () => _showAddDealDialog(context, ref),
             ),
-          )
+          ),
         ],
       ),
       body: dealsAsyncValue.when(
@@ -41,7 +41,7 @@ class SalesPipelineScreen extends ConsumerWidget {
 
   Widget _buildPipeline(BuildContext context, WidgetRef ref, List<Deal> deals) {
     final theme = Theme.of(context);
-    
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ListView.builder(
@@ -57,14 +57,17 @@ class SalesPipelineScreen extends ConsumerWidget {
   }
 
   Widget _buildStageColumn(
-    BuildContext context, 
-    WidgetRef ref, 
-    DealStage stage, 
+    BuildContext context,
+    WidgetRef ref,
+    DealStage stage,
     List<Deal> deals,
     ThemeData theme,
   ) {
     final formatCurrency = NumberFormat.simpleCurrency();
-    final totalStageValue = deals.fold<double>(0.0, (prev, deal) => prev + deal.value);
+    final totalStageValue = deals.fold<double>(
+      0.0,
+      (prev, deal) => prev + deal.value,
+    );
 
     return Container(
       width: 320,
@@ -85,7 +88,9 @@ class SalesPipelineScreen extends ConsumerWidget {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.5,
+                  ),
                 ),
               ),
             ),
@@ -120,7 +125,7 @@ class SalesPipelineScreen extends ConsumerWidget {
               ],
             ),
           ),
-          
+
           // Cards List
           Expanded(
             child: ListView.builder(
@@ -128,7 +133,13 @@ class SalesPipelineScreen extends ConsumerWidget {
               itemCount: deals.length,
               itemBuilder: (context, index) {
                 final deal = deals[index];
-                return _buildDealCard(context, ref, deal, theme, formatCurrency);
+                return _buildDealCard(
+                  context,
+                  ref,
+                  deal,
+                  theme,
+                  formatCurrency,
+                );
               },
             ),
           ),
@@ -138,9 +149,9 @@ class SalesPipelineScreen extends ConsumerWidget {
   }
 
   Widget _buildDealCard(
-    BuildContext context, 
-    WidgetRef ref, 
-    Deal deal, 
+    BuildContext context,
+    WidgetRef ref,
+    Deal deal,
     ThemeData theme,
     NumberFormat currencyFormat,
   ) {
@@ -199,7 +210,10 @@ class SalesPipelineScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(6),
@@ -243,7 +257,7 @@ class SalesPipelineScreen extends ConsumerWidget {
         return 'Closed Lost';
     }
   }
-  
+
   IconData _getStageIcon(DealStage stage) {
     switch (stage) {
       case DealStage.lead:
@@ -276,7 +290,9 @@ class SalesPipelineScreen extends ConsumerWidget {
             children: [
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(labelText: 'Deal Title (e.g. Acme Q3 Upgrade)'),
+                decoration: const InputDecoration(
+                  labelText: 'Deal Title (e.g. Acme Q3 Upgrade)',
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -287,7 +303,9 @@ class SalesPipelineScreen extends ConsumerWidget {
               TextField(
                 controller: valueController,
                 decoration: const InputDecoration(labelText: 'Value (\$)'),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
               ),
             ],
           ),
@@ -326,20 +344,24 @@ class SalesPipelineScreen extends ConsumerWidget {
           title: const Text('Move Deal'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            children: DealStage.values.map((stage) {
-              return RadioListTile<DealStage>(
-                title: Text(_getStageName(stage)),
-                value: stage,
-                groupValue: deal.stage,
-                onChanged: (selectedStage) {
-                  if (selectedStage != null && selectedStage != deal.stage) {
-                    final crmService = ref.read(crmServiceProvider);
-                    crmService.updateDeal(deal.copyWith(stage: selectedStage));
-                  }
-                  Navigator.pop(context);
-                },
-              );
-            }).toList(),
+            children:
+                DealStage.values.map((stage) {
+                  return RadioListTile<DealStage>(
+                    title: Text(_getStageName(stage)),
+                    value: stage,
+                    groupValue: deal.stage,
+                    onChanged: (selectedStage) {
+                      if (selectedStage != null &&
+                          selectedStage != deal.stage) {
+                        final crmService = ref.read(crmServiceProvider);
+                        crmService.updateDeal(
+                          deal.copyWith(stage: selectedStage),
+                        );
+                      }
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
           ),
           actions: [
             TextButton(

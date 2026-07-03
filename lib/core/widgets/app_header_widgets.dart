@@ -5,11 +5,16 @@ import '../utils/ui_utils.dart';
 import '../services/offline_sync_service.dart';
 import '../../config/theme.dart';
 import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+
 class SyncIndicator extends StatelessWidget {
   final SyncStatus status;
   final int pendingCount;
 
-  const SyncIndicator({super.key, required this.status, required this.pendingCount});
+  const SyncIndicator({
+    super.key,
+    required this.status,
+    required this.pendingCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -66,14 +71,13 @@ class SyncIndicator extends StatelessWidget {
   }
 }
 
-
 class GlobalSearchDelegate extends SearchDelegate<String> {
   final String tenantId;
   GlobalSearchDelegate(this.tenantId);
   @override
   List<Widget>? buildActions(BuildContext context) {
     return [
-      IconButton(icon: const Icon(Icons.clear), onPressed: () => query = '')
+      IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
     ];
   }
 
@@ -87,27 +91,35 @@ class GlobalSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    if (query.trim().isEmpty) return const Center(child: Text('Enter a search term'));
-    
+    if (query.trim().isEmpty) {
+      return const Center(child: Text('Enter a search term'));
+    }
+
     return FutureBuilder<List<DocumentSnapshot>>(
       future: _performGlobalSearch(query.trim()),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
-        
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
         final results = snapshot.data ?? [];
-        if (results.isEmpty) return const Center(child: Text('No results found.'));
-        
+        if (results.isEmpty) {
+          return const Center(child: Text('No results found.'));
+        }
+
         return ListView.builder(
           itemCount: results.length,
           itemBuilder: (context, index) {
             final doc = results[index];
             final data = doc.data() as Map<String, dynamic>;
             final collection = doc.reference.parent.id;
-            
+
             String title = 'Unknown';
             String subtitle = 'Collection: $collection';
-            
+
             if (collection == 'incidents') {
               title = data['title'] ?? 'Incident';
             } else if (collection == 'projects') {
@@ -115,7 +127,7 @@ class GlobalSearchDelegate extends SearchDelegate<String> {
             } else if (collection == 'employees') {
               title = '${data['firstName']} ${data['lastName']}';
             }
-            
+
             return ListTile(
               leading: const Icon(Icons.search),
               title: Text(title),
@@ -123,7 +135,17 @@ class GlobalSearchDelegate extends SearchDelegate<String> {
               onTap: () {
                 close(context, '');
                 if (collection == 'incidents') {
-                  UIUtils.showSideSheet(context: context, title: 'Incident Detail', builder: (ctx) => Padding(padding: const EdgeInsets.all(16.0), child: Text('Viewing item: ${doc.id}\n(Detail view not yet implemented)')));
+                  UIUtils.showSideSheet(
+                    context: context,
+                    title: 'Incident Detail',
+                    builder:
+                        (ctx) => Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Viewing item: ${doc.id}\n(Detail view not yet implemented)',
+                          ),
+                        ),
+                  );
                 } else if (collection == 'projects') {
                   context.push('/projects/${doc.id}');
                 } else if (collection == 'employees') {
@@ -139,18 +161,36 @@ class GlobalSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return const Center(child: Text('Type to search across projects, employees, and incidents...'));
+    return const Center(
+      child: Text(
+        'Type to search across projects, employees, and incidents...',
+      ),
+    );
   }
 
   Future<List<DocumentSnapshot>> _performGlobalSearch(String q) async {
     final fs = FirebaseFirestore.instance;
     final futures = <Future<QuerySnapshot>>[
-      fs.tenantCollection(tenantId, 'incidents').where('title', isGreaterThanOrEqualTo: q).where('title', isLessThanOrEqualTo: '$q\uf8ff').limit(5).get(),
-      fs.tenantCollection(tenantId, 'projects').where('name', isGreaterThanOrEqualTo: q).where('name', isLessThanOrEqualTo: '$q\uf8ff').limit(5).get(),
-      fs.tenantCollection(tenantId, 'employees').where('firstName', isGreaterThanOrEqualTo: q).where('firstName', isLessThanOrEqualTo: '$q\uf8ff').limit(5).get(),
+      fs
+          .tenantCollection(tenantId, 'incidents')
+          .where('title', isGreaterThanOrEqualTo: q)
+          .where('title', isLessThanOrEqualTo: '$q\uf8ff')
+          .limit(5)
+          .get(),
+      fs
+          .tenantCollection(tenantId, 'projects')
+          .where('name', isGreaterThanOrEqualTo: q)
+          .where('name', isLessThanOrEqualTo: '$q\uf8ff')
+          .limit(5)
+          .get(),
+      fs
+          .tenantCollection(tenantId, 'employees')
+          .where('firstName', isGreaterThanOrEqualTo: q)
+          .where('firstName', isLessThanOrEqualTo: '$q\uf8ff')
+          .limit(5)
+          .get(),
     ];
     final results = await Future.wait(futures);
     return results.expand((snap) => snap.docs).toList();
   }
 }
-

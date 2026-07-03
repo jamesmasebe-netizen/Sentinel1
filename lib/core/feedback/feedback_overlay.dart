@@ -31,7 +31,9 @@ class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
 
   Future<String?> _captureAndUploadScreenshot(String feedbackId) async {
     try {
-      final boundary = _boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary =
+          _boundaryKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
       if (boundary == null) return null;
 
       final image = await boundary.toImage(pixelRatio: 2.0);
@@ -39,13 +41,15 @@ class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
       if (byteData == null) return null;
 
       final bytes = byteData.buffer.asUint8List();
-      final storageRef = FirebaseStorage.instance.ref().child('feedback_screenshots/$feedbackId.png');
-      
+      final storageRef = FirebaseStorage.instance.ref().child(
+        'feedback_screenshots/$feedbackId.png',
+      );
+
       final uploadTask = await storageRef.putData(
         bytes,
         SettableMetadata(contentType: 'image/png'),
       );
-      
+
       return await uploadTask.ref.getDownloadURL();
     } catch (e) {
       debugPrint('Error capturing screenshot: $e');
@@ -53,10 +57,14 @@ class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
     }
   }
 
-  void _submitFeedback(BuildContext context, Map<String, dynamic> snapshot, String userText) async {
+  void _submitFeedback(
+    BuildContext context,
+    Map<String, dynamic> snapshot,
+    String userText,
+  ) async {
     setState(() => _isUploading = true);
     final feedbackId = DateTime.now().millisecondsSinceEpoch.toString();
-    
+
     try {
       // Capture and upload screenshot first
       final screenshotUrl = await _captureAndUploadScreenshot(feedbackId);
@@ -69,11 +77,21 @@ class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
         'screenshot_url': screenshotUrl,
       };
 
-      await FirebaseFirestore.instance.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'dev_feedback').doc(feedbackId).set(feedbackData);
-      
+      await FirebaseFirestore.instance
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'dev_feedback',
+          )
+          .doc(feedbackId)
+          .set(feedbackData);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Feedback submitted with UI snapshot and screenshot!')),
+          const SnackBar(
+            content: Text(
+              'Feedback submitted with UI snapshot and screenshot!',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -89,21 +107,25 @@ class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
 
   void _showFeedbackDialog(BuildContext context) {
     // Capture state immediately when dialog is triggered
-    final indexer = UIIndexer(context, screenName: ModalRoute.of(context)?.settings.name ?? 'Dashboard');
+    final indexer = UIIndexer(
+      context,
+      screenName: ModalRoute.of(context)?.settings.name ?? 'Dashboard',
+    );
     final snapshot = indexer.captureState();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => FeedbackBottomSheet(
-        snapshot: snapshot,
-        isUploading: _isUploading,
-        onCancel: () => Navigator.pop(context),
-        onSubmit: (text) {
-          Navigator.pop(context);
-          _submitFeedback(context, snapshot, text);
-        },
-      ),
+      builder:
+          (context) => FeedbackBottomSheet(
+            snapshot: snapshot,
+            isUploading: _isUploading,
+            onCancel: () => Navigator.pop(context),
+            onSubmit: (text) {
+              Navigator.pop(context);
+              _submitFeedback(context, snapshot, text);
+            },
+          ),
     );
   }
 
@@ -113,10 +135,7 @@ class _FeedbackOverlayState extends ConsumerState<FeedbackOverlay> {
 
     return Stack(
       children: [
-        RepaintBoundary(
-          key: _boundaryKey,
-          child: widget.child,
-        ),
+        RepaintBoundary(key: _boundaryKey, child: widget.child),
         Positioned(
           left: _position.dx,
           top: _position.dy,

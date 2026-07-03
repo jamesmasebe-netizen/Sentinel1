@@ -38,21 +38,23 @@ class _DrillFormCardState extends ConsumerState<DrillFormCard> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'emergency_drills',
-        data: {
-          'drillType': _drillType,
-          'dateConducted': _dateCtrl.text.trim(),
-          'durationMinutes': int.tryParse(_durationCtrl.text) ?? 0,
-          'evaluatorName': _evalCtrl.text.trim(),
-          'scenarioDescription': _scenarioCtrl.text.trim(),
-          'areasForImprovement': _improvementsCtrl.text.trim(),
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+            data: {
+              'drillType': _drillType,
+              'dateConducted': _dateCtrl.text.trim(),
+              'durationMinutes': int.tryParse(_durationCtrl.text) ?? 0,
+              'evaluatorName': _evalCtrl.text.trim(),
+              'scenarioDescription': _scenarioCtrl.text.trim(),
+              'areasForImprovement': _improvementsCtrl.text.trim(),
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         UIUtils.showToast(context, 'Drill logged', type: ToastType.success);
         widget.onCancel();
@@ -77,7 +79,9 @@ class _DrillFormCardState extends ConsumerState<DrillFormCard> {
           children: [
             Text(
               'Log Emergency Drill',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             GSpacing.vMd,
             Row(
@@ -85,17 +89,20 @@ class _DrillFormCardState extends ConsumerState<DrillFormCard> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _drillType,
-                    decoration: const InputDecoration(
-                      labelText: 'Drill Type',
-                    ),
-                    items: [
-                      'Fire',
-                      'Medical',
-                      'Spill',
-                      'Security',
-                      'Evacuation',
-                      'Other',
-                    ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                    decoration: const InputDecoration(labelText: 'Drill Type'),
+                    items:
+                        [
+                              'Fire',
+                              'Medical',
+                              'Spill',
+                              'Security',
+                              'Evacuation',
+                              'Other',
+                            ]
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
+                            .toList(),
                     onChanged: (v) => setState(() => _drillType = v!),
                   ),
                 ),
@@ -121,9 +128,7 @@ class _DrillFormCardState extends ConsumerState<DrillFormCard> {
             GSpacing.vMd,
             TextFormField(
               controller: _evalCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Evaluator Name',
-              ),
+              decoration: const InputDecoration(labelText: 'Evaluator Name'),
             ),
             GSpacing.vMd,
             TextFormField(

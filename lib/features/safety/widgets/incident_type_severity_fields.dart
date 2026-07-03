@@ -50,9 +50,10 @@ class IncidentTypeSeverityFields extends StatelessWidget {
               labelText: 'Type',
               prefixIcon: Icon(Icons.category),
             ),
-            items: _types
-                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                .toList(),
+            items:
+                _types
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .toList(),
             onChanged: onTypeChanged,
           ),
         ),
@@ -64,27 +65,28 @@ class IncidentTypeSeverityFields extends StatelessWidget {
               labelText: 'Severity',
               prefixIcon: Icon(Icons.warning),
             ),
-            items: _severities
-                .map(
-                  (s) => DropdownMenuItem(
-                    value: s,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: _severityColor(s),
-                            shape: BoxShape.circle,
-                          ),
+            items:
+                _severities
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: _severityColor(s),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(s),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(s),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
+                      ),
+                    )
+                    .toList(),
             onChanged: onSeverityChanged,
           ),
         ),

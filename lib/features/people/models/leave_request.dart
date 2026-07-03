@@ -53,12 +53,14 @@ class LeaveRequest {
     return LeaveRequest(
       id: documentId,
       employeeId: map['employeeId'] ?? '',
-      startDate: map['startDate'] != null 
-          ? DateTime.parse(map['startDate']) 
-          : DateTime.now(),
-      endDate: map['endDate'] != null 
-          ? DateTime.parse(map['endDate']) 
-          : DateTime.now(),
+      startDate:
+          map['startDate'] != null
+              ? DateTime.parse(map['startDate'])
+              : DateTime.now(),
+      endDate:
+          map['endDate'] != null
+              ? DateTime.parse(map['endDate'])
+              : DateTime.now(),
       type: map['type'] ?? 'Annual',
       status: map['status'] ?? 'Pending',
       reason: map['reason'] ?? '',

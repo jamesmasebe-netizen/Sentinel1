@@ -58,7 +58,8 @@ class _SheqChatState extends ConsumerState<SheqChatTab> {
       final resp = await _chat.sendMessage(Content.text(text));
       if (mounted) {
         setState(
-          () => _messages.add(ChatMessage(text: resp.text ?? '…', isUser: false)),
+          () =>
+              _messages.add(ChatMessage(text: resp.text ?? '…', isUser: false)),
         );
       }
     } catch (e) {
@@ -188,4 +189,3 @@ class _SheqChatState extends ConsumerState<SheqChatTab> {
     );
   }
 }
-

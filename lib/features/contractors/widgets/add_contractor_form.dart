@@ -37,28 +37,38 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'contractors',
-        data: {
-          'companyName': _nameCtrl.text.trim(),
-          'contactPersonId': _selectedContactPersonId,
-          'registrationNumber': _regCtrl.text.trim(),
-          'scopeOfWork': _scopeCtrl.text.trim(),
-          'riskRating': _riskRating,
-          'status': _status,
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'contractors',
+            data: {
+              'companyName': _nameCtrl.text.trim(),
+              'contactPersonId': _selectedContactPersonId,
+              'registrationNumber': _regCtrl.text.trim(),
+              'scopeOfWork': _scopeCtrl.text.trim(),
+              'riskRating': _riskRating,
+              'status': _status,
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
-        UIUtils.showToast(context, 'Contractor added successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Contractor added successfully',
+          type: ToastType.success,
+        );
         widget.onCancel();
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to add contractor: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to add contractor: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _isSub = false);
@@ -73,16 +83,11 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Add Contractor',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
+          Text('Add Contractor', style: Theme.of(context).textTheme.titleSmall),
           GSpacing.vMd,
           TextFormField(
             controller: _nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Company Name *',
-            ),
+            decoration: const InputDecoration(labelText: 'Company Name *'),
           ),
           GSpacing.vMd,
           Row(
@@ -90,7 +95,8 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
               Expanded(
                 child: EmployeeSelector(
                   value: _selectedContactPersonId,
-                  onChanged: (val) => setState(() => _selectedContactPersonId = val),
+                  onChanged:
+                      (val) => setState(() => _selectedContactPersonId = val),
                   label: 'Contact Person',
                 ),
               ),
@@ -108,9 +114,7 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
           GSpacing.vMd,
           TextFormField(
             controller: _scopeCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Scope of Work',
-            ),
+            decoration: const InputDecoration(labelText: 'Scope of Work'),
           ),
           GSpacing.vMd,
           Row(
@@ -122,9 +126,12 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
                     labelText: 'Risk Rating',
                     isDense: true,
                   ),
-                  items: ['Low', 'Medium', 'High', 'Critical']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
+                  items:
+                      ['Low', 'Medium', 'High', 'Critical']
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
+                          .toList(),
                   onChanged: (v) => setState(() => _riskRating = v!),
                 ),
               ),
@@ -136,9 +143,12 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
                     labelText: 'Status',
                     isDense: true,
                   ),
-                  items: ['Active', 'Inactive', 'Suspended']
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
+                  items:
+                      ['Active', 'Inactive', 'Suspended']
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
+                          .toList(),
                   onChanged: (v) => setState(() => _status = v!),
                 ),
               ),

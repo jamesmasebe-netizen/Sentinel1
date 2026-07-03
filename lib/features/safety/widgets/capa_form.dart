@@ -8,15 +8,10 @@ import '../../people/widgets/employee_selector.dart';
 import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
 
 class CAPAForm extends ConsumerStatefulWidget {
-  
   final VoidCallback onCancel;
 
   final String tenantId;
-  const CAPAForm({
-    super.key,
-    required this.tenantId,
-    required this.onCancel,
-  });
+  const CAPAForm({super.key, required this.tenantId, required this.onCancel});
 
   @override
   ConsumerState<CAPAForm> createState() => _CAPAFormState();
@@ -41,7 +36,11 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
     if (_descriptionController.text.isEmpty ||
         _assignedToId == null ||
         _dueDate == null) {
-      UIUtils.showToast(context, 'Please fill all required fields', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Please fill all required fields',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -63,15 +62,27 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
       };
 
       final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(tenantId: widget.tenantId, collection: 'capas', data: data);
+      await firestoreService.createDocument(
+        tenantId: widget.tenantId,
+        collection: 'capas',
+        data: data,
+      );
 
       if (mounted) {
-        UIUtils.showToast(context, 'CAPA created successfully', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'CAPA created successfully',
+          type: ToastType.success,
+        );
         widget.onCancel();
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Failed to create CAPA: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Failed to create CAPA: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -89,12 +100,16 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
         children: [
           // Link to incident (optional)
           StreamBuilder<QuerySnapshot>(
-            stream: firestore
-                .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'incidents')
-                .where('siteId', isEqualTo: '')
-                .orderBy('createdAt', descending: true)
-                .limit(20)
-                .snapshots(),
+            stream:
+                firestore
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'incidents',
+                    )
+                    .where('siteId', isEqualTo: '')
+                    .orderBy('createdAt', descending: true)
+                    .limit(20)
+                    .snapshots(),
             builder: (context, snapshot) {
               final incidents = snapshot.data?.docs ?? [];
               return DropdownButtonFormField<String?>(
@@ -104,16 +119,25 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
                   prefixIcon: Icon(Icons.link),
                 ),
                 items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text('None')),
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('None'),
+                  ),
                   ...incidents.map((doc) {
                     final d = doc.data() as Map<String, dynamic>;
                     return DropdownMenuItem(
                       value: doc.id,
-                      child: Text(d['title'] ?? 'Untitled', overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        d['title'] ?? 'Untitled',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }),
                 ],
-                onChanged: _isSubmitting ? null : (v) => setState(() => _linkedIncidentId = v),
+                onChanged:
+                    _isSubmitting
+                        ? null
+                        : (v) => setState(() => _linkedIncidentId = v),
               );
             },
           ),
@@ -161,19 +185,22 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
                   ? '${_dueDate!.day}/${_dueDate!.month}/${_dueDate!.year}'
                   : 'Tap to select',
             ),
-            onTap: _isSubmitting
-                ? null
-                : () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now().add(const Duration(days: 7)),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                    );
-                    if (date != null) {
-                      setState(() => _dueDate = date);
-                    }
-                  },
+            onTap:
+                _isSubmitting
+                    ? null
+                    : () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now().add(
+                          const Duration(days: 7),
+                        ),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (date != null) {
+                        setState(() => _dueDate = date);
+                      }
+                    },
           ),
           const SizedBox(height: 32),
 
@@ -181,9 +208,17 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: _isSubmitting ? null : _submitCAPA,
-              icon: _isSubmitting
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.save),
+              icon:
+                  _isSubmitting
+                      ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : const Icon(Icons.save),
               label: Text(_isSubmitting ? 'Creating...' : 'Create CAPA'),
             ),
           ),

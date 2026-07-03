@@ -12,9 +12,12 @@ class PropertyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double occupancyPercent = (property.occupancy / property.capacity);
-    Color statusColor = property.status == 'Optimal' 
-        ? XMTheme.success 
-        : (property.status.contains('Critical') ? XMTheme.error : XMTheme.warning);
+    Color statusColor =
+        property.status == 'Optimal'
+            ? XMTheme.success
+            : (property.status.contains('Critical')
+                ? XMTheme.error
+                : XMTheme.warning);
 
     return GCard(
       padding: EdgeInsets.zero,
@@ -27,7 +30,9 @@ class PropertyCard extends StatelessWidget {
             height: 120,
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400'),
+                image: NetworkImage(
+                  'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400',
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -36,7 +41,10 @@ class PropertyCard extends StatelessWidget {
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: GStatusTag(label: property.status.toUpperCase(), color: statusColor),
+                  child: GStatusTag(
+                    label: property.status.toUpperCase(),
+                    color: statusColor,
+                  ),
                 ),
               ],
             ),
@@ -49,7 +57,10 @@ class PropertyCard extends StatelessWidget {
               children: [
                 Text(
                   property.name,
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -63,9 +74,21 @@ class PropertyCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildMiniStat('ASSETS', property.totalAssets.toString(), Icons.inventory_2_outlined),
-                    _buildMiniStat('COMPLIANCE', '${property.complianceScore}%', Icons.verified_user_outlined),
-                    _buildMiniStat('OCCUPANCY', '${(occupancyPercent * 100).toInt()}%', Icons.people_outline),
+                    _buildMiniStat(
+                      'ASSETS',
+                      property.totalAssets.toString(),
+                      Icons.inventory_2_outlined,
+                    ),
+                    _buildMiniStat(
+                      'COMPLIANCE',
+                      '${property.complianceScore}%',
+                      Icons.verified_user_outlined,
+                    ),
+                    _buildMiniStat(
+                      'OCCUPANCY',
+                      '${(occupancyPercent * 100).toInt()}%',
+                      Icons.people_outline,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -74,9 +97,15 @@ class PropertyCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: property.complianceScore / 100,
                     minHeight: 4,
-                    backgroundColor: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.1),
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      property.complianceScore > 80 ? XMTheme.success : (property.complianceScore > 60 ? XMTheme.warning : XMTheme.error)
+                      property.complianceScore > 80
+                          ? XMTheme.success
+                          : (property.complianceScore > 60
+                              ? XMTheme.warning
+                              : XMTheme.error),
                     ),
                   ),
                 ),
@@ -96,11 +125,25 @@ class PropertyCard extends StatelessWidget {
           children: [
             Icon(icon, size: 10, color: Colors.grey),
             GSpacing.hXs,
-            Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 9,
+                color: Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
         GSpacing.vXs,
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: XMTheme.primary)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 13,
+            color: XMTheme.primary,
+          ),
+        ),
       ],
     );
   }

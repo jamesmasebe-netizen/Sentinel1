@@ -15,10 +15,7 @@ class IncidentCostTrackingFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Cost Tracking',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
+        Text('Cost Tracking', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
         Row(
           children: [

@@ -46,8 +46,14 @@ class PermitCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(type, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(location, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      type,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      location,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ),
@@ -60,8 +66,17 @@ class PermitCard extends StatelessWidget {
             runSpacing: 8,
             children: [
               PermitMiniInfo(icon: Icons.person_outline, label: applicant),
-              if (data['validFrom'] != null) PermitMiniInfo(icon: Icons.access_time, label: _fmtDate(data['validFrom'])),
-              if (loto) PermitMiniInfo(icon: Icons.lock_outline, label: 'LOTO', color: XMTheme.error),
+              if (data['validFrom'] != null)
+                PermitMiniInfo(
+                  icon: Icons.access_time,
+                  label: _fmtDate(data['validFrom']),
+                ),
+              if (loto)
+                PermitMiniInfo(
+                  icon: Icons.lock_outline,
+                  label: 'LOTO',
+                  color: XMTheme.error,
+                ),
             ],
           ),
           if (status == 'Requested' && canApprove) ...[
@@ -104,19 +119,52 @@ class PermitCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Notes/Description', style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Notes/Description',
+                style: Theme.of(
+                  ctx,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Text(notes, style: const TextStyle(fontSize: 15, height: 1.5)),
               const SizedBox(height: 24),
-              PermitDetailRow(icon: Icons.person_outline, label: 'Applicant', value: applicant),
-              PermitDetailRow(icon: Icons.location_on_outlined, label: 'Location', value: location),
-              PermitDetailRow(icon: Icons.category_outlined, label: 'Type', value: type),
-              PermitDetailRow(icon: Icons.flag_outlined, label: 'Status', value: status),
+              PermitDetailRow(
+                icon: Icons.person_outline,
+                label: 'Applicant',
+                value: applicant,
+              ),
+              PermitDetailRow(
+                icon: Icons.location_on_outlined,
+                label: 'Location',
+                value: location,
+              ),
+              PermitDetailRow(
+                icon: Icons.category_outlined,
+                label: 'Type',
+                value: type,
+              ),
+              PermitDetailRow(
+                icon: Icons.flag_outlined,
+                label: 'Status',
+                value: status,
+              ),
               if (data['validFrom'] != null)
-                PermitDetailRow(icon: Icons.access_time, label: 'Valid From', value: _fmtDate(data['validFrom'])),
+                PermitDetailRow(
+                  icon: Icons.access_time,
+                  label: 'Valid From',
+                  value: _fmtDate(data['validFrom']),
+                ),
               if (data['validTo'] != null)
-                PermitDetailRow(icon: Icons.access_time, label: 'Valid To', value: _fmtDate(data['validTo'])),
-              PermitDetailRow(icon: Icons.lock_outline, label: 'LOTO Required', value: loto ? 'Yes' : 'No'),
+                PermitDetailRow(
+                  icon: Icons.access_time,
+                  label: 'Valid To',
+                  value: _fmtDate(data['validTo']),
+                ),
+              PermitDetailRow(
+                icon: Icons.lock_outline,
+                label: 'LOTO Required',
+                value: loto ? 'Yes' : 'No',
+              ),
             ],
           ),
         );
@@ -135,34 +183,52 @@ class PermitCard extends StatelessWidget {
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'Hot Work': return Icons.local_fire_department;
-      case 'Working at Height': return Icons.height;
-      case 'Confined Space': return Icons.meeting_room;
-      case 'Electrical': return Icons.bolt;
-      case 'Excavation': return Icons.construction;
-      default: return Icons.assignment;
+      case 'Hot Work':
+        return Icons.local_fire_department;
+      case 'Working at Height':
+        return Icons.height;
+      case 'Confined Space':
+        return Icons.meeting_room;
+      case 'Electrical':
+        return Icons.bolt;
+      case 'Excavation':
+        return Icons.construction;
+      default:
+        return Icons.assignment;
     }
   }
 
   Color _typeColor(String type) {
     switch (type) {
-      case 'Hot Work': return XMTheme.error;
-      case 'Working at Height': return XMTheme.warning;
-      case 'Confined Space': return XMTheme.info;
-      case 'Electrical': return const Color(0xFFF59E0B);
-      case 'Excavation': return const Color(0xFF8B5CF6);
-      default: return XMTheme.primary;
+      case 'Hot Work':
+        return XMTheme.error;
+      case 'Working at Height':
+        return XMTheme.warning;
+      case 'Confined Space':
+        return XMTheme.info;
+      case 'Electrical':
+        return const Color(0xFFF59E0B);
+      case 'Excavation':
+        return const Color(0xFF8B5CF6);
+      default:
+        return XMTheme.primary;
     }
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'Requested': return XMTheme.statusDraft;
-      case 'Approved': return XMTheme.success;
-      case 'Active': return XMTheme.info;
-      case 'Rejected': return XMTheme.error;
-      case 'Closed': return XMTheme.statusClosed;
-      default: return XMTheme.statusDraft;
+      case 'Requested':
+        return XMTheme.statusDraft;
+      case 'Approved':
+        return XMTheme.success;
+      case 'Active':
+        return XMTheme.info;
+      case 'Rejected':
+        return XMTheme.error;
+      case 'Closed':
+        return XMTheme.statusClosed;
+      default:
+        return XMTheme.statusDraft;
     }
   }
 }
@@ -171,7 +237,12 @@ class PermitMiniInfo extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color? color;
-  const PermitMiniInfo({super.key, required this.icon, required this.label, this.color});
+  const PermitMiniInfo({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -191,8 +262,13 @@ class PermitDetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  
-  const PermitDetailRow({super.key, required this.icon, required this.label, required this.value});
+
+  const PermitDetailRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -207,9 +283,21 @@ class PermitDetailRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),

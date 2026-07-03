@@ -13,7 +13,9 @@ class EmergencyContactsTab extends StatelessWidget {
       children: [
         Text(
           'Emergency Contacts',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         GSpacing.vLg,
         const _ContactCard(
@@ -86,12 +88,11 @@ class _ContactCard extends StatelessWidget {
         ),
         title: Text(
           name,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          number,
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
+        subtitle: Text(number, style: Theme.of(context).textTheme.bodySmall),
         trailing: IconButton.filledTonal(
           onPressed: () {
             UIUtils.showToast(context, 'Dialing $number...');

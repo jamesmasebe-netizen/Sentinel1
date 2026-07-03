@@ -55,13 +55,15 @@ class IncidentLocationDateFields extends StatelessWidget {
                 initialTime: TimeOfDay.fromDateTime(dateOfIncident),
               );
               if (time != null) {
-                onDateChanged(DateTime(
-                  date.year,
-                  date.month,
-                  date.day,
-                  time.hour,
-                  time.minute,
-                ));
+                onDateChanged(
+                  DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    time.hour,
+                    time.minute,
+                  ),
+                );
               }
             }
           },

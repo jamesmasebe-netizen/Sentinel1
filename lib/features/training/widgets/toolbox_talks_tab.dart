@@ -22,7 +22,7 @@ class ToolboxTalksTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
-    
+
     return Column(
       children: [
         Padding(
@@ -31,9 +31,9 @@ class ToolboxTalksTab extends ConsumerWidget {
             children: [
               Text(
                 'Recent Talks',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
               FilledButton.icon(
@@ -46,14 +46,18 @@ class ToolboxTalksTab extends ConsumerWidget {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : firestore
-                    .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'toolbox_talks')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
+            stream:
+                siteId == null
+                    ? null
+                    : firestore
+                        .tenantCollection(
+                          ref.watch(currentTenantIdProvider) ?? "",
+                          'toolbox_talks',
+                        )
+                        .where('siteId', isEqualTo: siteId)
+                        .orderBy('createdAt', descending: true)
+                        .limit(50)
+                        .snapshots(),
             builder: (ctx, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -64,9 +68,16 @@ class ToolboxTalksTab extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.record_voice_over_outlined, size: 64, color: Theme.of(context).disabledColor),
+                      Icon(
+                        Icons.record_voice_over_outlined,
+                        size: 64,
+                        color: Theme.of(context).disabledColor,
+                      ),
                       GSpacing.vLg,
-                      Text('No toolbox talks logged', style: Theme.of(context).textTheme.bodyLarge),
+                      Text(
+                        'No toolbox talks logged',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ],
                   ),
                 );
@@ -76,8 +87,9 @@ class ToolboxTalksTab extends ConsumerWidget {
                 itemCount: docs.length,
                 itemBuilder: (ctx, i) {
                   final d = docs[i].data() as Map<String, dynamic>;
-                  final attendees = (d['attendees'] as List?)?.cast<String>() ?? [];
-                  
+                  final attendees =
+                      (d['attendees'] as List?)?.cast<String>() ?? [];
+
                   return GCard(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: Padding(
@@ -89,14 +101,15 @@ class ToolboxTalksTab extends ConsumerWidget {
                             children: [
                               Text(
                                 d['topic'] ?? 'Untitled Talk',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const Spacer(),
                               Text(
                                 d['date']?.toString().split('T').first ?? '',
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelSmall?.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
@@ -105,23 +118,48 @@ class ToolboxTalksTab extends ConsumerWidget {
                           GSpacing.vMd,
                           Row(
                             children: [
-                              if (d['location'] != null && d['location'].toString().isNotEmpty) ...[
-                                Icon(Icons.location_on_outlined, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              if (d['location'] != null &&
+                                  d['location'].toString().isNotEmpty) ...[
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  size: 14,
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                ),
                                 GSpacing.hSm,
                                 Text(
                                   d['location'],
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                                 GSpacing.hMd,
                               ],
-                              Icon(Icons.people_outline, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              Icon(
+                                Icons.people_outline,
+                                size: 14,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                              ),
                               GSpacing.hSm,
                               Text(
                                 '${attendees.length} attendees',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -131,17 +169,34 @@ class ToolboxTalksTab extends ConsumerWidget {
                             Wrap(
                               spacing: 8,
                               runSpacing: 4,
-                              children: attendees.take(5).map((a) => Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  a,
-                                  style: Theme.of(context).textTheme.labelSmall,
-                                ),
-                              )).toList(),
+                              children:
+                                  attendees
+                                      .take(5)
+                                      .map(
+                                        (a) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            a,
+                                            style:
+                                                Theme.of(
+                                                  context,
+                                                ).textTheme.labelSmall,
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
                             ),
                           ],
                         ],

@@ -19,10 +19,14 @@ class IncidentsCategoryChart extends ConsumerWidget {
     }
 
     return StreamBuilder<QuerySnapshot>(
-      stream: firestore
-          .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'incidents')
-          .where('siteId', isEqualTo: siteId)
-          .snapshots(),
+      stream:
+          firestore
+              .tenantCollection(
+                ref.watch(currentTenantIdProvider) ?? "",
+                'incidents',
+              )
+              .where('siteId', isEqualTo: siteId)
+              .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
@@ -33,10 +37,14 @@ class IncidentsCategoryChart extends ConsumerWidget {
 
         // Group by category/type
         final injuryCount = docs.where((d) => d.get('type') == 'Injury').length;
-        final nearMissCount = docs.where((d) => d.get('type') == 'Near Miss').length;
-        final envCount = docs.where((d) => d.get('type') == 'Environmental').length;
-        final propDamageCount = docs.where((d) => d.get('type') == 'Property Damage').length;
-        final hazardObsCount = docs.where((d) => d.get('type') == 'Hazard Observation').length;
+        final nearMissCount =
+            docs.where((d) => d.get('type') == 'Near Miss').length;
+        final envCount =
+            docs.where((d) => d.get('type') == 'Environmental').length;
+        final propDamageCount =
+            docs.where((d) => d.get('type') == 'Property Damage').length;
+        final hazardObsCount =
+            docs.where((d) => d.get('type') == 'Hazard Observation').length;
 
         final values = [
           injuryCount.toDouble(),
@@ -72,7 +80,10 @@ class IncidentsCategoryChart extends ConsumerWidget {
                   color: Theme.of(context).cardTheme.color,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                    ),
                   ],
                 ),
                 child: Column(
@@ -80,9 +91,8 @@ class IncidentsCategoryChart extends ConsumerWidget {
                   children: [
                     Text(
                       '$total',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w900),
                     ),
                     Text(
                       'TOTAL',

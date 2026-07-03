@@ -87,7 +87,7 @@ class AuthService {
       final userCredential = await _auth.signInAnonymously();
       final user = userCredential.user;
       if (user == null) return null;
-      
+
       final profile = await _getOrCreateProfile(user);
       _currentProfile = profile;
       _profileController.add(profile);

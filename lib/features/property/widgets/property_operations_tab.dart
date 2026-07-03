@@ -83,7 +83,11 @@ class PropertyOperationsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkedEventsList(BuildContext context, String collection, String location) {
+  Widget _buildLinkedEventsList(
+    BuildContext context,
+    String collection,
+    String location,
+  ) {
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
@@ -104,7 +108,10 @@ class PropertyOperationsTab extends StatelessWidget {
             const Spacer(),
             TextButton(
               onPressed: () {
-                UIUtils.showToast(context, 'Viewing $collection details for $location');
+                UIUtils.showToast(
+                  context,
+                  'Viewing $collection details for $location',
+                );
               },
               child: const Text('View Details'),
             ),

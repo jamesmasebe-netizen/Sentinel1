@@ -24,146 +24,223 @@ class SafetyTab extends ConsumerWidget {
     return riskIdsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => Center(child: Text('Error: $e')),
-      data: (riskAssessmentIds) => FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
-        future: fetchSafetyComplianceData(fs, project, riskAssessmentIds),
-      builder: (context, snap) {
-        if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      data:
+          (
+            riskAssessmentIds,
+          ) => FutureBuilder<Map<String, List<Map<String, dynamic>>>>(
+            future: fetchSafetyComplianceData(fs, project, riskAssessmentIds),
+            builder: (context, snap) {
+              if (!snap.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-        final data = snap.data!;
-        final risks = data['risks'] ?? [];
-        final permits = data['permits'] ?? [];
-        final actions = data['actions'] ?? [];
+              final data = snap.data!;
+              final risks = data['risks'] ?? [];
+              final permits = data['permits'] ?? [];
+              final actions = data['actions'] ?? [];
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Safety & Compliance Metrics', style: Theme.of(context).textTheme.titleLarge),
-              GSpacing.vLg,
-              Row(
-                children: [
-                  Expanded(
-                    child: GCard(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.shield, color: XMTheme.success, size: 48),
-                          GSpacing.vSm,
-                          const Text('Contractor Safety File'),
-                          Text('${project.safetyFileScore.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Safety & Compliance Metrics',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                  GSpacing.hMd,
-                  Expanded(
-                    child: GCard(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          const Icon(Icons.assignment_late, color: XMTheme.error, size: 48),
-                          GSpacing.vSm,
-                          const Text('Open OHS NCRs'),
-                          Text('${project.totalNcrs}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
+                    GSpacing.vLg,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GCard(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.shield,
+                                  color: XMTheme.success,
+                                  size: 48,
+                                ),
+                                GSpacing.vSm,
+                                const Text('Contractor Safety File'),
+                                Text(
+                                  '${project.safetyFileScore.toStringAsFixed(0)}%',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        GSpacing.hMd,
+                        Expanded(
+                          child: GCard(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.assignment_late,
+                                  color: XMTheme.error,
+                                  size: 48,
+                                ),
+                                GSpacing.vSm,
+                                const Text('Open OHS NCRs'),
+                                Text(
+                                  '${project.totalNcrs}',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              GSpacing.vXl,
+                    GSpacing.vXl,
 
-              // ─── Associated Risk Assessments ───
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.security_rounded, color: XMTheme.warning, size: 20),
-                      const SizedBox(width: 8),
-                      Text('Risk Assessments (${risks.length})', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      UIUtils.showSideSheet(context: context, title: 'HIRA Risk Assessment', builder: (ctx) => const HiraScreen());
-                    },
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Add Risk'),
-                  ),
-                ],
-              ),
-              GSpacing.vMd,
-              if (risks.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                  ),
-                  child: const Text('No Risk Assessments currently linked.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                )
-              else
-                ...risks.map((risk) => RiskAssessmentCard(risk: risk)),
-              GSpacing.vXl,
+                    // ─── Associated Risk Assessments ───
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.security_rounded,
+                              color: XMTheme.warning,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Risk Assessments (${risks.length})',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            UIUtils.showSideSheet(
+                              context: context,
+                              title: 'HIRA Risk Assessment',
+                              builder: (ctx) => const HiraScreen(),
+                            );
+                          },
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('Add Risk'),
+                        ),
+                      ],
+                    ),
+                    GSpacing.vMd,
+                    if (risks.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: const Text(
+                          'No Risk Assessments currently linked.',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      )
+                    else
+                      ...risks.map((risk) => RiskAssessmentCard(risk: risk)),
+                    GSpacing.vXl,
 
-              // ─── Related Permits to Work ───
-              Row(
-                children: [
-                  const Icon(Icons.assignment_turned_in_rounded, color: XMTheme.success, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Related Permits to Work (${permits.length})', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ],
-              ),
-              GSpacing.vMd,
-              if (permits.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                  ),
-                  child: const Text('No permits found referencing this project\'s assessments.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                )
-              else
-                ...permits.map((p) => PermitCard(p: p)),
-              GSpacing.vXl,
+                    // ─── Related Permits to Work ───
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.assignment_turned_in_rounded,
+                          color: XMTheme.success,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Related Permits to Work (${permits.length})',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    GSpacing.vMd,
+                    if (permits.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: const Text(
+                          'No permits found referencing this project\'s assessments.',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      )
+                    else
+                      ...permits.map((p) => PermitCard(p: p)),
+                    GSpacing.vXl,
 
-              // ─── Open Action Items ───
-              Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: XMTheme.error, size: 20),
-                  const SizedBox(width: 8),
-                  Text('Open Project Action Items (${actions.length})', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                ],
-              ),
-              GSpacing.vMd,
-              if (actions.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                  ),
-                  child: const Text('No open action items for this project.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                )
-              else
-                ...actions.map((act) => ActionItemCard(act: act)),
-            ],
+                    // ─── Open Action Items ───
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: XMTheme.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Open Project Action Items (${actions.length})',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    GSpacing.vMd,
+                    if (actions.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: const Text(
+                          'No open action items for this project.',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      )
+                    else
+                      ...actions.map((act) => ActionItemCard(act: act)),
+                  ],
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
     );
   }
-
 }

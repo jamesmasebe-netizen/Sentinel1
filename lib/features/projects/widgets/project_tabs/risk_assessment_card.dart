@@ -11,7 +11,9 @@ class RiskAssessmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rating = risk['rating'] as String;
     Color badgeColor = Colors.grey;
-    if (rating == 'High' || rating == 'Critical' || rating == 'Extreme') badgeColor = XMTheme.error;
+    if (rating == 'High' || rating == 'Critical' || rating == 'Extreme') {
+      badgeColor = XMTheme.error;
+    }
     if (rating == 'Medium') badgeColor = XMTheme.warning;
     if (rating == 'Low' || rating == 'Safe') badgeColor = XMTheme.success;
 
@@ -26,19 +28,48 @@ class RiskAssessmentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(risk['title'] ?? 'Unnamed Assessment', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  risk['title'] ?? 'Unnamed Assessment',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(color: XMTheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                      child: Text(risk['type'] ?? 'HIRA', style: const TextStyle(fontSize: 9, color: XMTheme.primary, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: XMTheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        risk['type'] ?? 'HIRA',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: XMTheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(color: badgeColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                      child: Text(rating, style: TextStyle(fontSize: 9, color: badgeColor, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        rating,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: badgeColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),

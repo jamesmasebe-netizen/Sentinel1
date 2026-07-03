@@ -22,22 +22,36 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
         children: [
           Text(
             'Environmental Analytics',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           GSpacing.vSm,
           Text(
             'Performance overview for $siteId',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           GSpacing.vLg,
 
           // ─── Spill KPIs ───
-          Text('Spill Response', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Spill Response',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
           GSpacing.vMd,
           StreamBuilder<QuerySnapshot>(
-            stream: fs.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'environmental_spills').where('siteId', isEqualTo: siteId).snapshots(),
+            stream:
+                fs
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'environmental_spills',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
               int total = docs.length, contained = 0, uncontained = 0;
@@ -53,15 +67,33 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _AnalyticsKpiCard(label: 'Total Spills', value: '$total', icon: Icons.water_drop, color: XMTheme.info),
+                    _AnalyticsKpiCard(
+                      label: 'Total Spills',
+                      value: '$total',
+                      icon: Icons.water_drop,
+                      color: XMTheme.info,
+                    ),
                     GSpacing.hMd,
-                    _AnalyticsKpiCard(label: 'Contained', value: '$contained', icon: Icons.check_circle, color: XMTheme.success),
+                    _AnalyticsKpiCard(
+                      label: 'Contained',
+                      value: '$contained',
+                      icon: Icons.check_circle,
+                      color: XMTheme.success,
+                    ),
                     GSpacing.hMd,
-                    _AnalyticsKpiCard(label: 'Uncontained', value: '$uncontained', icon: Icons.cancel, color: XMTheme.error),
+                    _AnalyticsKpiCard(
+                      label: 'Uncontained',
+                      value: '$uncontained',
+                      icon: Icons.cancel,
+                      color: XMTheme.error,
+                    ),
                     GSpacing.hMd,
                     _AnalyticsKpiCard(
                       label: 'Containment %',
-                      value: total > 0 ? '${(contained / total * 100).toStringAsFixed(0)}%' : '—',
+                      value:
+                          total > 0
+                              ? '${(contained / total * 100).toStringAsFixed(0)}%'
+                              : '—',
                       icon: Icons.percent,
                       color: XMTheme.primary,
                     ),
@@ -73,10 +105,22 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
           GSpacing.vLg,
 
           // ─── Waste Distribution ───
-          Text('Waste Distribution', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Waste Distribution',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
           GSpacing.vMd,
           StreamBuilder<QuerySnapshot>(
-            stream: fs.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'waste_manifests').where('siteId', isEqualTo: siteId).snapshots(),
+            stream:
+                fs
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'waste_manifests',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
               final byType = <String, int>{};
@@ -85,43 +129,63 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                 final t = (d['wasteType'] ?? 'Other').toString();
                 byType[t] = (byType[t] ?? 0) + 1;
               }
-              if (byType.isEmpty) return const GCard(child: Center(child: Text('No waste data available')));
+              if (byType.isEmpty) {
+                return const GCard(
+                  child: Center(child: Text('No waste data available')),
+                );
+              }
               final total = byType.values.reduce((a, b) => a + b);
               return GCard(
                 padding: const EdgeInsets.all(20),
                 child: Column(
-                  children: byType.entries.map((e) {
-                    final pct = e.value / total;
-                    final color = e.key == 'Hazardous'
-                        ? XMTheme.error
-                        : (e.key == 'Recyclable' ? XMTheme.success : (e.key == 'General' ? XMTheme.info : XMTheme.warning));
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children:
+                      byType.entries.map((e) {
+                        final pct = e.value / total;
+                        final color =
+                            e.key == 'Hazardous'
+                                ? XMTheme.error
+                                : (e.key == 'Recyclable'
+                                    ? XMTheme.success
+                                    : (e.key == 'General'
+                                        ? XMTheme.info
+                                        : XMTheme.warning));
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(e.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                              Text('${e.value} (${(pct * 100).toStringAsFixed(0)}%)',
-                                  style: Theme.of(context).textTheme.labelSmall),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    e.key,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${e.value} (${(pct * 100).toStringAsFixed(0)}%)',
+                                    style:
+                                        Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                ],
+                              ),
+                              GSpacing.vSm,
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: LinearProgressIndicator(
+                                  value: pct,
+                                  minHeight: 10,
+                                  backgroundColor: color.withValues(alpha: 0.1),
+                                  color: color,
+                                ),
+                              ),
                             ],
                           ),
-                          GSpacing.vSm,
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: LinearProgressIndicator(
-                              value: pct,
-                              minHeight: 10,
-                              backgroundColor: color.withValues(alpha: 0.1),
-                              color: color,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                        );
+                      }).toList(),
                 ),
               );
             },
@@ -129,13 +193,29 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
           GSpacing.vLg,
 
           // ─── ESG Scorecard ───
-          Text('ESG Scorecard', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'ESG Scorecard',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
           GSpacing.vMd,
           StreamBuilder<QuerySnapshot>(
-            stream: fs.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'esg_metrics').where('siteId', isEqualTo: siteId).snapshots(),
+            stream:
+                fs
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'esg_metrics',
+                    )
+                    .where('siteId', isEqualTo: siteId)
+                    .snapshots(),
             builder: (ctx, snap) {
               final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) return const GCard(child: Center(child: Text('No ESG metrics available')));
+              if (docs.isEmpty) {
+                return const GCard(
+                  child: Center(child: Text('No ESG metrics available')),
+                );
+              }
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -154,10 +234,18 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(d['category'] ?? 'Metric', style: Theme.of(context).textTheme.labelSmall),
+                        Text(
+                          d['category'] ?? 'Metric',
+                          style: Theme.of(context).textTheme.labelSmall,
+                        ),
                         GSpacing.vSm,
-                        Text('${d['value']} ${d['unit']}',
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                        Text(
+                          '${d['value']} ${d['unit']}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                       ],
                     ),
                   );
@@ -175,21 +263,33 @@ class _AnalyticsKpiCard extends StatelessWidget {
   final String label, value;
   final IconData icon;
   final Color color;
-  const _AnalyticsKpiCard({required this.label, required this.value, required this.icon, required this.color});
+  const _AnalyticsKpiCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) => GCard(
-        width: 150,
-        color: color.withValues(alpha: 0.05),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 22),
-            GSpacing.vMd,
-            Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: color)),
-            GSpacing.vSm,
-            Text(label, style: Theme.of(context).textTheme.labelSmall),
-          ],
+    width: 150,
+    color: color.withValues(alpha: 0.05),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: color, size: 22),
+        GSpacing.vMd,
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
         ),
-      );
+        GSpacing.vSm,
+        Text(label, style: Theme.of(context).textTheme.labelSmall),
+      ],
+    ),
+  );
 }

@@ -8,7 +8,7 @@ import '../../../core/widgets/ds_widgets.dart';
 
 class PropertyMapCard extends StatelessWidget {
   final AsyncValue<List<Property>> propertiesAsync;
-  
+
   const PropertyMapCard({super.key, required this.propertiesAsync});
 
   @override
@@ -27,15 +27,26 @@ class PropertyMapCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(XMTheme.radiusXl),
           child: propertiesAsync.when(
             data: (properties) {
-              final markers = properties.map((p) => Marker(
-                markerId: MarkerId(p.id),
-                position: LatLng(p.lat, p.lng),
-                infoWindow: InfoWindow(title: p.name, snippet: p.type),
-                onTap: () => context.push('/property/${p.id}'),
-              )).toSet();
+              final markers =
+                  properties
+                      .map(
+                        (p) => Marker(
+                          markerId: MarkerId(p.id),
+                          position: LatLng(p.lat, p.lng),
+                          infoWindow: InfoWindow(
+                            title: p.name,
+                            snippet: p.type,
+                          ),
+                          onTap: () => context.push('/property/${p.id}'),
+                        ),
+                      )
+                      .toSet();
 
               return GoogleMap(
-                initialCameraPosition: const CameraPosition(target: initialPosition, zoom: 10),
+                initialCameraPosition: const CameraPosition(
+                  target: initialPosition,
+                  zoom: 10,
+                ),
                 markers: markers,
                 myLocationEnabled: false,
                 zoomControlsEnabled: true,
@@ -43,7 +54,10 @@ class PropertyMapCard extends StatelessWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(child: Icon(Icons.map_outlined, size: 64, color: Colors.grey)),
+            error:
+                (_, __) => const Center(
+                  child: Icon(Icons.map_outlined, size: 64, color: Colors.grey),
+                ),
           ),
         ),
       ),

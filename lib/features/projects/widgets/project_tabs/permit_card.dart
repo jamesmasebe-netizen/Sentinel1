@@ -11,7 +11,9 @@ class PermitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = p['status'] as String;
     Color statusColor = Colors.grey;
-    if (status == 'approved' || status == 'active') statusColor = XMTheme.success;
+    if (status == 'approved' || status == 'active') {
+      statusColor = XMTheme.success;
+    }
     if (status == 'pending_approval') statusColor = XMTheme.warning;
 
     return GCard(
@@ -25,8 +27,17 @@ class PermitCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(p['title'] ?? 'Permit', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('No: ${p['permitNumber'] ?? 'N/A'} • Type: ${p['type'] ?? 'General'}', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text(
+                  p['title'] ?? 'Permit',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'No: ${p['permitNumber'] ?? 'N/A'} • Type: ${p['type'] ?? 'General'}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ],
             ),
           ),
@@ -36,7 +47,14 @@ class PermitCard extends StatelessWidget {
               color: statusColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(status.replaceAll('_', ' ').toUpperCase(), style: TextStyle(fontSize: 9, color: statusColor, fontWeight: FontWeight.bold)),
+            child: Text(
+              status.replaceAll('_', ' ').toUpperCase(),
+              style: TextStyle(
+                fontSize: 9,
+                color: statusColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

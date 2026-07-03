@@ -28,26 +28,32 @@ class _FirstAidFormState extends ConsumerState<FirstAidForm> {
 
   Future<void> _submitFirstAid() async {
     if (_faEmpCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Employee name is required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Employee name is required',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'first_aid_logs',
-        data: {
-          'employeeName': _faEmpCtrl.text.trim(),
-          'description': _faDescCtrl.text.trim(),
-          'treatment': _faTreatCtrl.text.trim(),
-          'date': DateTime.now().toIso8601String(),
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'first_aid_logs',
+            data: {
+              'employeeName': _faEmpCtrl.text.trim(),
+              'description': _faDescCtrl.text.trim(),
+              'treatment': _faTreatCtrl.text.trim(),
+              'date': DateTime.now().toIso8601String(),
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         Navigator.pop(context); // Close SideSheet
         UIUtils.showToast(context, 'First aid entry saved successfully');
@@ -68,13 +74,18 @@ class _FirstAidFormState extends ConsumerState<FirstAidForm> {
         children: [
           TextFormField(
             controller: _faEmpCtrl,
-            decoration: const InputDecoration(labelText: 'Employee / Person *', prefixIcon: Icon(Icons.person_outline)),
+            decoration: const InputDecoration(
+              labelText: 'Employee / Person *',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
           ),
           GSpacing.vMd,
           TextFormField(
             controller: _faDescCtrl,
             maxLines: 3,
-            decoration: const InputDecoration(labelText: 'Injury / Complaint Description'),
+            decoration: const InputDecoration(
+              labelText: 'Injury / Complaint Description',
+            ),
           ),
           GSpacing.vMd,
           TextFormField(

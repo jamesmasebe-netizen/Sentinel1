@@ -6,11 +6,19 @@ import '../../providers/project_providers.dart';
 import '../../../people/widgets/employee_selector.dart';
 import '../../../people/providers/employee_providers.dart';
 
-void showEditContactsDialog(BuildContext context, Project project, WidgetRef ref) {
+void showEditContactsDialog(
+  BuildContext context,
+  Project project,
+  WidgetRef ref,
+) {
   final leadController = TextEditingController(text: project.projectLead);
-  final leadContactController = TextEditingController(text: project.projectLeadContact);
+  final leadContactController = TextEditingController(
+    text: project.projectLeadContact,
+  );
   final backupController = TextEditingController(text: project.fallbackContact);
-  final backupContactController = TextEditingController(text: project.fallbackContactContact);
+  final backupContactController = TextEditingController(
+    text: project.fallbackContactContact,
+  );
 
   String? selectedLeadId;
   String? selectedBackupId;
@@ -18,10 +26,16 @@ void showEditContactsDialog(BuildContext context, Project project, WidgetRef ref
   final initialEmployees = ref.read(employeesProvider).valueOrNull;
   if (initialEmployees != null) {
     try {
-      selectedLeadId = initialEmployees.firstWhere((e) => e.fullName == project.projectLead).id;
+      selectedLeadId =
+          initialEmployees
+              .firstWhere((e) => e.fullName == project.projectLead)
+              .id;
     } catch (_) {}
     try {
-      selectedBackupId = initialEmployees.firstWhere((e) => e.fullName == project.fallbackContact).id;
+      selectedBackupId =
+          initialEmployees
+              .firstWhere((e) => e.fullName == project.fallbackContact)
+              .id;
     } catch (_) {}
   }
 
@@ -61,7 +75,9 @@ void showEditContactsDialog(BuildContext context, Project project, WidgetRef ref
                   TextField(
                     controller: leadContactController,
                     enabled: !isLoading,
-                    decoration: const InputDecoration(labelText: 'Lead Contact Info'),
+                    decoration: const InputDecoration(
+                      labelText: 'Lead Contact Info',
+                    ),
                   ),
                   const SizedBox(height: 16),
                   EmployeeSelector(
@@ -87,7 +103,9 @@ void showEditContactsDialog(BuildContext context, Project project, WidgetRef ref
                   TextField(
                     controller: backupContactController,
                     enabled: !isLoading,
-                    decoration: const InputDecoration(labelText: 'Backup Contact Info'),
+                    decoration: const InputDecoration(
+                      labelText: 'Backup Contact Info',
+                    ),
                   ),
                 ],
               ),
@@ -98,35 +116,55 @@ void showEditContactsDialog(BuildContext context, Project project, WidgetRef ref
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        setDialogState(() => isLoading = true);
-                        try {
-                          final updated = project.copyWith(
-                            projectLead: leadController.text.trim(),
-                            projectLeadContact: leadContactController.text.trim(),
-                            fallbackContact: backupController.text.trim(),
-                            fallbackContactContact: backupContactController.text.trim(),
-                          );
-                          await ref.read(projectServiceProvider).updateProject(updated);
-                          if (ctx.mounted) {
-                            Navigator.pop(ctx);
-                            UIUtils.showToast(context, 'Contacts updated.', type: ToastType.success);
+                onPressed:
+                    isLoading
+                        ? null
+                        : () async {
+                          setDialogState(() => isLoading = true);
+                          try {
+                            final updated = project.copyWith(
+                              projectLead: leadController.text.trim(),
+                              projectLeadContact:
+                                  leadContactController.text.trim(),
+                              fallbackContact: backupController.text.trim(),
+                              fallbackContactContact:
+                                  backupContactController.text.trim(),
+                            );
+                            await ref
+                                .read(projectServiceProvider)
+                                .updateProject(updated);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              UIUtils.showToast(
+                                context,
+                                'Contacts updated.',
+                                type: ToastType.success,
+                              );
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              UIUtils.showToast(
+                                context,
+                                'Failed to save contacts: $e',
+                                type: ToastType.error,
+                              );
+                            }
+                          } finally {
+                            if (ctx.mounted) {
+                              setDialogState(() => isLoading = false);
+                            }
                           }
-                        } catch (e) {
-                          if (ctx.mounted) {
-                            UIUtils.showToast(context, 'Failed to save contacts: $e', type: ToastType.error);
-                          }
-                        } finally {
-                          if (ctx.mounted) {
-                            setDialogState(() => isLoading = false);
-                          }
-                        }
-                      },
-                child: isLoading
-                    ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Save'),
+                        },
+                child:
+                    isLoading
+                        ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text('Save'),
               ),
             ],
           );

@@ -36,7 +36,12 @@ class ComplianceTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('COIDA Compliance', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      Text(
+                        'COIDA Compliance',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       GSpacing.vSm,
                       Text(
                         '$done / ${items.length} requirements met',
@@ -50,14 +55,17 @@ class ComplianceTab extends StatelessWidget {
                   children: [
                     CircularProgressIndicator(
                       value: progress,
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                       color: XMTheme.success,
                       strokeWidth: 8,
                       strokeCap: StrokeCap.round,
                     ),
                     Text(
                       '${(progress * 100).round()}%',
-                      style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -65,18 +73,29 @@ class ComplianceTab extends StatelessWidget {
             ),
           ),
           GSpacing.vLg,
-          Text('Compliance Checklist', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Compliance Checklist',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           GSpacing.vMd,
           ...items.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: GCard(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     Icon(
-                      item.$2 ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                      color: item.$2 ? XMTheme.success : theme.colorScheme.outline,
+                      item.$2
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      color:
+                          item.$2 ? XMTheme.success : theme.colorScheme.outline,
                       size: 22,
                     ),
                     GSpacing.hMd,
@@ -84,8 +103,12 @@ class ComplianceTab extends StatelessWidget {
                       child: Text(
                         item.$1,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: item.$2 ? null : theme.colorScheme.onSurfaceVariant,
-                          decoration: item.$2 ? TextDecoration.lineThrough : null,
+                          color:
+                              item.$2
+                                  ? null
+                                  : theme.colorScheme.onSurfaceVariant,
+                          decoration:
+                              item.$2 ? TextDecoration.lineThrough : null,
                         ),
                       ),
                     ),

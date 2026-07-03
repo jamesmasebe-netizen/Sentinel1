@@ -54,17 +54,19 @@ class ActionTrackerListItem extends StatelessWidget {
           PopupMenuButton<String>(
             initialValue: item.status,
             onSelected: (v) => onUpdateStatus(item, v),
-            itemBuilder: (_) => ['Pending', 'In Progress', 'Completed']
-                .map(
-                  (s) => PopupMenuItem(
-                    value: s,
-                    child: Text(
-                      s,
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                )
-                .toList(),
+            itemBuilder:
+                (_) =>
+                    ['Pending', 'In Progress', 'Completed']
+                        .map(
+                          (s) => PopupMenuItem(
+                            value: s,
+                            child: Text(
+                              s,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        )
+                        .toList(),
             child: GStatusTag(
               label: item.status,
               color: _statusColor(item.status),

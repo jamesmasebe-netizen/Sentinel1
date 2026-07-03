@@ -7,7 +7,11 @@ class JobApplicationForm extends StatefulWidget {
   final String jobId;
   final String jobTitle;
 
-  const JobApplicationForm({super.key, required this.jobId, required this.jobTitle});
+  const JobApplicationForm({
+    super.key,
+    required this.jobId,
+    required this.jobTitle,
+  });
 
   @override
   State<JobApplicationForm> createState() => _JobApplicationFormState();
@@ -27,25 +31,35 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.tenantCollection("", 'job_applications').add({
-        'jobId': widget.jobId,
-        'jobTitle': widget.jobTitle,
-        'applicantName': _name,
-        'email': _email,
-        'phone': _phone,
-        'resumeLink': _resumeLink,
-        'status': 'New',
-        'appliedAt': FieldValue.serverTimestamp(),
-        'isExternal': true,
-      });
+      await FirebaseFirestore.instance
+          .tenantCollection("", 'job_applications')
+          .add({
+            'jobId': widget.jobId,
+            'jobTitle': widget.jobTitle,
+            'applicantName': _name,
+            'email': _email,
+            'phone': _phone,
+            'resumeLink': _resumeLink,
+            'status': 'New',
+            'appliedAt': FieldValue.serverTimestamp(),
+            'isExternal': true,
+          });
 
       if (mounted) {
-        UIUtils.showToast(context, 'Application submitted successfully!', type: ToastType.success);
+        UIUtils.showToast(
+          context,
+          'Application submitted successfully!',
+          type: ToastType.success,
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        UIUtils.showToast(context, 'Error submitting application: $e', type: ToastType.error);
+        UIUtils.showToast(
+          context,
+          'Error submitting application: $e',
+          type: ToastType.error,
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -61,27 +75,45 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
         child: ListView(
           children: [
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              decoration: const InputDecoration(
+                labelText: 'Full Name',
+                border: OutlineInputBorder(),
+              ),
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
               onSaved: (val) => _name = val!.trim(),
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Email Address', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Email Address',
+                border: OutlineInputBorder(),
+              ),
               keyboardType: TextInputType.emailAddress,
-              validator: (val) => val == null || val.isEmpty || !val.contains('@') ? 'Valid email required' : null,
+              validator:
+                  (val) =>
+                      val == null || val.isEmpty || !val.contains('@')
+                          ? 'Valid email required'
+                          : null,
               onSaved: (val) => _email = val!.trim(),
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
               keyboardType: TextInputType.phone,
               onSaved: (val) => _phone = val?.trim() ?? '',
             ),
             const SizedBox(height: 16),
             TextFormField(
-              decoration: const InputDecoration(labelText: 'Resume Link (Google Drive, LinkedIn, etc.)', border: OutlineInputBorder()),
-              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+              decoration: const InputDecoration(
+                labelText: 'Resume Link (Google Drive, LinkedIn, etc.)',
+                border: OutlineInputBorder(),
+              ),
+              validator:
+                  (val) => val == null || val.isEmpty ? 'Required' : null,
               onSaved: (val) => _resumeLink = val!.trim(),
             ),
             const SizedBox(height: 32),

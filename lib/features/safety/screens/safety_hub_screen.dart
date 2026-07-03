@@ -25,13 +25,17 @@ class SafetyHubScreen extends ConsumerWidget {
       children: [
         GHeader(
           title: 'Safety & Risk Hub',
-          subtitle: 'Unified command center for organizational safety, risk assessments, and compliance.',
+          subtitle:
+              'Unified command center for organizational safety, risk assessments, and compliance.',
           trailing: FilledButton.icon(
             onPressed: () {
               UIUtils.showSideSheet(
                 context: context,
                 title: 'Report Incident',
-                builder: (ctx) => IncidentReportForm(tenantId: ref.read(currentTenantIdProvider) ?? ''),
+                builder:
+                    (ctx) => IncidentReportForm(
+                      tenantId: ref.read(currentTenantIdProvider) ?? '',
+                    ),
               );
             },
             style: FilledButton.styleFrom(
@@ -64,49 +68,84 @@ class SafetyHubScreen extends ConsumerWidget {
                       subtitle: 'Real-time incident tracking and reporting.',
                       icon: Icons.assignment_late_rounded,
                       color: XMTheme.error,
-                      onTap: () => _openModule(context, 'Incidents Register', const IncidentsRegisterScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'Incidents Register',
+                            const IncidentsRegisterScreen(),
+                          ),
                     ),
                     ModuleCard(
                       title: 'Permit to Work',
                       subtitle: 'Manage and approve hazardous work permits.',
                       icon: Icons.vpn_key_rounded,
                       color: XMTheme.primary,
-                      onTap: () => _openModule(context, 'Permit to Work', const PermitToWorkScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'Permit to Work',
+                            const PermitToWorkScreen(),
+                          ),
                     ),
                     ModuleCard(
                       title: 'Hazard Register',
                       subtitle: 'Report and track workplace hazards.',
                       icon: Icons.warning_amber_rounded,
                       color: XMTheme.warning,
-                      onTap: () => _openModule(context, 'Hazard Register', const HazardRegisterScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'Hazard Register',
+                            const HazardRegisterScreen(),
+                          ),
                     ),
                     ModuleCard(
                       title: 'CAPA Management',
                       subtitle: 'Corrective and Preventive Actions.',
                       icon: Icons.fact_check_rounded,
                       color: XMTheme.success,
-                      onTap: () => _openModule(context, 'CAPA Management', const CAPAScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'CAPA Management',
+                            const CAPAScreen(),
+                          ),
                     ),
                     ModuleCard(
                       title: 'BBS Observations',
                       subtitle: 'Behavioral-based safety program.',
                       icon: Icons.visibility_rounded,
                       color: XMTheme.info,
-                      onTap: () => _openModule(context, 'BBS Observations', const BBSObservationsScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'BBS Observations',
+                            const BBSObservationsScreen(),
+                          ),
                     ),
                     ModuleCard(
                       title: 'PPE Compliance',
                       subtitle: 'Track equipment issuance and compliance.',
                       icon: Icons.health_and_safety_rounded,
                       color: XMTheme.primary,
-                      onTap: () => _openModule(context, 'PPE Compliance', const PPEComplianceScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'PPE Compliance',
+                            const PPEComplianceScreen(),
+                          ),
                     ),
                     ModuleCard(
                       title: 'Safety Analytics',
                       subtitle: 'Performance indicators and safety trends.',
                       icon: Icons.analytics_rounded,
                       color: XMTheme.warning,
-                      onTap: () => _openModule(context, 'Safety Analytics', const SafetyAnalyticsScreen()),
+                      onTap:
+                          () => _openModule(
+                            context,
+                            'Safety Analytics',
+                            const SafetyAnalyticsScreen(),
+                          ),
                     ),
                   ]),
                 ),

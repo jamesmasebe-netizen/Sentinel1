@@ -21,9 +21,21 @@ class ContractorCardOhsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(ohsStatus == 'Approved' ? Icons.verified_rounded : Icons.pending_actions_rounded, size: 16, color: ohsColor),
+        Icon(
+          ohsStatus == 'Approved'
+              ? Icons.verified_rounded
+              : Icons.pending_actions_rounded,
+          size: 16,
+          color: ohsColor,
+        ),
         const SizedBox(width: 6),
-        Text('OHS File:', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(
+          'OHS File:',
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(width: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -31,11 +43,24 @@ class ContractorCardOhsRow extends StatelessWidget {
             color: ohsColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(ohsStatus, style: TextStyle(fontSize: 11, color: ohsColor, fontWeight: FontWeight.bold)),
+          child: Text(
+            ohsStatus,
+            style: TextStyle(
+              fontSize: 11,
+              color: ohsColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         if (submission != null) ...[
           const SizedBox(width: 10),
-          Text('Score: ${ohsScore.toStringAsFixed(0)}%', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          Text(
+            'Score: ${ohsScore.toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
         const Spacer(),
         TextButton.icon(

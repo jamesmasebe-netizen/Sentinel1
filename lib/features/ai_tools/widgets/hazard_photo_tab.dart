@@ -120,8 +120,7 @@ class _HazardPhotoState extends ConsumerState<HazardPhotoTab> {
             const SizedBox(height: 16),
             AIHazardReport(result: _result),
           ],
-          if (_image == null)
-            const EmptyPhotoView(),
+          if (_image == null) const EmptyPhotoView(),
         ],
       ),
     );

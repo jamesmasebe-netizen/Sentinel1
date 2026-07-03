@@ -26,7 +26,7 @@ class HiraCard extends StatelessWidget {
     final theme = Theme.of(context);
     final level = d['riskLevel'] ?? 'Low';
     final score = d['riskScore'] ?? 0;
-    
+
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
@@ -39,21 +39,42 @@ class HiraCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: getLevelColor(level).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.assessment_rounded, color: getLevelColor(level), size: 22),
+                decoration: BoxDecoration(
+                  color: getLevelColor(level).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.assessment_rounded,
+                  color: getLevelColor(level),
+                  size: 22,
+                ),
               ),
               GSpacing.hMd,
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(d['title'] ?? 'Untitled Assessment', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      d['title'] ?? 'Untitled Assessment',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     GSpacing.vXs,
-                    Text('Hazard: ${d['hazard'] ?? ''}', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    Text(
+                      'Hazard: ${d['hazard'] ?? ''}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              GStatusTag(label: level.toUpperCase(), color: getLevelColor(level), icon: Icons.speed_rounded),
+              GStatusTag(
+                label: level.toUpperCase(),
+                color: getLevelColor(level),
+                icon: Icons.speed_rounded,
+              ),
             ],
           ),
           GSpacing.vMd,
@@ -61,16 +82,31 @@ class HiraCard extends StatelessWidget {
           GSpacing.vMd,
           Row(
             children: [
-              HiraInfoBadge(label: 'Score: $score', icon: Icons.analytics_rounded, color: theme.colorScheme.primary),
+              HiraInfoBadge(
+                label: 'Score: $score',
+                icon: Icons.analytics_rounded,
+                color: theme.colorScheme.primary,
+              ),
               GSpacing.hSm,
-              HiraInfoBadge(label: 'Likelihood: ${d['likelihood']}', icon: Icons.show_chart_rounded),
+              HiraInfoBadge(
+                label: 'Likelihood: ${d['likelihood']}',
+                icon: Icons.show_chart_rounded,
+              ),
               GSpacing.hSm,
-              HiraInfoBadge(label: 'Severity: ${d['severity']}', icon: Icons.layers_outlined),
+              HiraInfoBadge(
+                label: 'Severity: ${d['severity']}',
+                icon: Icons.layers_outlined,
+              ),
             ],
           ),
-          if (d['controlMeasure'] != null && d['controlMeasure'].toString().isNotEmpty) ...[
+          if (d['controlMeasure'] != null &&
+              d['controlMeasure'].toString().isNotEmpty) ...[
             GSpacing.vMd,
-            HiraInfoBadge(label: 'Control: ${d['controlMeasure']}', icon: Icons.shield_outlined, color: XMTheme.success),
+            HiraInfoBadge(
+              label: 'Control: ${d['controlMeasure']}',
+              icon: Icons.shield_outlined,
+              color: XMTheme.success,
+            ),
           ],
         ],
       ),
@@ -82,10 +118,10 @@ class HiraInfoBadge extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color? color;
-  
+
   const HiraInfoBadge({
     super.key,
-    required this.label, 
+    required this.label,
     required this.icon,
     this.color,
   });
@@ -94,7 +130,7 @@ class HiraInfoBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final displayColor = color ?? theme.colorScheme.onSurfaceVariant;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(

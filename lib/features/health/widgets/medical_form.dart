@@ -32,29 +32,35 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
 
   Future<void> _submitMedical() async {
     if (_medEmpCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Employee name is required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Employee name is required',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'medical_records',
-        data: {
-          'employeeName': _medEmpCtrl.text.trim(),
-          'idNumber': _medIdCtrl.text.trim(),
-          'medicalType': _medType,
-          'status': _medStatus,
-          'restrictions': _medRestCtrl.text.trim(),
-          'dateConducted': _medDate.toIso8601String(),
-          'nextDueDate': _medNextDue.toIso8601String(),
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
-      );
+      await ref
+          .read(firestoreServiceProvider)
+          .createDocument(
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
+            collection: 'medical_records',
+            data: {
+              'employeeName': _medEmpCtrl.text.trim(),
+              'idNumber': _medIdCtrl.text.trim(),
+              'medicalType': _medType,
+              'status': _medStatus,
+              'restrictions': _medRestCtrl.text.trim(),
+              'dateConducted': _medDate.toIso8601String(),
+              'nextDueDate': _medNextDue.toIso8601String(),
+              'authorId': p.uid,
+              'siteId': p.tenantId,
+              'createdAt': DateTime.now().toIso8601String(),
+            },
+          );
       if (mounted) {
         Navigator.pop(context); // Close SideSheet
         UIUtils.showToast(context, 'Medical record saved successfully');
@@ -73,42 +79,58 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Employee Details', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Employee Details',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           GSpacing.vSm,
           TextFormField(
             controller: _medEmpCtrl,
-            decoration: const InputDecoration(labelText: 'Employee Name *', prefixIcon: Icon(Icons.person_outline)),
+            decoration: const InputDecoration(
+              labelText: 'Employee Name *',
+              prefixIcon: Icon(Icons.person_outline),
+            ),
           ),
           GSpacing.vMd,
           TextFormField(
             controller: _medIdCtrl,
-            decoration: const InputDecoration(labelText: 'ID / Employee Number', prefixIcon: Icon(Icons.badge_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'ID / Employee Number',
+              prefixIcon: Icon(Icons.badge_outlined),
+            ),
           ),
           GSpacing.vLg,
-          Text('Examination Info', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Examination Info',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           GSpacing.vSm,
           DropdownButtonFormField<String>(
             value: _medType,
             decoration: const InputDecoration(labelText: 'Exam Type'),
-            items: ['Pre-employment', 'Annual', 'Exit', 'Baseline', 'Other']
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
+            items:
+                ['Pre-employment', 'Annual', 'Exit', 'Baseline', 'Other']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
             onChanged: (v) => setState(() => _medType = v!),
           ),
           GSpacing.vMd,
           DropdownButtonFormField<String>(
             value: _medStatus,
             decoration: const InputDecoration(labelText: 'Fitness Status'),
-            items: ['Fit', 'Fit with Restrictions', 'Unfit']
-                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                .toList(),
+            items:
+                ['Fit', 'Fit with Restrictions', 'Unfit']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
             onChanged: (v) => setState(() => _medStatus = v!),
           ),
           GSpacing.vMd,
           TextFormField(
             controller: _medRestCtrl,
             maxLines: 2,
-            decoration: const InputDecoration(labelText: 'Restrictions / Comments'),
+            decoration: const InputDecoration(
+              labelText: 'Restrictions / Comments',
+            ),
           ),
           GSpacing.vLg,
           Row(
@@ -117,7 +139,13 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Conducted On', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Conducted On',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     GSpacing.vSm,
                     InkWell(
                       onTap: () async {
@@ -132,7 +160,9 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -152,7 +182,13 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Next Due', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Next Due',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     GSpacing.vSm,
                     InkWell(
                       onTap: () async {
@@ -160,14 +196,18 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
                           context: context,
                           initialDate: _medNextDue,
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 1825)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 1825),
+                          ),
                         );
                         if (d != null) setState(() => _medNextDue = d);
                       },
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Theme.of(context).dividerColor),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(

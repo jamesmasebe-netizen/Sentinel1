@@ -26,13 +26,23 @@ class EmployeeHubScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Welcome back, ${profile?.displayName ?? 'Employee'}',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const Text('Your personal portal for HR, Training, and Tasks.', style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    'Your personal portal for HR, Training, and Tasks.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   GSpacing.vXl,
                   _buildQuickStats(context),
                   GSpacing.vXl,
-                  Text('My Portal', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'My Portal',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   GSpacing.vMd,
                   _buildModuleGrid(context),
                 ],
@@ -51,9 +61,18 @@ class EmployeeHubScreen extends ConsumerWidget {
           child: GCard(
             child: Column(
               children: [
-                const Text('Leave Balance', style: TextStyle(color: Colors.grey)),
+                const Text(
+                  'Leave Balance',
+                  style: TextStyle(color: Colors.grey),
+                ),
                 GSpacing.vSm,
-                Text('14 Days', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: XMTheme.primary)),
+                Text(
+                  '14 Days',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: XMTheme.primary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -63,9 +82,18 @@ class EmployeeHubScreen extends ConsumerWidget {
           child: GCard(
             child: Column(
               children: [
-                const Text('Pending Tasks', style: TextStyle(color: Colors.grey)),
+                const Text(
+                  'Pending Tasks',
+                  style: TextStyle(color: Colors.grey),
+                ),
                 GSpacing.vSm,
-                Text('3', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: XMTheme.warning)),
+                Text(
+                  '3',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: XMTheme.warning,
+                  ),
+                ),
               ],
             ),
           ),
@@ -77,7 +105,13 @@ class EmployeeHubScreen extends ConsumerWidget {
               children: [
                 const Text('Training', style: TextStyle(color: Colors.grey)),
                 GSpacing.vSm,
-                Text('1 Due', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: XMTheme.error)),
+                Text(
+                  '1 Due',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: XMTheme.error,
+                  ),
+                ),
               ],
             ),
           ),
@@ -89,7 +123,10 @@ class EmployeeHubScreen extends ConsumerWidget {
   Widget _buildModuleGrid(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth > 800 ? 3 : (constraints.maxWidth > 500 ? 2 : 1);
+        int crossAxisCount =
+            constraints.maxWidth > 800
+                ? 3
+                : (constraints.maxWidth > 500 ? 2 : 1);
         return GridView.count(
           crossAxisCount: crossAxisCount,
           shrinkWrap: true,
@@ -104,7 +141,11 @@ class EmployeeHubScreen extends ConsumerWidget {
               'Apply for and track leave requests',
               Icons.event_available,
               Colors.teal,
-              () => UIUtils.showSideSheet(context: context, title: 'My Leave', builder: (c) => const LeaveManagementScreen()),
+              () => UIUtils.showSideSheet(
+                context: context,
+                title: 'My Leave',
+                builder: (c) => const LeaveManagementScreen(),
+              ),
             ),
             _buildModuleCard(
               context,
@@ -112,7 +153,11 @@ class EmployeeHubScreen extends ConsumerWidget {
               'Access the Learning Management System',
               Icons.school,
               Colors.indigo,
-              () => UIUtils.showSideSheet(context: context, title: 'LMS', builder: (c) => const TrainingScreen()),
+              () => UIUtils.showSideSheet(
+                context: context,
+                title: 'LMS',
+                builder: (c) => const TrainingScreen(),
+              ),
             ),
             _buildModuleCard(
               context,
@@ -120,7 +165,11 @@ class EmployeeHubScreen extends ConsumerWidget {
               'Tasks assigned to you',
               Icons.checklist,
               Colors.orange,
-              () => UIUtils.showSideSheet(context: context, title: 'Action Tracker', builder: (c) => const ActionTrackerScreen()),
+              () => UIUtils.showSideSheet(
+                context: context,
+                title: 'Action Tracker',
+                builder: (c) => const ActionTrackerScreen(),
+              ),
             ),
             _buildModuleCard(
               context,
@@ -131,23 +180,27 @@ class EmployeeHubScreen extends ConsumerWidget {
               () {
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('My Payslips'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.receipt),
-                          title: const Text('Payslip - March 2026'),
-                          trailing: const Icon(Icons.download),
-                          onTap: () {
-                            UIUtils.showToast(context, 'Downloading payslip...');
-                            Navigator.pop(context);
-                          },
+                  builder:
+                      (context) => AlertDialog(
+                        title: const Text('My Payslips'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.receipt),
+                              title: const Text('Payslip - March 2026'),
+                              trailing: const Icon(Icons.download),
+                              onTap: () {
+                                UIUtils.showToast(
+                                  context,
+                                  'Downloading payslip...',
+                                );
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
                 );
               },
             ),
@@ -157,7 +210,14 @@ class EmployeeHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildModuleCard(BuildContext context, String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildModuleCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GCard(
       padding: EdgeInsets.zero,
       onTap: onTap,
@@ -169,14 +229,27 @@ class EmployeeHubScreen extends ConsumerWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 8),
             Flexible(
-              child: Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.grey, fontSize: 13),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

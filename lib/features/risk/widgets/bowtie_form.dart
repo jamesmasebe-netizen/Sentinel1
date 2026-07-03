@@ -34,7 +34,11 @@ class _BowTieFormState extends ConsumerState<BowTieForm> {
 
   Future<void> _submit(BuildContext formCtx) async {
     if (_titleCtrl.text.isEmpty || _topEvent.isEmpty) {
-      UIUtils.showToast(context, 'Title and top event are required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Title and top event are required',
+        type: ToastType.error,
+      );
       return;
     }
     setState(() => _isSubmitting = true);
@@ -70,7 +74,9 @@ class _BowTieFormState extends ConsumerState<BowTieForm> {
         _topEvent = '';
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -114,7 +120,10 @@ class _BowTieFormState extends ConsumerState<BowTieForm> {
                         .map(
                           (e) => DropdownMenuItem(
                             value: e,
-                            child: Text(e, style: const TextStyle(fontSize: 13)),
+                            child: Text(
+                              e,
+                              style: const TextStyle(fontSize: 13),
+                            ),
                           ),
                         )
                         .toList(),
@@ -195,17 +204,22 @@ class _BowTieFormState extends ConsumerState<BowTieForm> {
                           ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                           : const Icon(Icons.account_tree_rounded),
-                  label: Text(_isSubmitting ? 'SAVING...' : 'REGISTER ANALYSIS'),
+                  label: Text(
+                    _isSubmitting ? 'SAVING...' : 'REGISTER ANALYSIS',
+                  ),
                 ),
               ),
               GSpacing.vXl,
             ],
           ),
         );
-      }
+      },
     );
   }
 }

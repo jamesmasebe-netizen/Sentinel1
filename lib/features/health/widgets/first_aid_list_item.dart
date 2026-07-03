@@ -17,8 +17,15 @@ class FirstAidListItem extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: theme.colorScheme.errorContainer.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(14)),
-            child: Icon(Icons.medical_services_rounded, color: theme.colorScheme.error, size: 24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.errorContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.medical_services_rounded,
+              color: theme.colorScheme.error,
+              size: 24,
+            ),
           ),
           GSpacing.hLg,
           Expanded(
@@ -28,27 +35,48 @@ class FirstAidListItem extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(data['employeeName'] ?? 'Unknown', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      data['employeeName'] ?? 'Unknown',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text(
                       UIUtils.formatTimestamp(data['date']).split(',').first,
-                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
                 GSpacing.vSm,
-                Text(data['description'] ?? 'No description', style: theme.textTheme.bodySmall),
+                Text(
+                  data['description'] ?? 'No description',
+                  style: theme.textTheme.bodySmall,
+                ),
                 GSpacing.vMd,
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: Row(
                     children: [
-                      Icon(Icons.healing_rounded, size: 14, color: theme.colorScheme.primary),
+                      Icon(
+                        Icons.healing_rounded,
+                        size: 14,
+                        color: theme.colorScheme.primary,
+                      ),
                       GSpacing.hMd,
                       Expanded(
                         child: Text(
                           'Treatment: ${data['treatment'] ?? "None recorded"}',
-                          style: theme.textTheme.labelSmall?.copyWith(fontStyle: FontStyle.italic),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     ],

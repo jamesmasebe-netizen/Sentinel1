@@ -6,7 +6,11 @@ import '../../providers/project_providers.dart';
 
 export 'edit_contacts_dialog.dart';
 
-void showEditProjectDetailsDialog(BuildContext context, Project project, WidgetRef ref) {
+void showEditProjectDetailsDialog(
+  BuildContext context,
+  Project project,
+  WidgetRef ref,
+) {
   final formKey = GlobalKey<FormState>();
   String name = project.name;
   String category = project.category;
@@ -29,41 +33,78 @@ void showEditProjectDetailsDialog(BuildContext context, Project project, WidgetR
                   children: [
                     TextFormField(
                       initialValue: name,
-                      decoration: const InputDecoration(labelText: 'Project Name'),
+                      decoration: const InputDecoration(
+                        labelText: 'Project Name',
+                      ),
                       enabled: !isLoading,
-                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                      validator:
+                          (v) => (v == null || v.isEmpty) ? 'Required' : null,
                       onSaved: (v) => name = v ?? '',
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: ['Maintenance', 'Opex', 'Renovation', 'Emergency'].contains(category) ? category : 'Maintenance',
+                      value:
+                          [
+                                'Maintenance',
+                                'Opex',
+                                'Renovation',
+                                'Emergency',
+                              ].contains(category)
+                              ? category
+                              : 'Maintenance',
                       decoration: const InputDecoration(labelText: 'Category'),
-                      items: ['Maintenance', 'Opex', 'Renovation', 'Emergency']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                          .toList(),
-                      onChanged: isLoading ? null : (val) {
-                        if (val != null) category = val;
-                      },
+                      items:
+                          ['Maintenance', 'Opex', 'Renovation', 'Emergency']
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                      onChanged:
+                          isLoading
+                              ? null
+                              : (val) {
+                                if (val != null) category = val;
+                              },
                     ),
                     const SizedBox(height: 12),
                     TextFormField(
                       initialValue: budgetStr,
-                      decoration: const InputDecoration(labelText: 'Total Budget (R)', prefixText: 'R '),
+                      decoration: const InputDecoration(
+                        labelText: 'Total Budget (R)',
+                        prefixText: 'R ',
+                      ),
                       keyboardType: TextInputType.number,
                       enabled: !isLoading,
-                      validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                      validator:
+                          (v) => (v == null || v.isEmpty) ? 'Required' : null,
                       onSaved: (v) => budgetStr = v ?? '',
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
-                      value: ['Draft', 'Active', 'On Hold', 'Completed'].contains(status) ? status : 'Draft',
+                      value:
+                          [
+                                'Draft',
+                                'Active',
+                                'On Hold',
+                                'Completed',
+                              ].contains(status)
+                              ? status
+                              : 'Draft',
                       decoration: const InputDecoration(labelText: 'Status'),
-                      items: ['Draft', 'Active', 'On Hold', 'Completed']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                          .toList(),
-                      onChanged: isLoading ? null : (val) {
-                        if (val != null) status = val;
-                      },
+                      items:
+                          ['Draft', 'Active', 'On Hold', 'Completed']
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                      onChanged:
+                          isLoading
+                              ? null
+                              : (val) {
+                                if (val != null) status = val;
+                              },
                     ),
                   ],
                 ),
@@ -75,39 +116,58 @@ void showEditProjectDetailsDialog(BuildContext context, Project project, WidgetR
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        if (formKey.currentState!.validate()) {
-                          formKey.currentState!.save();
-                          setDialogState(() => isLoading = true);
-                          try {
-                            final amt = double.tryParse(budgetStr) ?? project.budget;
-                            final updated = project.copyWith(
-                              name: name,
-                              category: category,
-                              budget: amt,
-                              status: status,
-                            );
-                            await ref.read(projectServiceProvider).updateProject(updated);
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                              UIUtils.showToast(context, 'Project updated successfully.', type: ToastType.success);
-                            }
-                          } catch (e) {
-                            if (ctx.mounted) {
-                              UIUtils.showToast(context, 'Failed to update project: $e', type: ToastType.error);
-                            }
-                          } finally {
-                            if (ctx.mounted) {
-                              setDialogState(() => isLoading = false);
+                onPressed:
+                    isLoading
+                        ? null
+                        : () async {
+                          if (formKey.currentState!.validate()) {
+                            formKey.currentState!.save();
+                            setDialogState(() => isLoading = true);
+                            try {
+                              final amt =
+                                  double.tryParse(budgetStr) ?? project.budget;
+                              final updated = project.copyWith(
+                                name: name,
+                                category: category,
+                                budget: amt,
+                                status: status,
+                              );
+                              await ref
+                                  .read(projectServiceProvider)
+                                  .updateProject(updated);
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx);
+                                UIUtils.showToast(
+                                  context,
+                                  'Project updated successfully.',
+                                  type: ToastType.success,
+                                );
+                              }
+                            } catch (e) {
+                              if (ctx.mounted) {
+                                UIUtils.showToast(
+                                  context,
+                                  'Failed to update project: $e',
+                                  type: ToastType.error,
+                                );
+                              }
+                            } finally {
+                              if (ctx.mounted) {
+                                setDialogState(() => isLoading = false);
+                              }
                             }
                           }
-                        }
-                      },
-                child: isLoading
-                    ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Save'),
+                        },
+                child:
+                    isLoading
+                        ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text('Save'),
               ),
             ],
           );
@@ -117,7 +177,11 @@ void showEditProjectDetailsDialog(BuildContext context, Project project, WidgetR
   );
 }
 
-void showEditDescriptionDialog(BuildContext context, Project project, WidgetRef ref) {
+void showEditDescriptionDialog(
+  BuildContext context,
+  Project project,
+  WidgetRef ref,
+) {
   final controller = TextEditingController(text: project.description);
 
   showDialog(
@@ -146,31 +210,51 @@ void showEditDescriptionDialog(BuildContext context, Project project, WidgetRef 
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        setDialogState(() => isLoading = true);
-                        try {
-                          final newDesc = controller.text.trim();
-                          final updated = project.copyWith(description: newDesc);
-                          await ref.read(projectServiceProvider).updateProject(updated);
-                          if (ctx.mounted) {
-                            Navigator.pop(ctx);
-                            UIUtils.showToast(context, 'Project description updated.', type: ToastType.success);
+                onPressed:
+                    isLoading
+                        ? null
+                        : () async {
+                          setDialogState(() => isLoading = true);
+                          try {
+                            final newDesc = controller.text.trim();
+                            final updated = project.copyWith(
+                              description: newDesc,
+                            );
+                            await ref
+                                .read(projectServiceProvider)
+                                .updateProject(updated);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              UIUtils.showToast(
+                                context,
+                                'Project description updated.',
+                                type: ToastType.success,
+                              );
+                            }
+                          } catch (e) {
+                            if (ctx.mounted) {
+                              UIUtils.showToast(
+                                context,
+                                'Failed to save description: $e',
+                                type: ToastType.error,
+                              );
+                            }
+                          } finally {
+                            if (ctx.mounted) {
+                              setDialogState(() => isLoading = false);
+                            }
                           }
-                        } catch (e) {
-                          if (ctx.mounted) {
-                            UIUtils.showToast(context, 'Failed to save description: $e', type: ToastType.error);
-                          }
-                        } finally {
-                          if (ctx.mounted) {
-                            setDialogState(() => isLoading = false);
-                          }
-                        }
-                      },
-                child: isLoading
-                    ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Save'),
+                        },
+                child:
+                    isLoading
+                        ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text('Save'),
               ),
             ],
           );

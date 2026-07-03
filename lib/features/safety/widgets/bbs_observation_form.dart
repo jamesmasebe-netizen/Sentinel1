@@ -35,7 +35,11 @@ class _BBSObservationFormState extends ConsumerState<BBSObservationForm> {
 
   Future<void> _submit() async {
     if (_locCtrl.text.isEmpty || _descCtrl.text.isEmpty) {
-      UIUtils.showToast(context, 'Location and description are required', type: ToastType.error);
+      UIUtils.showToast(
+        context,
+        'Location and description are required',
+        type: ToastType.error,
+      );
       return;
     }
 
@@ -57,7 +61,12 @@ class _BBSObservationFormState extends ConsumerState<BBSObservationForm> {
         'pointsAwarded': _type == 'Safe Act' ? 5 : 10,
       };
 
-      await FirebaseFirestore.instance.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'bbs_observations').add(data);
+      await FirebaseFirestore.instance
+          .tenantCollection(
+            ref.watch(currentTenantIdProvider) ?? "",
+            'bbs_observations',
+          )
+          .add(data);
 
       if (mounted) {
         Navigator.pop(context);
@@ -67,7 +76,9 @@ class _BBSObservationFormState extends ConsumerState<BBSObservationForm> {
         _interventionCtrl.clear();
       }
     } catch (e) {
-      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      if (mounted) {
+        UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -86,7 +97,10 @@ class _BBSObservationFormState extends ConsumerState<BBSObservationForm> {
             contentPadding: EdgeInsets.zero,
             value: _isAnon,
             onChanged: (v) => setState(() => _isAnon = v),
-            title: const Text('Submit Anonymously', style: TextStyle(fontSize: 14)),
+            title: const Text(
+              'Submit Anonymously',
+              style: TextStyle(fontSize: 14),
+            ),
             secondary: const Icon(Icons.visibility_off_rounded),
           ),
           if (!_isAnon) ...[
@@ -98,31 +112,47 @@ class _BBSObservationFormState extends ConsumerState<BBSObservationForm> {
             ),
           ],
           GSpacing.vLg,
-          Text('Observation Details', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Observation Details',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           GSpacing.vSm,
           DropdownButtonFormField<String>(
             value: _type,
             decoration: const InputDecoration(labelText: 'Type'),
-            items: _types.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+            items:
+                _types
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .toList(),
             onChanged: (v) => setState(() => _type = v!),
           ),
           GSpacing.vMd,
           TextFormField(
             controller: _locCtrl,
-            decoration: const InputDecoration(labelText: 'Location / Area *', prefixIcon: Icon(Icons.place_outlined)),
+            decoration: const InputDecoration(
+              labelText: 'Location / Area *',
+              prefixIcon: Icon(Icons.place_outlined),
+            ),
           ),
           GSpacing.vMd,
           TextFormField(
             controller: _descCtrl,
             maxLines: 3,
-            decoration: const InputDecoration(labelText: 'What did you observe? *', alignLabelWithHint: true),
+            decoration: const InputDecoration(
+              labelText: 'What did you observe? *',
+              alignLabelWithHint: true,
+            ),
           ),
           GSpacing.vMd,
           if (_type != 'Safe Act')
             TextFormField(
               controller: _interventionCtrl,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'Intervention Action Taken', hintText: 'What did you do to correct it?', alignLabelWithHint: true),
+              decoration: const InputDecoration(
+                labelText: 'Intervention Action Taken',
+                hintText: 'What did you do to correct it?',
+                alignLabelWithHint: true,
+              ),
             ),
           UIUtils.buildFormButtons(
             context: context,

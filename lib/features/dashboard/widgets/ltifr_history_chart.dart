@@ -23,25 +23,25 @@ class LtifrHistoryChart extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Container(
-                         alignment: Alignment.bottomCenter,
-                         decoration: BoxDecoration(
-                           color: XMTheme.primary.withValues(alpha: 0.1),
-                           borderRadius: const BorderRadius.vertical(
-                             top: Radius.circular(8),
-                           ),
-                         ),
-                         child: FractionallySizedBox(
-                           heightFactor: (values[index] / 100).clamp(0.0, 1.0),
-                           child: Container(
-                             decoration: const BoxDecoration(
-                               color: XMTheme.secondary,
-                               borderRadius: BorderRadius.vertical(
-                                 top: Radius.circular(8),
-                               ),
-                             ),
-                           ),
-                         ),
-                       ),
+                        alignment: Alignment.bottomCenter,
+                        decoration: BoxDecoration(
+                          color: XMTheme.primary.withValues(alpha: 0.1),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(8),
+                          ),
+                        ),
+                        child: FractionallySizedBox(
+                          heightFactor: (values[index] / 100).clamp(0.0, 1.0),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: XMTheme.secondary,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -58,7 +58,8 @@ class LtifrHistoryChart extends ConsumerWidget {
           }),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading:
+          () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Center(child: Text('Error: $e')),
     );
   }
