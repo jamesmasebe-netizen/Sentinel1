@@ -52,6 +52,9 @@ firebase/functions/lib/
 .env.production
 .env*.local
 
+# Claude Code personal overrides
+.claude/settings.local.json
+
 # OS files
 Thumbs.db
 .env
