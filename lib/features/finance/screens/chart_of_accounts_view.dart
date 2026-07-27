@@ -53,12 +53,12 @@ class _ChartOfAccountsViewState extends ConsumerState<ChartOfAccountsView> {
               onPressed: () {
                 final newAccount = GeneralLedgerAccount(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  accountCode: codeCtrl.text,
+                  accountNumber: codeCtrl.text,
                   name: nameCtrl.text,
                   type: typeCtrl.text,
-                  currentBalance: 0.0,
-                  currency: 'USD',
+                  currencyCode: 'USD',
                   isActive: true,
+                  isReconciliationAccount: false,
                 );
                 ref.read(financeServiceProvider).createGeneralLedgerAccount(newAccount);
                 Navigator.pop(context);
@@ -123,10 +123,10 @@ class _ChartOfAccountsViewState extends ConsumerState<ChartOfAccountsView> {
                       ],
                       rows: accounts.map((acc) {
                         return DataRow(cells: [
-                          DataCell(Text(acc.accountCode, style: const TextStyle(fontWeight: FontWeight.bold))),
+                          DataCell(Text(acc.accountNumber, style: const TextStyle(fontWeight: FontWeight.bold))),
                           DataCell(Text(acc.name)),
                           DataCell(Chip(label: Text(acc.type.toUpperCase(), style: const TextStyle(fontSize: 10)))),
-                          DataCell(Text('\$${acc.currentBalance.toStringAsFixed(2)}')),
+                          DataCell(Text('\$0.00')),
                           DataCell(
                             Icon(
                               acc.isActive ? Icons.check_circle : Icons.cancel,

@@ -36,6 +36,7 @@ dependencies:
   flutter_secure_storage: any
   local_auth: any
   screen_protector: any
+  mobile_scanner: any
 
   # AI
   google_generative_ai: any

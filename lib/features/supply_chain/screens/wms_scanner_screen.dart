@@ -72,15 +72,17 @@ class _WmsScannerScreenState extends State<WmsScannerScreen> {
         children: [
           Expanded(
             flex: 3,
-            child: MobileScanner(
-              onDetect: _onDetect,
-              overlay: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.blueAccent, width: 2),
-                  borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              children: [
+                MobileScanner(onDetect: _onDetect),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.blueAccent, width: 2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  margin: const EdgeInsets.all(48),
                 ),
-                margin: const EdgeInsets.all(48),
-              ),
+              ],
             ),
           ),
           Expanded(

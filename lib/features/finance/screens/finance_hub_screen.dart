@@ -11,7 +11,7 @@ class FinanceHubScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final journalEntries = ref.watch(journalEntriesProvider);
-    final accounts = ref.watch(chartOfAccountsProvider);
+    final accountsAsync = ref.watch(glAccountsStreamProvider);
     final currencyFormatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     return Scaffold(
@@ -32,7 +32,11 @@ class FinanceHubScreen extends ConsumerWidget {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
-                    Text('Total Accounts: ${accounts.length}'),
+                    accountsAsync.when(
+                      data: (accounts) => Text('Total Accounts: ${accounts.length}'),
+                      loading: () => const Text('Total Accounts: Loading...'),
+                      error: (err, st) => const Text('Total Accounts: Error loading'),
+                    ),
                     Text('Total Journal Entries: ${journalEntries.length}'),
                   ],
                 ),
