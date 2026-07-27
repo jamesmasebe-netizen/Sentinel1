@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 import 'employee_profiles_screen.dart';
 import 'leave_management_screen.dart';

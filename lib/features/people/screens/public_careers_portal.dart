@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/hr_models.dart';
 import '../widgets/application_form_widget.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class PublicCareersPortal extends ConsumerStatefulWidget {
   const PublicCareersPortal({super.key});

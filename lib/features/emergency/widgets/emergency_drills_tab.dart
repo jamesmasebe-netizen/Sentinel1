@@ -5,7 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'drill_form_card.dart';
 import 'drill_list_item.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EmergencyDrillsTab extends ConsumerStatefulWidget {
   const EmergencyDrillsTab({super.key});

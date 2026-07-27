@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../core/utils/ui_utils.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/equipment_asset_tab.dart';
 import '../widgets/equipment_inspections_tab.dart';
 import '../widgets/maintenance_log_dialog.dart';
+import 'asset_detail_screen.dart';
 
 /// Equipment Management — asset register, inspection schedule, maintenance log.
 class EquipmentManagementScreen extends ConsumerStatefulWidget {
@@ -31,16 +32,10 @@ class _EquipState extends ConsumerState<EquipmentManagementScreen>
     _tab = TabController(length: 3, vsync: this);
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        UIUtils.showSideSheet(
-          context: context,
-          title: 'Item Details',
-          builder:
-              (ctx) => Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Viewing item: ${widget.highlightId}\n(Detail view not yet implemented)',
-                ),
-              ),
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AssetDetailScreen(assetId: widget.highlightId!),
+          ),
         );
       });
     }
@@ -57,9 +52,14 @@ class _EquipState extends ConsumerState<EquipmentManagementScreen>
     final theme = Theme.of(context);
     return Column(
       children: [
-        const GHeader(
+        GHeader(
           title: 'Equipment Management',
           subtitle: 'Asset register and inspections',
+          trailing: IconButton(
+            icon: const Icon(Icons.lock_outline, color: Colors.red),
+            tooltip: 'LOTO Management',
+            onPressed: () => context.push('/loto-management'),
+          ),
         ),
         // Premium Sub-Header for Tabs
         Container(

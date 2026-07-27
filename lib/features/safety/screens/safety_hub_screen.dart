@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:xm_system/core/providers/app_providers.dart';
 import '../../../config/theme.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
@@ -12,6 +11,7 @@ import 'bbs_observations_screen.dart';
 import 'ppe_compliance_screen.dart';
 import 'safety_analytics_screen.dart';
 import 'incident_report_form.dart';
+import 'qr_scanner_screen.dart';
 import '../widgets/safety_metrics_header.dart';
 import '../widgets/module_card.dart';
 
@@ -27,23 +27,36 @@ class SafetyHubScreen extends ConsumerWidget {
           title: 'Safety & Risk Hub',
           subtitle:
               'Unified command center for organizational safety, risk assessments, and compliance.',
-          trailing: FilledButton.icon(
-            onPressed: () {
-              UIUtils.showSideSheet(
-                context: context,
-                title: 'Report Incident',
-                builder:
-                    (ctx) => IncidentReportForm(
-                      tenantId: ref.read(currentTenantIdProvider) ?? '',
-                    ),
-              );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: XMTheme.error,
-              foregroundColor: Colors.white,
-            ),
-            icon: const Icon(Icons.add_alert_rounded, size: 18),
-            label: const Text('Report Incident'),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+                  );
+                },
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Scan Passport'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: () {
+                  UIUtils.showSideSheet(
+                    context: context,
+                    title: 'Report Incident',
+                    builder: (ctx) => const IncidentReportForm(),
+                  );
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: XMTheme.error,
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.add_alert_rounded, size: 18),
+                label: const Text('Report Incident'),
+              ),
+            ],
           ),
         ),
         Expanded(

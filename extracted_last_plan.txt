@@ -1,0 +1,12 @@
+')
+if len(blocks) > 1:
+    last_block = blocks[-1]
+    # It might end with quotes or \
+ or whatever. Let's just take the first 4000 chars.
+    print(last_block[:4000].replace(r'\
+', '\
+'))
+else:
+    print('Not found')
+\" > extracted_last_plan.txt","Cwd":"/Users/jamesmasebe/Desktop/Sentinel1","WaitMsBeforeAsync":5000,"toolAction":"Extracting the last roadmap occurrence","toolSummary":"Extract latest roadmap"}}]}
+

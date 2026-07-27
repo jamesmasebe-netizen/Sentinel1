@@ -20,11 +20,11 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     super.initState();
     // Start authentication as soon as the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _authenticate();
+      _authenticate(auto: true);
     });
   }
 
-  Future<void> _authenticate() async {
+  Future<void> _authenticate({bool auto = false}) async {
     if (_isAuthenticating) return;
 
     setState(() {
@@ -50,7 +50,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
         }
       } else {
         // Fallback for devices without biometrics
-        if (mounted) {
+        if (mounted && !auto) {
           ref.read(sessionManagerProvider).unlockSession();
         }
       }

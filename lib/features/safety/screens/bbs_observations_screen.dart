@@ -6,7 +6,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/observation_card.dart';
 import '../widgets/bbs_observation_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Behavioral Based Safety — observations, suggestion box, and gamification leaderboard.
 class BBSObservationsScreen extends ConsumerWidget {

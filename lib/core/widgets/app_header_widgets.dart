@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../utils/ui_utils.dart';
 import '../services/offline_sync_service.dart';
 import '../../config/theme.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class SyncIndicator extends StatelessWidget {
   final SyncStatus status;

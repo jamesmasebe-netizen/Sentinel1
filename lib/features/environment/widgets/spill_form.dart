@@ -52,7 +52,7 @@ class _SpillFormState extends ConsumerState<SpillForm> {
               'contained': _contained,
               'reportedToAuthorities': _reported,
               'authorId': p.uid,
-              'siteId': p.tenantId,
+              'siteId': ref.read(currentTenantIdProvider) ?? '',
               'dateOfSpill': DateTime.now().toIso8601String(),
               'createdAt': DateTime.now().toIso8601String(),
             },

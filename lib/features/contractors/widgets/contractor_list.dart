@@ -5,7 +5,7 @@ import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'contractor_projects_sheet.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ContractorList extends ConsumerStatefulWidget {
   final String searchQuery;
@@ -36,7 +36,6 @@ class _ContractorListState extends ConsumerState<ContractorList> {
                     ref.watch(currentTenantIdProvider) ?? "",
                     'contractors',
                   )
-                  .where('siteId', isEqualTo: siteId)
                   .orderBy('createdAt', descending: true)
                   .limit(100)
                   .snapshots(),

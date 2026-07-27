@@ -397,3 +397,179 @@ export const checkTrainingExpiry = onSchedule(
     logger.info(`Training expiry: ${expiringSnap.size} notifications`);
   }
 );
+
+// ============================================================================
+// 10. THE OMNI-GRAPH: FINANCIAL CORE (DUAL-ENTRY LEDGER)
+// ============================================================================
+import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+
+interface JournalLine {
+  accountId: string;
+  debit: number;
+  credit: number;
+  memo: string;
+}
+
+interface JournalEntryData {
+  tenantId: string;
+  date: string;
+  description: string;
+  lines: JournalLine[];
+}
+
+/**
+ * Posts a dual-entry journal. Ensures debits == credits, updates account balances
+ * transactionally, and writes an immutable journal record.
+ */
+export const postJournalEntry = onCall(
+  { region: "europe-west1" },
+  async (request: CallableRequest<JournalEntryData>) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Must be authenticated");
+    const { tenantId, date, description, lines } = request.data;
+    if (!tenantId || !date || !lines || lines.length < 2) {
+      throw new HttpsError("invalid-argument", "Missing required fields or < 2 lines.");
+    }
+
+    // 1. Verify Debit = Credit
+    let totalDebit = 0;
+    let totalCredit = 0;
+    for (const line of lines) {
+      totalDebit += line.debit;
+      totalCredit += line.credit;
+    }
+    // Tolerance for floating point
+    if (Math.abs(totalDebit - totalCredit) > 0.001) {
+      throw new HttpsError("failed-precondition", `Unbalanced entry: Debit (${totalDebit}) != Credit (${totalCredit})`);
+    }
+
+    const journalRef = db.collection("tenants").doc(tenantId).collection("finance_journals").doc();
+    const accountRefs = lines.map(line => db.collection("tenants").doc(tenantId).collection("finance_accounts").doc(line.accountId));
+
+    await db.runTransaction(async (t) => {
+      // Read all accounts to ensure they exist
+      const accountDocs = await t.getAll(...accountRefs);
+      for (const [i, doc] of accountDocs.entries()) {
+        if (!doc.exists) {
+          throw new HttpsError("not-found", `Account ${lines[i].accountId} not found`);
+        }
+      }
+
+      // Write balances
+      for (const [i, doc] of accountDocs.entries()) {
+        const line = lines[i];
+        const acc = doc.data() as { currentBalance: number; type: string };
+        
+        let balanceChange = 0;
+        // Normal balance depends on account type
+        if (acc.type === "asset" || acc.type === "expense") {
+          balanceChange = line.debit - line.credit; // Debit increases
+        } else {
+          balanceChange = line.credit - line.debit; // Credit increases (liability, equity, revenue)
+        }
+
+        t.update(doc.ref, { currentBalance: admin.firestore.FieldValue.increment(balanceChange) });
+      }
+
+      // Write journal header
+      t.set(journalRef, {
+        date,
+        description,
+        totalDebit,
+        totalCredit,
+        createdBy: request.auth?.uid,
+        status: "posted",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Write journal lines
+      for (const line of lines) {
+        const lineRef = journalRef.collection("lines").doc();
+        t.set(lineRef, line);
+      }
+    });
+
+    logger.info(`Posted Journal Entry ${journalRef.id} for ${tenantId}`);
+    return { success: true, journalId: journalRef.id };
+  }
+);
+
+/**
+ * Automatically posts a journal entry when an invoice is sent or paid.
+ */
+export const onInvoiceStatusChanged = onDocumentUpdated(
+  { document: "tenants/{tenantId}/finance_invoices/{invoiceId}", region: "europe-west1" },
+  async (event) => {
+    const before = event.data?.before.data();
+    const after = event.data?.after.data();
+    if (!before || !after) return;
+
+    const tenantId = event.params.tenantId;
+    const invoiceId = event.params.invoiceId;
+
+    // Detect if invoice was just marked as "SENT" for the first time
+    if (before.status !== "SENT" && after.status === "SENT") {
+      logger.info(`Invoice ${invoiceId} marked as SENT. Posting to GL.`);
+      
+      const amount = after.amount || 0;
+      if (amount <= 0) return;
+
+      // Find AR account and Revenue account
+      const accountsSnap = await db.collection("tenants").doc(tenantId).collection("finance_accounts").get();
+      let arAccountId = "";
+      let revAccountId = "";
+      for (const doc of accountsSnap.docs) {
+        const type = doc.data().type;
+        if (type === "asset" && doc.data().name.toLowerCase().includes("receivable")) arAccountId = doc.id;
+        if (type === "revenue") revAccountId = doc.id;
+      }
+
+      if (!arAccountId || !revAccountId) {
+        logger.error(`Could not find AR or Revenue account for tenant ${tenantId}`);
+        return;
+      }
+
+      const journalData: JournalEntryData = {
+        tenantId,
+        date: new Date().toISOString(),
+        description: `Auto-post for Invoice ${invoiceId}`,
+        lines: [
+          { accountId: arAccountId, debit: amount, credit: 0, memo: `Invoice ${invoiceId}` },
+          { accountId: revAccountId, debit: 0, credit: amount, memo: `Invoice ${invoiceId}` },
+        ]
+      };
+
+      // Call the transaction directly (simulated internal call)
+      const journalRef = db.collection("tenants").doc(tenantId).collection("finance_journals").doc();
+      await db.runTransaction(async (t) => {
+        const arRef = db.collection("tenants").doc(tenantId).collection("finance_accounts").doc(arAccountId);
+        const revRef = db.collection("tenants").doc(tenantId).collection("finance_accounts").doc(revAccountId);
+        
+        t.update(arRef, { currentBalance: admin.firestore.FieldValue.increment(amount) });
+        t.update(revRef, { currentBalance: admin.firestore.FieldValue.increment(amount) });
+        
+        t.set(journalRef, {
+          date: journalData.date,
+          description: journalData.description,
+          totalDebit: amount,
+          totalCredit: amount,
+          createdBy: "system",
+          status: "posted",
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        
+        journalData.lines.forEach(line => {
+          t.set(journalRef.collection("lines").doc(), line);
+        });
+      });
+      logger.info(`Auto-posted journal ${journalRef.id} for Invoice ${invoiceId}`);
+    }
+  }
+);
+export * from './mrpEngine';
+export * from './aiEngine';
+export * from './iotEngine';
+export * from './routingEngine';
+export * from './taxEngine';
+export * from './revRecEngine';
+export * from './hrEngine';
+export * from './copilotEngine';

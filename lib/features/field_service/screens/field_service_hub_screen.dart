@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dispatcher_board_screen.dart';
 import 'work_order_list_screen.dart';
+import 'route_optimization_screen.dart';
 
 class FieldServiceHubScreen extends StatelessWidget {
   const FieldServiceHubScreen({super.key});
@@ -36,6 +37,13 @@ class FieldServiceHubScreen extends StatelessWidget {
               icon: Icons.emergency,
               color: Colors.red,
               destination: null, // Placeholder
+            ),
+            _buildDashboardCard(
+              context,
+              title: 'Route Optimization',
+              icon: Icons.map,
+              color: Colors.teal,
+              destination: const RouteOptimizationScreen(),
             ),
             _buildDashboardCard(
               context,
@@ -80,7 +88,7 @@ class FieldServiceHubScreen extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [color.withOpacity(0.7), color],
+              colors: [color.withValues(alpha: 0.7), color],
             ),
           ),
           child: Column(

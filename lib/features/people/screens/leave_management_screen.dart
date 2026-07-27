@@ -5,7 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../providers/hr_providers.dart';
 import '../models/hr_models.dart';
 import '../widgets/leave_application_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class LeaveManagementScreen extends ConsumerWidget {
   const LeaveManagementScreen({super.key});
@@ -105,7 +105,7 @@ class LeaveManagementScreen extends ConsumerWidget {
                       Text(
                         'Dates: ${UIUtils.formatDate(req.startDate)} - ${UIUtils.formatDate(req.endDate)}',
                       ),
-                      if (req.reason != null && req.reason!.isNotEmpty) ...[
+                      if (req.reason.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text(
                           'Reason: ${req.reason}',

@@ -6,7 +6,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/hira_card.dart';
 import '../widgets/hira_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Baseline HIRA (Hazard Identification & Risk Assessment) — full CRUD register.
 class HiraScreen extends ConsumerStatefulWidget {

@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'hira_card.dart';
+import '../../../core/widgets/searchable_multi_select.dart';
+import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
 
 class HiraForm extends ConsumerStatefulWidget {
   const HiraForm({super.key});
@@ -20,6 +24,11 @@ class _HiraFormState extends ConsumerState<HiraForm> {
   String _likelihood = 'Possible';
   String _severity = 'Major';
   String _controlMeasure = '';
+  String _residualLikelihood = 'Possible';
+  String _residualSeverity = 'Minor';
+  List<String> _teamMembers = [];
+  String? _approverId;
+  DateTime? _reviewDate;
   bool _isSubmitting = false;
 
   static const _likelihoods = [
@@ -78,18 +87,24 @@ class _HiraFormState extends ConsumerState<HiraForm> {
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'risk_assessments',
             data: {
+              'type': 'hira',
               'title': _titleCtrl.text.trim(),
+              'description': _hazardCtrl.text.trim(),
               'hazard': _hazardCtrl.text.trim(),
               'consequence': _consequenceCtrl.text.trim(),
               'likelihood': _likelihood,
               'severity': _severity,
-              'riskScore': score,
-              'riskLevel': _riskLevel(score),
+              'inherentRiskScore': score,
+              'riskRating': _riskLevel(score),
               'controlMeasure': _controlMeasure,
-              'status': 'Active',
-              'assessorId': profile.uid,
+              'residualRiskLevel': _riskLevel(_riskScore(_residualLikelihood, _residualSeverity)),
+              'teamMembers': _teamMembers,
+              'approverId': _approverId,
+              'reviewDate': _reviewDate?.toIso8601String(),
+              'status': 'active',
+              'assessedBy': profile.uid,
               'siteId': profile.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
+              'createdAt': FieldValue.serverTimestamp(),
             },
           );
       if (formCtx.mounted) {
@@ -305,6 +320,77 @@ class _HiraFormState extends ConsumerState<HiraForm> {
                         .toList(),
                 onChanged:
                     (v) => setLocalState(() => _controlMeasure = v ?? ''),
+              ),
+              GSpacing.vMd,
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _residualLikelihood,
+                      decoration: const InputDecoration(labelText: 'Residual Likelihood'),
+                      items: _likelihoods.map((l) => DropdownMenuItem(value: l, child: Text(l, style: const TextStyle(fontSize: 13)))).toList(),
+                      onChanged: (v) => setLocalState(() => _residualLikelihood = v!),
+                    ),
+                  ),
+                  GSpacing.hMd,
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _residualSeverity,
+                      decoration: const InputDecoration(labelText: 'Residual Severity'),
+                      items: _severities.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(fontSize: 13)))).toList(),
+                      onChanged: (v) => setLocalState(() => _residualSeverity = v!),
+                    ),
+                  ),
+                ],
+              ),
+              GSpacing.vLg,
+              Text(
+                'Approval & Review',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              GSpacing.vMd,
+              EmployeeSelector(
+                label: 'Approver',
+                value: _approverId,
+                onChanged: (val) => setLocalState(() => _approverId = val),
+              ),
+              GSpacing.vMd,
+              ref.watch(employeesProvider).when(
+                data: (employees) {
+                  final options = employees.map((e) => e.id).toList();
+                  final labels = {for (var e in employees) e.id: e.fullName};
+                  return SearchableStringMultiSelect(
+                    label: 'Team Members',
+                    hintText: 'Search team members...',
+                    availableItems: options,
+                    itemLabels: labels,
+                    selectedItems: _teamMembers,
+                    onChanged: (vals) => setLocalState(() => _teamMembers = vals),
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => Text('Error loading employees: $e'),
+              ),
+              GSpacing.vMd,
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today_outlined),
+                title: const Text('Next Review Date'),
+                subtitle: Text(
+                  _reviewDate != null ? '${_reviewDate!.toLocal()}'.split(' ')[0] : 'Select Date',
+                ),
+                onTap: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 365)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                  );
+                  if (d != null) setLocalState(() => _reviewDate = d);
+                },
               ),
               GSpacing.vXl,
               SizedBox(

@@ -51,7 +51,7 @@ class _WasteFormState extends ConsumerState<WasteForm> {
               'disposalFacility': _facilityCtrl.text.trim(),
               'status': _wasteStatus,
               'authorId': p.uid,
-              'siteId': p.tenantId,
+              'siteId': ref.read(currentTenantIdProvider) ?? '',
               'createdAt': DateTime.now().toIso8601String(),
             },
           );

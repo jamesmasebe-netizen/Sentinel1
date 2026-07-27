@@ -9,7 +9,7 @@ class CrashlyticsService {
   Future<void> initialize() async {
     // Stub for Firebase Crashlytics & Performance Monitoring
     if (kDebugMode) {
-      print('Crashlytics: Initialized in debug mode');
+      debugPrint('Crashlytics: Initialized in debug mode');
     }
   }
 
@@ -20,7 +20,7 @@ class CrashlyticsService {
   }) async {
     // Stub for logging errors
     if (kDebugMode) {
-      print('Crashlytics Error: $reason - $error');
+      debugPrint('Crashlytics Error: $reason - $error');
     }
   }
 

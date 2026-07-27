@@ -4,9 +4,9 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/providers/app_providers.dart';
 import '../providers/hr_providers.dart';
 import '../providers/employee_providers.dart';
-import '../models/hr_models.dart';
 import '../widgets/employee_selector.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../models/hr_models.dart';
 
 class OHSAppointmentsScreen extends ConsumerWidget {
   const OHSAppointmentsScreen({super.key});

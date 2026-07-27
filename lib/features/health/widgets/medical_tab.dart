@@ -8,7 +8,7 @@ import '../../../core/utils/ui_utils.dart';
 import 'medical_form.dart';
 import 'medical_list_item.dart';
 import 'oh_stat_chip.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class MedicalsTab extends ConsumerStatefulWidget {
   const MedicalsTab({super.key});

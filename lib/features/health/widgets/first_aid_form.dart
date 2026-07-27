@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../../people/widgets/employee_selector.dart';
 
 class FirstAidForm extends ConsumerStatefulWidget {
   const FirstAidForm({super.key});
@@ -14,23 +15,26 @@ class FirstAidForm extends ConsumerStatefulWidget {
 class _FirstAidFormState extends ConsumerState<FirstAidForm> {
   bool _isSub = false;
 
-  final _faEmpCtrl = TextEditingController();
+  String? _patientId;
+  String? _firstAiderId;
   final _faDescCtrl = TextEditingController();
   final _faTreatCtrl = TextEditingController();
+  final _actionTakenCtrl = TextEditingController();
+  bool _referredToMedical = false;
 
   @override
   void dispose() {
-    _faEmpCtrl.dispose();
     _faDescCtrl.dispose();
     _faTreatCtrl.dispose();
+    _actionTakenCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submitFirstAid() async {
-    if (_faEmpCtrl.text.isEmpty) {
+    if (_patientId == null || _firstAiderId == null) {
       UIUtils.showToast(
         context,
-        'Employee name is required',
+        'Patient and First Aider are required',
         type: ToastType.error,
       );
       return;
@@ -45,9 +49,12 @@ class _FirstAidFormState extends ConsumerState<FirstAidForm> {
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'first_aid_logs',
             data: {
-              'employeeName': _faEmpCtrl.text.trim(),
+              'patientId': _patientId,
+              'firstAiderId': _firstAiderId,
               'description': _faDescCtrl.text.trim(),
               'treatment': _faTreatCtrl.text.trim(),
+              'actionTaken': _actionTakenCtrl.text.trim(),
+              'referredToMedical': _referredToMedical,
               'date': DateTime.now().toIso8601String(),
               'authorId': p.uid,
               'siteId': p.tenantId,
@@ -72,12 +79,20 @@ class _FirstAidFormState extends ConsumerState<FirstAidForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextFormField(
-            controller: _faEmpCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Employee / Person *',
-              prefixIcon: Icon(Icons.person_outline),
-            ),
+          EmployeeSelector(
+            value: _patientId,
+            onChanged: (val) {
+              setState(() => _patientId = val);
+            },
+            label: 'Patient (Employee) *',
+          ),
+          GSpacing.vMd,
+          EmployeeSelector(
+            value: _firstAiderId,
+            onChanged: (val) {
+              setState(() => _firstAiderId = val);
+            },
+            label: 'First Aider *',
           ),
           GSpacing.vMd,
           TextFormField(
@@ -92,6 +107,22 @@ class _FirstAidFormState extends ConsumerState<FirstAidForm> {
             controller: _faTreatCtrl,
             maxLines: 3,
             decoration: const InputDecoration(labelText: 'Treatment Provided'),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _actionTakenCtrl,
+            maxLines: 2,
+            decoration: const InputDecoration(labelText: 'Action Taken'),
+          ),
+          GSpacing.vMd,
+          SwitchListTile(
+            value: _referredToMedical,
+            onChanged: (v) => setState(() => _referredToMedical = v),
+            title: const Text(
+              'Referred to Medical?',
+              style: TextStyle(fontSize: 14),
+            ),
+            contentPadding: EdgeInsets.zero,
           ),
           GSpacing.vXl,
           SizedBox(

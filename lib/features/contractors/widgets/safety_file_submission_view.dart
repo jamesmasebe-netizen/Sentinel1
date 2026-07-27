@@ -8,9 +8,9 @@ import 'package:printing/printing.dart';
 import '../models/safety_file_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'finding_update_dialog.dart';
-import 'finding_list_item.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import 'document_review_dialog.dart';
+import 'ai_prescreen_badge.dart';
 
 class SafetyFileSubmissionView extends ConsumerStatefulWidget {
   final String contractorId;
@@ -31,33 +31,6 @@ class _SafetyFileSubmissionViewState
     extends ConsumerState<SafetyFileSubmissionView> {
   final _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
   bool _isGeneratingPdf = false;
-
-  Future<void> _updateFindingStatus(
-    Finding finding,
-    FindingStatus newStatus,
-    String comment,
-  ) async {
-    final user = ref.read(userProfileProvider).valueOrNull;
-    if (user == null) return;
-
-    final db = ref.read(firestoreProvider);
-    final historyEntry = {
-      'status': newStatus.name,
-      'timestamp': DateTime.now().toIso8601String(),
-      'comment': comment,
-      'userId': user.uid,
-    };
-
-    await db
-        .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'findings')
-        .doc(finding.findingId)
-        .update({
-          'status': newStatus.name,
-          'modifiedBy': user.uid,
-          'modifiedAt': FieldValue.serverTimestamp(),
-          'statusHistory': FieldValue.arrayUnion([historyEntry]),
-        });
-  }
 
   Future<void> _generateReport(String submissionId) async {
     setState(() => _isGeneratingPdf = true);
@@ -215,36 +188,47 @@ class _SafetyFileSubmissionViewState
                     db
                         .tenantCollection(
                           ref.watch(currentTenantIdProvider) ?? "",
-                          'findings',
+                          'contractor_documents',
                         )
                         .where('submissionId', isEqualTo: submissionId)
                         .snapshots(),
-                builder: (ctx, findingSnap) {
-                  if (!findingSnap.hasData) {
+                builder: (ctx, docSnap) {
+                  if (!docSnap.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  final findings =
-                      findingSnap.data!.docs
-                          .map((d) => Finding.fromFirestore(d))
+                  final documents =
+                      docSnap.data!.docs
+                          .map((d) => ContractorDocument.fromFirestore(d))
                           .toList();
 
-                  if (findings.isEmpty) {
-                    return const Center(child: Text('No findings logged yet.'));
+                  if (documents.isEmpty) {
+                    return const Center(child: Text('No documents uploaded yet.'));
                   }
 
                   return ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: findings.length,
+                    itemCount: documents.length,
                     itemBuilder: (context, i) {
-                      final f = findings[i];
-                      return FindingListItem(
-                        finding: f,
-                        onUpdateTap:
-                            () => FindingUpdateDialog.show(
-                              context,
-                              f,
-                              _updateFindingStatus,
-                            ),
+                      final doc = documents[i];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          title: Text(doc.name),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Status: ${doc.status}'),
+                              if (doc.feedback != null && doc.feedback!.isNotEmpty)
+                                Text('Feedback: ${doc.feedback}'),
+                              const SizedBox(height: 4),
+                              AiPreScreenBadge(documentId: doc.id),
+                            ],
+                          ),
+                          trailing: FilledButton.tonal(
+                            onPressed: () => DocumentReviewDialog.show(context, doc),
+                            child: const Text('Review'),
+                          ),
+                        ),
                       );
                     },
                   );

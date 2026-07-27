@@ -16,8 +16,8 @@ class SkillAssessmentForm extends ConsumerStatefulWidget {
 class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
   final _employeeCtrl = TextEditingController();
   final _skillCtrl = TextEditingController();
+  final _verifiedByCtrl = TextEditingController();
   String _proficiency = 'Intermediate';
-  final String _verifiedBy = '';
   bool _isSubmitting = false;
 
   static const _proficiencies = [
@@ -43,6 +43,7 @@ class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
   void dispose() {
     _employeeCtrl.dispose();
     _skillCtrl.dispose();
+    _verifiedByCtrl.dispose();
     super.dispose();
   }
 
@@ -68,7 +69,7 @@ class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
               'employeeName': _employeeCtrl.text.trim(),
               'skill': _skillCtrl.text.trim(),
               'proficiency': _proficiency,
-              'verifiedBy': _verifiedBy,
+              'verifiedBy': _verifiedByCtrl.text.trim(),
               'lastAssessed': DateTime.now().toIso8601String(),
               'siteId': profile.tenantId,
               'createdAt': DateTime.now().toIso8601String(),
@@ -150,6 +151,15 @@ class _SkillAssessmentFormState extends ConsumerState<SkillAssessmentForm> {
                     )
                     .toList(),
             onChanged: (v) => setState(() => _proficiency = v!),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _verifiedByCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Verified By',
+              prefixIcon: Icon(Icons.verified_user),
+              isDense: true,
+            ),
           ),
           GSpacing.vLg,
           SizedBox(

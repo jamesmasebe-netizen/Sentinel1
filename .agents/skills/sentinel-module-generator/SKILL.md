@@ -7,6 +7,12 @@ description: Use this skill to rapidly scaffold new features or "Hubs" in the Se
 
 When instructed to create a new module or feature hub for Sentinel, use this skill to generate the codebase efficiently and precisely. Do NOT guess the architecture; follow these exact specifications.
 
+## 0. Design & Planning
+Before generating any code, you MUST use the `write_to_file` tool to create a `module_design.md` artifact detailing the feature. 
+Set `RequestFeedback: true` in the ArtifactMetadata to ensure the user reviews the data layer, UI components, and Riverpod structure before the heavy scaffolding begins.
+
+*Optional but Recommended:* Use the `sentinel-swarm-orchestrator` skill to delegate the coding phase to specialized subagents (e.g., UI vs. Data) once the design is approved by the user.
+
 ## 1. Directory Structure
 Create a new folder in `lib/features/<module_name>/`.
 Inside it, create:

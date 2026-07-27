@@ -43,7 +43,7 @@ class _OmnichannelTicketScreenState extends State<OmnichannelTicketScreen> {
                       final isSelected = index == _selectedTicketIndex;
                       return ListTile(
                         selected: isSelected,
-                        selectedTileColor: Colors.blue.withOpacity(0.1),
+                        selectedTileColor: Colors.blue.withValues(alpha: 0.1),
                         leading: CircleAvatar(child: Text('U${index + 1}')),
                         title: Text('User ${index + 1}'),
                         subtitle: const Text('Need help with...'),

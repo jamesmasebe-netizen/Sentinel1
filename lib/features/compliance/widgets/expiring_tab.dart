@@ -5,7 +5,7 @@ import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'doc_list_item.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ExpiringTab extends ConsumerWidget {
   const ExpiringTab({super.key});

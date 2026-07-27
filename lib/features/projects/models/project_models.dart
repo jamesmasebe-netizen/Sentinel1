@@ -182,6 +182,9 @@ class Project {
   final String fallbackContactContact;
 
   // Linked Entities
+  final List<String> allocatedEmployeeIds;
+  final List<String> allocatedContractorIds;
+  final List<String> allocatedAssetIds;
 
   // Calculated & Aggregated Safety Fields
   final String
@@ -213,6 +216,9 @@ class Project {
     this.projectLeadContact = '',
     this.fallbackContact = '',
     this.fallbackContactContact = '',
+    this.allocatedEmployeeIds = const [],
+    this.allocatedContractorIds = const [],
+    this.allocatedAssetIds = const [],
     this.overallRiskLevel = 'Medium',
     this.safetyFileScore = 0.0,
     this.totalNcrs = 0,
@@ -239,6 +245,9 @@ class Project {
     String? projectLeadContact,
     String? fallbackContact,
     String? fallbackContactContact,
+    List<String>? allocatedEmployeeIds,
+    List<String>? allocatedContractorIds,
+    List<String>? allocatedAssetIds,
     String? overallRiskLevel,
     double? safetyFileScore,
     int? totalNcrs,
@@ -266,6 +275,9 @@ class Project {
       fallbackContact: fallbackContact ?? this.fallbackContact,
       fallbackContactContact:
           fallbackContactContact ?? this.fallbackContactContact,
+      allocatedEmployeeIds: allocatedEmployeeIds ?? this.allocatedEmployeeIds,
+      allocatedContractorIds: allocatedContractorIds ?? this.allocatedContractorIds,
+      allocatedAssetIds: allocatedAssetIds ?? this.allocatedAssetIds,
       overallRiskLevel: overallRiskLevel ?? this.overallRiskLevel,
       safetyFileScore: safetyFileScore ?? this.safetyFileScore,
       totalNcrs: totalNcrs ?? this.totalNcrs,
@@ -318,6 +330,9 @@ class Project {
       projectLeadContact: data['projectLeadContact'] ?? '',
       fallbackContact: data['fallbackContact'] ?? '',
       fallbackContactContact: data['fallbackContactContact'] ?? '',
+      allocatedEmployeeIds: List<String>.from(data['allocatedEmployeeIds'] ?? []),
+      allocatedContractorIds: List<String>.from(data['allocatedContractorIds'] ?? []),
+      allocatedAssetIds: List<String>.from(data['allocatedAssetIds'] ?? []),
       overallRiskLevel: data['overallRiskLevel'] ?? 'Medium',
       safetyFileScore: (data['safetyFileScore'] as num?)?.toDouble() ?? 0.0,
       totalNcrs: data['totalNcrs'] ?? 0,
@@ -345,6 +360,9 @@ class Project {
       'projectLeadContact': projectLeadContact,
       'fallbackContact': fallbackContact,
       'fallbackContactContact': fallbackContactContact,
+      'allocatedEmployeeIds': allocatedEmployeeIds,
+      'allocatedContractorIds': allocatedContractorIds,
+      'allocatedAssetIds': allocatedAssetIds,
       'overallRiskLevel': overallRiskLevel,
       'safetyFileScore': safetyFileScore,
       'totalNcrs': totalNcrs,

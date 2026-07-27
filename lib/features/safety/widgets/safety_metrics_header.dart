@@ -4,7 +4,7 @@ import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'stream_metric_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class SafetyMetricsHeader extends ConsumerWidget {
   const SafetyMetricsHeader({super.key});

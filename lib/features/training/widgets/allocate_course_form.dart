@@ -3,24 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
-import '../../people/widgets/employee_selector.dart';
+import '../../../core/widgets/searchable_multi_select.dart';
+import '../../people/providers/employee_providers.dart';
 
 class AllocateCourseForm extends ConsumerStatefulWidget {
-  final String tenantId;
-  const AllocateCourseForm({super.key, required this.tenantId});
+  const AllocateCourseForm({super.key});
   @override
   ConsumerState<AllocateCourseForm> createState() => _AllocateCourseFormState();
 }
 
 class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
   bool _isSubmitting = false;
-  String? _selectedEmployeeId;
-  String? _selectedEmployeeName;
+  List<String> _enrolledEmployees = [];
   final _courseCtrl = TextEditingController();
+  final _courseIdCtrl = TextEditingController();
   DateTime _dueDate = DateTime.now().add(const Duration(days: 30));
 
   Future<void> _submit() async {
-    if (_selectedEmployeeId == null || _courseCtrl.text.isEmpty) {
+    if (_enrolledEmployees.isEmpty || _courseCtrl.text.isEmpty || _courseIdCtrl.text.isEmpty) {
       UIUtils.showToast(
         context,
         'Please fill in required fields',
@@ -33,23 +33,26 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
 
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: widget.tenantId,
-            collection: 'training_enrollments',
-            data: {
-              'employeeId': _selectedEmployeeId,
-              'employeeName': _selectedEmployeeName,
-              'courseName': _courseCtrl.text.trim(),
-              'dueDate': _dueDate.toIso8601String(),
-              'assignedAt': DateTime.now().toIso8601String(),
-              'status': 'Assigned',
-              'authorId': profile.uid,
-              'siteId': profile.tenantId,
-              'progressPercentage': 0.0,
-            },
-          );
+      // Create enrollment for each selected employee
+      for (final empId in _enrolledEmployees) {
+        await ref
+            .read(firestoreServiceProvider)
+            .createDocument(
+              tenantId: ref.read(currentTenantIdProvider) ?? '',
+              collection: 'training_enrollments',
+              data: {
+                'employeeId': empId,
+                'courseId': _courseIdCtrl.text.trim(),
+                'courseName': _courseCtrl.text.trim(),
+                'dueDate': _dueDate.toIso8601String(),
+                'enrollmentDate': DateTime.now().toIso8601String(),
+                'status': 'Assigned',
+                'authorId': profile.uid,
+                'siteId': profile.tenantId,
+                'progressPercentage': 0.0,
+              },
+            );
+      }
 
       if (mounted) {
         Navigator.pop(context);
@@ -82,14 +85,25 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
             style: TextStyle(fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
-          EmployeeSelector(
-            value: _selectedEmployeeId,
-            onChanged: (val) {
-              setState(() {
-                _selectedEmployeeId = val;
-                _selectedEmployeeName = 'Unknown (Fetched via ID)';
-              });
+          ref.watch(employeesProvider).when(
+            data: (employees) {
+              final options = employees.map((e) => e.id).toList();
+              final labels = <String, String>{for (var e in employees) e.id: e.fullName};
+              return SearchableStringMultiSelect(
+                label: 'Select Employees',
+                hintText: 'Search employees...',
+                availableItems: options,
+                itemLabels: labels,
+                selectedItems: _enrolledEmployees,
+                onChanged: (val) {
+                  setState(() {
+                    _enrolledEmployees = val;
+                  });
+                },
+              );
             },
+            loading: () => const CircularProgressIndicator(),
+            error: (e, s) => Text('Error loading employees: $e'),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -97,6 +111,14 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
             decoration: const InputDecoration(
               labelText: 'Course Name *',
               hintText: 'e.g. Health & Safety Level 1',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _courseIdCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Course ID *',
+              hintText: 'e.g. CRS-101',
             ),
           ),
           const SizedBox(height: 16),

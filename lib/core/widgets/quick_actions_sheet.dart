@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../config/theme.dart';
 import '../utils/ui_utils.dart';
+import '../../features/safety/screens/incident_report_form.dart';
 
 class QuickActionsSheet {
   static void show(BuildContext context) {
@@ -27,8 +28,12 @@ class QuickActionsSheet {
                   title: 'Incident Report',
                   subtitle: 'Log a safety incident or near-miss',
                   onTap: () {
-                    Navigator.pop(context);
-                    context.go('/safety');
+                    Navigator.pop(context); // Close the bottom sheet first
+                    UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Report Incident',
+                      builder: (ctx) => const IncidentReportForm(),
+                    );
                   },
                 ),
                 _QuickActionTile(

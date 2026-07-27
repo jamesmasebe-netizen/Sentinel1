@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../../people/widgets/employee_selector.dart';
 
 class MedicalForm extends ConsumerStatefulWidget {
   const MedicalForm({super.key});
@@ -14,9 +15,11 @@ class MedicalForm extends ConsumerStatefulWidget {
 class _MedicalFormState extends ConsumerState<MedicalForm> {
   bool _isSub = false;
 
-  final _medEmpCtrl = TextEditingController();
+  String? _selectedEmployeeId;
   final _medIdCtrl = TextEditingController();
   final _medRestCtrl = TextEditingController();
+  final _practitionerCtrl = TextEditingController();
+  final _facilityCtrl = TextEditingController();
   String _medType = 'Pre-employment';
   String _medStatus = 'Fit';
   DateTime _medDate = DateTime.now();
@@ -24,14 +27,15 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
 
   @override
   void dispose() {
-    _medEmpCtrl.dispose();
     _medIdCtrl.dispose();
     _medRestCtrl.dispose();
+    _practitionerCtrl.dispose();
+    _facilityCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submitMedical() async {
-    if (_medEmpCtrl.text.isEmpty) {
+    if (_selectedEmployeeId == null) {
       UIUtils.showToast(
         context,
         'Employee name is required',
@@ -49,11 +53,13 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'medical_records',
             data: {
-              'employeeName': _medEmpCtrl.text.trim(),
+              'employeeId': _selectedEmployeeId,
               'idNumber': _medIdCtrl.text.trim(),
               'medicalType': _medType,
               'status': _medStatus,
               'restrictions': _medRestCtrl.text.trim(),
+              'practitionerName': _practitionerCtrl.text.trim(),
+              'facility': _facilityCtrl.text.trim(),
               'dateConducted': _medDate.toIso8601String(),
               'nextDueDate': _medNextDue.toIso8601String(),
               'authorId': p.uid,
@@ -84,12 +90,14 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           GSpacing.vSm,
-          TextFormField(
-            controller: _medEmpCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Employee Name *',
-              prefixIcon: Icon(Icons.person_outline),
-            ),
+          EmployeeSelector(
+            value: _selectedEmployeeId,
+            onChanged: (val) {
+              setState(() {
+                _selectedEmployeeId = val;
+              });
+            },
+            label: 'Select Employee *',
           ),
           GSpacing.vMd,
           TextFormField(
@@ -130,6 +138,20 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
             maxLines: 2,
             decoration: const InputDecoration(
               labelText: 'Restrictions / Comments',
+            ),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _practitionerCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Practitioner Name',
+            ),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _facilityCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Facility',
             ),
           ),
           GSpacing.vLg,

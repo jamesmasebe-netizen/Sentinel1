@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import 'employee_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EmployeeList extends StatelessWidget {
   final FirebaseFirestore firestore;

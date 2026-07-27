@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/app_providers.dart';
+import '../../../../core/widgets/searchable_multi_select.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../../people/providers/employee_providers.dart';
 import '../../../people/widgets/employee_selector.dart';
@@ -10,6 +11,7 @@ import '../../providers/project_providers.dart';
 import 'new_project_header.dart';
 import 'project_stages_preview.dart';
 import 'new_project_footer.dart';
+import '../../../equipment/widgets/equipment_multi_selector.dart';
 
 class NewProjectDialogContent extends ConsumerStatefulWidget {
   const NewProjectDialogContent({super.key});
@@ -27,6 +29,10 @@ class _NewProjectDialogContentState
   final _budgetCtrl = TextEditingController();
   final _leadContactCtrl = TextEditingController();
   final _fallbackContactCtrl = TextEditingController();
+
+  List<String> _allocatedEmployeeIds = [];
+  List<String> _allocatedContractorIds = [];
+  List<String> _allocatedAssetIds = [];
 
   String? _selectedLeadId;
   String? _selectedFallbackId;
@@ -106,6 +112,9 @@ class _NewProjectDialogContentState
         projectLeadContact: _leadContactCtrl.text.trim(),
         fallbackContact: _selectedFallbackId ?? '',
         fallbackContactContact: _fallbackContactCtrl.text.trim(),
+        allocatedEmployeeIds: _allocatedEmployeeIds,
+        allocatedContractorIds: _allocatedContractorIds,
+        allocatedAssetIds: _allocatedAssetIds,
         status: 'Draft',
         stages: _defaultStages,
         createdAt: DateTime.now(),
@@ -349,6 +358,41 @@ class _NewProjectDialogContentState
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('Comprehensive Resource Allocation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  ref.watch(employeesProvider).when(
+                        data: (employees) {
+                          final Map<String, String> empLabels = {};
+                          final List<String> availableEmpIds = [];
+                          for (var e in employees) {
+                            empLabels[e.id] = '\${e.firstName} \${e.lastName} (\${e.department})';
+                            availableEmpIds.add(e.id);
+                          }
+                          return SearchableStringMultiSelect(
+                            label: 'Allocated Employee IDs',
+                            hintText: 'Search or type Employee Name/ID...',
+                            availableItems: availableEmpIds,
+                            itemLabels: empLabels,
+                            selectedItems: _allocatedEmployeeIds,
+                            onChanged: (val) => setState(() => _allocatedEmployeeIds = val),
+                          );
+                        },
+                        loading: () => const CircularProgressIndicator(),
+                        error: (e, s) => Text('Error loading employees: $e'),
+                      ),
+                  const SizedBox(height: 12),
+                  SearchableStringMultiSelect(
+                    label: 'Allocated Contractor IDs',
+                    hintText: 'Search or type Contractor ID...',
+                    selectedItems: _allocatedContractorIds,
+                    onChanged: (val) => setState(() => _allocatedContractorIds = val),
+                  ),
+                  const SizedBox(height: 12),
+                  EquipmentMultiSelector(
+                    selectedItems: _allocatedAssetIds,
+                    onChanged: (val) => setState(() => _allocatedAssetIds = val),
                   ),
                   const SizedBox(height: 20),
                   ProjectStagesPreview(stages: _defaultStages),

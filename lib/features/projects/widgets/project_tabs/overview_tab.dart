@@ -6,6 +6,8 @@ import '../../models/project_models.dart';
 import 'overview_dialogs.dart';
 import 'project_health_status.dart';
 import 'project_metrics_grid.dart';
+import '../../../../core/bpf/bpf_ribbon_widget.dart';
+import '../../../../core/bpf/project_lifecycle_bpf.dart';
 
 class OverviewTab extends ConsumerWidget {
   final Project project;
@@ -18,6 +20,13 @@ class OverviewTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          BpfRibbonWidget(
+            bpfTypeId: 'project_lifecycle',
+            recordType: 'project',
+            recordId: project.id,
+            definition: projectLifecycleDefinition,
+          ),
+          GSpacing.vLg,
           Row(
             children: [
               Expanded(

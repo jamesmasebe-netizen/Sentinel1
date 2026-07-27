@@ -9,6 +9,23 @@ You have been spawned as a background subagent responsible for keeping the Senti
 
 A major improvement has just been introduced in one part of the app. Your job is to retroactively apply this improvement to all other relevant modules.
 
+## Spawning this Subagent (For Parent Agents)
+
+When you (the parent agent) complete a major architectural improvement, you MUST invoke this skill using the `invoke_subagent` tool. Use the `self` TypeName so the subagent has file-editing capabilities.
+
+```json
+{
+  "Subagents": [
+    {
+      "TypeName": "self", 
+      "Role": "Refactor Subagent",
+      "Prompt": "Execute the auto-sync-refactor protocol to replace [Old Pattern] with [New Pattern]...",
+      "Workspace": "inherit"
+    }
+  ]
+}
+```
+
 ## Workflow
 
 1. **Understand the Target Pattern:** 
@@ -33,6 +50,6 @@ A major improvement has just been introduced in one part of the app. Your job is
    - Confirmation that `flutter analyze` passes.
 
 ## Strict Rules
-- Do NOT rewrite entire files. Use chunk replacements to conserve tokens and speed.
+- Do NOT rewrite entire files. ALWAYS use the `multi_replace_file_content` tool to perform surgical, chunk-based replacements to conserve tokens and speed.
 - Do NOT skip `flutter analyze`. The codebase must remain in a compilable state without regression glitches.
-- If you encounter a complex file that exceeds 1,000 lines, you may optionally break it down into smaller sub-components (following the 300-Line Threshold rule from `AGENTS.md`) to make the refactor easier.
+- If you encounter a complex file that exceeds 200 lines, you MUST break it down into smaller sub-components (following the 200-Line Threshold rule from `AGENTS.md`) to make the refactor easier and maintain system health.

@@ -120,6 +120,16 @@ final currentTenantIdProvider = Provider<String?>((ref) {
   return profile.whenOrNull(data: (p) => p?.tenantId);
 });
 
+/// Resolves the base document reference for the current tenant.
+/// Use this provider in all service classes instead of root collection references.
+final tenantDocProvider = Provider<DocumentReference>((ref) {
+  final tenantId = ref.watch(currentTenantIdProvider);
+  if (tenantId == null || tenantId.isEmpty) {
+    throw Exception('No active tenant ID found for the current session.');
+  }
+  return ref.watch(firestoreProvider).collection('tenants').doc(tenantId);
+});
+
 /// Whether the user is authenticated
 final isAuthenticatedProvider = Provider<bool>((ref) {
   final isMocked = ref.watch(isMockLoggedInProvider);

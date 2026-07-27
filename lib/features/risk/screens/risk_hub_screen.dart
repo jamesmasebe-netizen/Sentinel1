@@ -12,7 +12,7 @@ import 'bowtie_screen.dart';
 import 'risk_command_center_screen.dart';
 import 'widgets/stream_metric_card.dart';
 import 'widgets/risk_module_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Risk Management Hub — Unified access to HIRAs, DRAs, Bowties, and command centers.
 class RiskHubScreen extends ConsumerWidget {

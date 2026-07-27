@@ -4,10 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/widgets/searchable_multi_select.dart';
+import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
 
 class DRAForm extends ConsumerStatefulWidget {
-  final String tenantId;
-  const DRAForm({super.key, required this.tenantId});
+  const DRAForm({super.key});
 
   @override
   ConsumerState<DRAForm> createState() => _DRAFormState();
@@ -19,6 +22,9 @@ class _DRAFormState extends ConsumerState<DRAForm> {
   final _hazardCtrl = TextEditingController();
   final _controlCtrl = TextEditingController();
   List<String> _hazards = [], _controls = [];
+  List<String> _teamMembers = [];
+  String? _approverId;
+  DateTime? _reviewDate;
   bool _isSafe = false;
   bool _isSubmitting = false;
 
@@ -47,18 +53,24 @@ class _DRAFormState extends ConsumerState<DRAForm> {
       await ref
           .read(firestoreServiceProvider)
           .createDocument(
-            tenantId: widget.tenantId,
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'dynamic_risk_assessments',
             data: {
-              'taskDescription': _taskCtrl.text.trim(),
-              'location': _locCtrl.text.trim(),
+              'type': 'dra',
+              'title': 'DRA: ${_taskCtrl.text.trim()}',
+              'description': _hazards.join(', '),
+              'activity': _taskCtrl.text.trim(),
+              'area': _locCtrl.text.trim(),
               'hazardsIdentified': _hazards,
               'controlsApplied': _controls,
+              'teamMembers': _teamMembers,
+              'approverId': _approverId,
+              'reviewDate': _reviewDate?.toIso8601String(),
               'isSafeToProceed': _isSafe,
-              'authorId': profile.uid,
+              'assessedBy': profile.uid,
               'authorName': profile.displayName,
               'siteId': profile.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
+              'createdAt': FieldValue.serverTimestamp(),
             },
           );
       if (formCtx.mounted) {
@@ -236,6 +248,55 @@ class _DRAFormState extends ConsumerState<DRAForm> {
                           ),
                         )
                         .toList(),
+              ),
+              GSpacing.vLg,
+              Text(
+                'Approval & Review',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              GSpacing.vMd,
+              EmployeeSelector(
+                label: 'Approver',
+                value: _approverId,
+                onChanged: (val) => setLocalState(() => _approverId = val),
+              ),
+              GSpacing.vMd,
+              ref.watch(employeesProvider).when(
+                data: (employees) {
+                  final options = employees.map((e) => e.id).toList();
+                  final labels = {for (var e in employees) e.id: e.fullName};
+                  return SearchableStringMultiSelect(
+                    label: 'Team Members',
+                    hintText: 'Search team members...',
+                    availableItems: options,
+                    itemLabels: labels,
+                    selectedItems: _teamMembers,
+                    onChanged: (vals) => setLocalState(() => _teamMembers = vals),
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => Text('Error loading employees: $e'),
+              ),
+              GSpacing.vMd,
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today_outlined),
+                title: const Text('Next Review Date'),
+                subtitle: Text(
+                  _reviewDate != null ? '${_reviewDate!.toLocal()}'.split(' ')[0] : 'Select Date',
+                ),
+                onTap: () async {
+                  final d = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 365)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                  );
+                  if (d != null) setLocalState(() => _reviewDate = d);
+                },
               ),
               GSpacing.vLg,
               Container(

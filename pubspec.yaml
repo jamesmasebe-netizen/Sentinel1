@@ -1,4 +1,4 @@
-name: xm_system
+name: sentinel1
 description: XM System — Enterprise SHEQ Management Platform
 publish_to: 'none'
 version: 1.0.0+1
@@ -13,10 +13,10 @@ dependencies:
   # Firebase
   firebase_core: any
   firebase_auth: any
-  cloud_firestore: any
+  cloud_firestore: ^6.6.0
   firebase_storage: any
   firebase_messaging: any
-  cloud_functions: any
+  cloud_functions: ^6.3.3
 
   # State Management
   flutter_riverpod: any
@@ -48,7 +48,7 @@ dependencies:
   qr_flutter: any
   path_provider: any
   share_plus: any
-  url_launcher: any
+  url_launcher: ^6.3.2
   pdf: any
   printing: any
   uuid: any

@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/job_application_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
-import 'package:xm_system/core/providers/app_providers.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/providers/app_providers.dart';
 
 class PublicCareersScreen extends ConsumerStatefulWidget {
   const PublicCareersScreen({super.key});

@@ -10,7 +10,7 @@ import '../widgets/action_tracker_stats_row.dart';
 import '../widgets/action_tracker_list_item.dart';
 import '../widgets/action_tracker_search_bar.dart';
 import '../widgets/action_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Unified Action Item Tracker — aggregates items from incidents, CAPA, permits, DRA, observations.
 class ActionTrackerScreen extends ConsumerStatefulWidget {

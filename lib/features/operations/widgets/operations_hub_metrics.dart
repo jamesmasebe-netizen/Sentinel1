@@ -4,8 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'hub_cards.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
-import 'package:xm_system/core/providers/app_providers.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/providers/app_providers.dart';
 
 class OperationsHubMetrics extends ConsumerWidget {
   final String? siteId;

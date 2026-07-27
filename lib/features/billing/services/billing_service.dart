@@ -1,56 +1,53 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/app_providers.dart';
-import '../models/subscription_models.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../models/subscription_model.dart';
 
 class BillingService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  BillingService(this._firestore);
+  Future<void> createStripeCheckoutSession(String tenantId) async {
+    try {
+      final callable = _functions.httpsCallable('createStripeCheckoutSession');
+      final result = await callable.call({'tenantId': tenantId});
+      final String? url = result.data['url'] as String?;
+      if (url != null) {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          throw Exception('Could not launch $url');
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to create checkout session: $e');
+    }
+  }
 
-  Stream<TenantSubscription?> streamSubscription(String tenantId) {
-    if (tenantId.isEmpty) return Stream.value(null);
-
+  Stream<TenantSubscription?> getSubscriptionStream(String tenantId) {
     return _firestore
         .collection('tenants')
         .doc(tenantId)
-        .collection('billing')
-        .doc('subscription')
+        .collection('subscription')
+        .doc('status')
         .snapshots()
-        .map(
-          (doc) => doc.exists ? TenantSubscription.fromFirestore(doc) : null,
-        );
-  }
-
-  Future<TenantSubscription?> getSubscription(String tenantId) async {
-    if (tenantId.isEmpty) return null;
-
-    final doc =
-        await _firestore
-            .collection('tenants')
-            .doc(tenantId)
-            .collection('billing')
-            .doc('subscription')
-            .get();
-
-    if (!doc.exists) return null;
-    return TenantSubscription.fromFirestore(doc);
+        .map((snapshot) {
+          if (snapshot.exists && snapshot.data() != null) {
+            return TenantSubscription.fromJson(snapshot.data()!);
+          }
+          return null;
+        });
   }
 }
 
 final billingServiceProvider = Provider<BillingService>((ref) {
-  final firestore = ref.watch(firestoreProvider);
-  return BillingService(firestore);
+  return BillingService();
 });
 
-final currentTenantSubscriptionProvider = StreamProvider<TenantSubscription?>((
-  ref,
-) {
-  final tenantId = ref.watch(currentTenantIdProvider);
-  if (tenantId == null || tenantId.isEmpty) {
-    return Stream.value(null);
-  }
-
-  final billingService = ref.watch(billingServiceProvider);
-  return billingService.streamSubscription(tenantId);
-});
+final subscriptionStreamProvider =
+    StreamProvider.family<TenantSubscription?, String>((ref, tenantId) {
+      final billingService = ref.read(billingServiceProvider);
+      return billingService.getSubscriptionStream(tenantId);
+    });

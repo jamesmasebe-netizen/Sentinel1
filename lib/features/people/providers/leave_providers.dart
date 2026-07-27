@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/leave_request.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 final leaveRequestsCollectionProvider =
     Provider<CollectionReference<LeaveRequest>>((ref) {

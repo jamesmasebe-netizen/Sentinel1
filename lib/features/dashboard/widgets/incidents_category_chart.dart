@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math' as math;
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class IncidentsCategoryChart extends ConsumerWidget {
   const IncidentsCategoryChart({super.key});

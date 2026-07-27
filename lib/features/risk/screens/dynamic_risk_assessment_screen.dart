@@ -6,7 +6,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/dra_card.dart';
 import '../widgets/dra_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Dynamic Risk Assessment — on-the-spot task risk evaluation with hazard/control chip lists.
 class DynamicRiskAssessmentScreen extends ConsumerStatefulWidget {
@@ -44,9 +44,7 @@ class _DRAState extends ConsumerState<DynamicRiskAssessmentScreen> {
                       context: context,
                       title: 'New Dynamic Assessment',
                       builder:
-                          (ctx) => DRAForm(
-                            tenantId: ref.read(currentTenantIdProvider) ?? '',
-                          ),
+                          (ctx) => const DRAForm(),
                     ),
                 icon: const Icon(Icons.bolt_rounded, size: 18),
                 label: const Text('New Assessment'),

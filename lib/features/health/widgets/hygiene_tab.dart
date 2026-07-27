@@ -5,7 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import 'hygiene_form.dart';
 import 'hygiene_list_item.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class HygieneTab extends ConsumerStatefulWidget {
   const HygieneTab({super.key});

@@ -7,7 +7,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/competency_passport/competency_form_card.dart';
 import '../widgets/competency_passport/competency_employee_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Competency Passport — per-employee competency tracking with certifications and expiry.
 class CompetencyPassportScreen extends ConsumerStatefulWidget {

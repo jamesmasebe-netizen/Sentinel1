@@ -7,7 +7,9 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import 'detail_row.dart';
 import 'incident_status_colors.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../../core/bpf/bpf_ribbon_widget.dart';
+import '../../../core/bpf/issue_to_resolution_bpf.dart';
 
 void showIncidentDetail(
   BuildContext context,
@@ -47,6 +49,13 @@ void showIncidentDetail(
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                const SizedBox(height: 12),
+                BpfRibbonWidget(
+                  bpfTypeId: 'issue_to_resolution',
+                  recordType: 'incident',
+                  recordId: docId,
+                  definition: issueToResolutionDefinition,
                 ),
                 const SizedBox(height: 12),
                 if (!isEditable) ...[

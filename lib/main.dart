@@ -14,7 +14,6 @@ import 'config/theme.dart';
 import 'config/router.dart';
 import 'core/providers/app_providers.dart';
 import 'core/services/session_manager.dart';
-import 'scripts/seed_dummy_data.dart';
 
 /// Top-level background message handler — must be a top-level function.
 @pragma('vm:entry-point')
@@ -68,18 +67,19 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  // --- DEV ONLY: SEED DUMMY DATA ON STARTUP ---
+  // --- PRODUCTION DATA SEEDING (Run Once) ---
+  // Seeding complete. Commented out to prevent accidental runs.
+  /*
   if (kDebugMode) {
     try {
-      debugPrint('Seeding dummy data...');
-      await seedAllDummyData(firestore);
-      debugPrint('Successfully seeded dummy data.');
+      debugPrint('Seeding production data...');
+      await seedProductionData(firestore);
+      debugPrint('Successfully seeded production data.');
     } catch (e) {
-      debugPrint('Error seeding dummy data: $e');
+      debugPrint('Error seeding production data: $e');
     }
   }
-
-  // ─── Initialize Hive for offline queue ───
+  */
   await Hive.initFlutter();
 
   // ─── Lock orientation ───

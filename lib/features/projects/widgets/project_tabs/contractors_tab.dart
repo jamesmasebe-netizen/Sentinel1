@@ -8,7 +8,7 @@ import '../../providers/project_providers.dart';
 import 'assign_contractor_dialog.dart';
 import 'ohs_file_content.dart';
 import 'contractor_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ContractorsTab extends ConsumerWidget {
   final Project project;
@@ -110,7 +110,7 @@ class ContractorsTab extends ConsumerWidget {
                                         try {
                                           await fs
                                               .tenantCollection(
-                                                ref.watch(
+                                                ref.read(
                                                       currentTenantIdProvider,
                                                     ) ??
                                                     "",

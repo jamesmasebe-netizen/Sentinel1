@@ -14,7 +14,7 @@ import '../widgets/project_tabs/overview_tab.dart';
 import '../widgets/project_tabs/workflow_tab.dart';
 import '../widgets/project_tabs/timeline_tab.dart';
 import '../widgets/project_tabs/safety_tab.dart';
-import '../widgets/project_tabs/contractors_tab.dart';
+import '../widgets/project_tabs/resources_tab.dart';
 import '../widgets/project_tabs/financials_tab.dart';
 import '../widgets/project_tabs/expense_form_dialog.dart';
 
@@ -55,7 +55,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
           const Tab(text: 'Project Workflow'),
           const Tab(text: 'Timeline & Tasks'),
           const Tab(text: 'Safety & Compliance'),
-          const Tab(text: 'Contractors'),
+          const Tab(text: 'Resources'),
           if (isLeadOrAdmin) const Tab(text: 'Cost & Budget'),
         ];
 
@@ -79,7 +79,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                 WorkflowTab(project: project),
                 TimelineTab(project: project),
                 SafetyTab(project: project),
-                ContractorsTab(project: project),
+                ResourcesTab(project: project),
                 if (isLeadOrAdmin) FinancialsTab(project: project),
               ],
             ),
@@ -176,10 +176,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                           context: context,
                           title: 'Report Incident',
                           builder:
-                              (ctx) => IncidentReportForm(
-                                tenantId:
-                                    ref.read(currentTenantIdProvider) ?? '',
-                              ),
+                              (ctx) => const IncidentReportForm(),
                         );
                       },
                     ),

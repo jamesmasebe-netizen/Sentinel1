@@ -5,8 +5,9 @@ import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../screens/asset_detail_screen.dart';
 import 'equipment_list_item.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EquipmentAssetTab extends ConsumerStatefulWidget {
   final String? initialSearch;
@@ -57,6 +58,7 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'equipment',
             data: {
+              'tenantId': ref.read(currentTenantIdProvider) ?? '',
               'equipmentName': _nameCtrl.text.trim(),
               'assetTag': _tagCtrl.text.trim(),
               'location': _locCtrl.text.trim(),
@@ -68,7 +70,6 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
               'daysUntilInspection':
                   _nextInsp.difference(DateTime.now()).inDays,
               'authorId': p.uid,
-              'siteId': p.tenantId,
               'createdAt': DateTime.now().toIso8601String(),
             },
           );
@@ -117,7 +118,7 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
 
   @override
   Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
+    final currentTenantId = ref.watch(currentTenantIdProvider);
     final fs = ref.watch(firestoreProvider);
     return Column(
       children: [
@@ -301,14 +302,13 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream:
-                siteId == null
+                currentTenantId == null
                     ? null
                     : fs
                         .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
+                          currentTenantId,
                           'equipment',
                         )
-                        .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)
                         .limit(100)
                         .snapshots(),
@@ -352,9 +352,19 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
                 itemCount: docs.length,
                 itemBuilder: (ctx, i) {
                   final d = docs[i].data() as Map<String, dynamic>;
-                  return EquipmentListItem(
-                    data: d,
-                    categoryIcon: _categoryIcon(d['category']),
+                  final docId = docs[i].id;
+                  return InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => AssetDetailScreen(assetId: docId),
+                        ),
+                      );
+                    },
+                    child: EquipmentListItem(
+                      data: d,
+                      categoryIcon: _categoryIcon(d['category']),
+                    ),
                   );
                 },
               );

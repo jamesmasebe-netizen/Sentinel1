@@ -5,21 +5,23 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../people/widgets/employee_selector.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class CAPAForm extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
 
-  final String tenantId;
-  const CAPAForm({super.key, required this.tenantId, required this.onCancel});
+  const CAPAForm({super.key, required this.onCancel});
 
   @override
   ConsumerState<CAPAForm> createState() => _CAPAFormState();
 }
 
 class _CAPAFormState extends ConsumerState<CAPAForm> {
+  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _rcaController = TextEditingController();
+  String _type = 'corrective';
+  String _priority = 'medium';
   String? _assignedToId;
   DateTime? _dueDate;
   String? _linkedIncidentId;
@@ -27,13 +29,15 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
 
   @override
   void dispose() {
+    _titleController.dispose();
     _descriptionController.dispose();
     _rcaController.dispose();
     super.dispose();
   }
 
   Future<void> _submitCAPA() async {
-    if (_descriptionController.text.isEmpty ||
+    if (_titleController.text.isEmpty ||
+        _descriptionController.text.isEmpty ||
         _assignedToId == null ||
         _dueDate == null) {
       UIUtils.showToast(
@@ -50,20 +54,23 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
       if (profile == null) throw Exception('Not logged in');
 
       final data = {
+        'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
+        'type': _type,
+        'priority': _priority,
         'rca': _rcaController.text.trim(),
-        'assignedToId': _assignedToId,
+        'assignedTo': _assignedToId,
         'dueDate': _dueDate!.toIso8601String(),
         'status': 'Open',
-        'createdById': profile.uid,
-        'siteId': profile.tenantId,
+        'createdBy': profile.uid,
+        'tenantId': profile.tenantId,
         'createdAt': DateTime.now().toIso8601String(),
         if (_linkedIncidentId != null) 'incidentId': _linkedIncidentId,
       };
 
       final firestoreService = ref.read(firestoreServiceProvider);
       await firestoreService.createDocument(
-        tenantId: widget.tenantId,
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
         collection: 'capas',
         data: data,
       );
@@ -140,6 +147,46 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
                         : (v) => setState(() => _linkedIncidentId = v),
               );
             },
+          ),
+          GSpacing.vMd,
+
+          TextFormField(
+            controller: _titleController,
+            enabled: !_isSubmitting,
+            decoration: const InputDecoration(
+              labelText: 'Title *',
+              prefixIcon: Icon(Icons.title),
+            ),
+          ),
+          GSpacing.vMd,
+
+          DropdownButtonFormField<String>(
+            value: _type,
+            decoration: const InputDecoration(
+              labelText: 'CAPA Type *',
+              prefixIcon: Icon(Icons.category),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'corrective', child: Text('Corrective')),
+              DropdownMenuItem(value: 'preventive', child: Text('Preventive')),
+            ],
+            onChanged: _isSubmitting ? null : (v) => setState(() => _type = v!),
+          ),
+          GSpacing.vMd,
+
+          DropdownButtonFormField<String>(
+            value: _priority,
+            decoration: const InputDecoration(
+              labelText: 'Priority *',
+              prefixIcon: Icon(Icons.flag),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'low', child: Text('Low')),
+              DropdownMenuItem(value: 'medium', child: Text('Medium')),
+              DropdownMenuItem(value: 'high', child: Text('High')),
+            ],
+            onChanged:
+                _isSubmitting ? null : (v) => setState(() => _priority = v!),
           ),
           GSpacing.vMd,
 

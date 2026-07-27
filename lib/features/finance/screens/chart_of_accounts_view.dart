@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/chart_of_accounts.dart';
+import '../../../core/widgets/ds_widgets.dart';
+import '../models/finance_models.dart';
 import '../providers/finance_providers.dart';
+import '../services/finance_service.dart';
 
 class ChartOfAccountsView extends ConsumerStatefulWidget {
   const ChartOfAccountsView({super.key});
@@ -12,6 +14,8 @@ class ChartOfAccountsView extends ConsumerStatefulWidget {
 }
 
 class _ChartOfAccountsViewState extends ConsumerState<ChartOfAccountsView> {
+  bool _isConsolidated = false;
+
   void _addAccount() {
     showDialog(
       context: context,
@@ -20,22 +24,22 @@ class _ChartOfAccountsViewState extends ConsumerState<ChartOfAccountsView> {
         final codeCtrl = TextEditingController();
         final typeCtrl = TextEditingController();
         return AlertDialog(
-          title: const Text('Add Account'),
+          title: const Text('New GL Account'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(labelText: 'Account Name'),
               ),
               TextField(
                 controller: codeCtrl,
-                decoration: const InputDecoration(labelText: 'Code'),
+                decoration: const InputDecoration(labelText: 'Account Code (e.g. 1000)'),
               ),
               TextField(
                 controller: typeCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Type (e.g. Asset, Liability)',
+                  labelText: 'Type (asset, liability, equity, revenue, expense)',
                 ),
               ),
             ],
@@ -47,18 +51,19 @@ class _ChartOfAccountsViewState extends ConsumerState<ChartOfAccountsView> {
             ),
             ElevatedButton(
               onPressed: () {
-                final newAccount = ChartOfAccounts(
+                final newAccount = GeneralLedgerAccount(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  accountCode: codeCtrl.text,
                   name: nameCtrl.text,
-                  code: codeCtrl.text,
                   type: typeCtrl.text,
+                  currentBalance: 0.0,
+                  currency: 'USD',
+                  isActive: true,
                 );
-                ref
-                    .read(chartOfAccountsProvider.notifier)
-                    .update((state) => [...state, newAccount]);
+                ref.read(financeServiceProvider).createGeneralLedgerAccount(newAccount);
                 Navigator.pop(context);
               },
-              child: const Text('Add'),
+              child: const Text('Create'),
             ),
           ],
         );
@@ -68,26 +73,76 @@ class _ChartOfAccountsViewState extends ConsumerState<ChartOfAccountsView> {
 
   @override
   Widget build(BuildContext context) {
-    final accounts = ref.watch(chartOfAccountsProvider);
+    final accountsAsync = ref.watch(glAccountsStreamProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chart of Accounts')),
-      body:
-          accounts.isEmpty
-              ? const Center(child: Text('No accounts yet.'))
-              : ListView.builder(
-                itemCount: accounts.length,
-                itemBuilder: (context, index) {
-                  final account = accounts[index];
-                  return ListTile(
-                    title: Text(account.name),
-                    subtitle: Text('${account.code} - ${account.type}'),
-                  );
-                },
-              ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addAccount,
-        child: const Icon(Icons.add),
+      body: Column(
+        children: [
+          GHeader(
+            title: 'Omni-Graph: Chart of Accounts',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Multi-Entity Consolidation'),
+                Switch(
+                  value: _isConsolidated,
+                  onChanged: (val) {
+                    setState(() {
+                      _isConsolidated = val;
+                    });
+                  },
+                ),
+                const SizedBox(width: 16),
+                ElevatedButton.icon(
+                  onPressed: _addAccount,
+                  icon: const Icon(Icons.add),
+                  label: const Text('New GL Account'),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: accountsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => Center(child: Text('Error: $e')),
+              data: (accounts) {
+                if (accounts.isEmpty) {
+                  return const Center(child: Text('No GL accounts found.'));
+                }
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    child: DataTable(
+                      headingRowColor: MaterialStateProperty.all(Colors.grey[100]),
+                      columns: const [
+                        DataColumn(label: Text('Code')),
+                        DataColumn(label: Text('Name')),
+                        DataColumn(label: Text('Type')),
+                        DataColumn(label: Text('Balance')),
+                        DataColumn(label: Text('Status')),
+                      ],
+                      rows: accounts.map((acc) {
+                        return DataRow(cells: [
+                          DataCell(Text(acc.accountCode, style: const TextStyle(fontWeight: FontWeight.bold))),
+                          DataCell(Text(acc.name)),
+                          DataCell(Chip(label: Text(acc.type.toUpperCase(), style: const TextStyle(fontSize: 10)))),
+                          DataCell(Text('\$${acc.currentBalance.toStringAsFixed(2)}')),
+                          DataCell(
+                            Icon(
+                              acc.isActive ? Icons.check_circle : Icons.cancel,
+                              color: acc.isActive ? Colors.green : Colors.red,
+                              size: 16,
+                            ),
+                          ),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

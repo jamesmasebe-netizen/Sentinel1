@@ -7,7 +7,7 @@ import '../../../safety/screens/incidents_register_screen.dart';
 import '../../../safety/screens/capa_screen.dart';
 import '../../models/project_models.dart';
 import '../../providers/project_providers.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 Future<List<Map<String, dynamic>>> fetchLinkedRisks(
   dynamic fs,
@@ -309,10 +309,7 @@ void showRiskPickerSheet(
                                         if (val == true) {
                                           await fs
                                               .tenantCollection(
-                                                ref.watch(
-                                                      currentTenantIdProvider,
-                                                    ) ??
-                                                    "",
+                                                siteId,
                                                 'projects',
                                               )
                                               .doc(projectId)
@@ -325,10 +322,7 @@ void showRiskPickerSheet(
                                         } else {
                                           await fs
                                               .tenantCollection(
-                                                ref.watch(
-                                                      currentTenantIdProvider,
-                                                    ) ??
-                                                    "",
+                                                siteId,
                                                 'projects',
                                               )
                                               .doc(projectId)
@@ -786,10 +780,7 @@ void showTaskEditor(
                                                     '${task.id}_${risk['id']}';
                                                 await fs
                                                     .tenantCollection(
-                                                      ref.watch(
-                                                            currentTenantIdProvider,
-                                                          ) ??
-                                                          "",
+                                                      siteId,
                                                       'projects',
                                                     )
                                                     .doc(projectId)

@@ -4,6 +4,7 @@ import '../providers/project_providers.dart';
 import '../widgets/custom_gantt_chart.dart';
 import 'timesheet_entry_screen.dart';
 import 'expense_entry_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class ProjectOperationsHubScreen extends ConsumerStatefulWidget {
   const ProjectOperationsHubScreen({super.key});
@@ -169,6 +170,15 @@ class _ProjectOperationsHubScreenState
                           );
                         },
                       ),
+                      _buildActionCard(
+                        context: context,
+                        title: 'Revenue Recognition',
+                        icon: Icons.account_balance,
+                        color: Colors.purple,
+                        onTap: () {
+                          context.push('/revenue-recognition');
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -191,7 +201,7 @@ class _ProjectOperationsHubScreenState
   }) {
     return Card(
       elevation: 4,
-      shadowColor: color.withOpacity(0.4),
+      shadowColor: color.withValues(alpha: 0.4),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -199,7 +209,10 @@ class _ProjectOperationsHubScreenState
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+              colors: [
+                color.withValues(alpha: 0.1),
+                color.withValues(alpha: 0.05),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -212,7 +225,7 @@ class _ProjectOperationsHubScreenState
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, size: 48, color: color),

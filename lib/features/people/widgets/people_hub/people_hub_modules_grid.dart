@@ -11,7 +11,7 @@ import '../../screens/ohs_appointments_screen.dart';
 import '../../screens/leave_management_screen.dart';
 import '../../screens/recruitment_dashboard_screen.dart';
 import '../../screens/payroll_dashboard_screen.dart';
-import '../../screens/performance_review_screen.dart';
+import '../../screens/okr_dashboard_screen.dart';
 import 'people_hub_module_card.dart';
 
 class PeopleHubModulesGrid extends StatelessWidget {
@@ -155,8 +155,8 @@ class PeopleHubModulesGrid extends StatelessWidget {
             onTap:
                 () => _openModule(
                   context,
-                  'Performance Reviews',
-                  const PerformanceReviewScreen(),
+                  'Performance Reviews (OKRs)',
+                  const OkrDashboardScreen(),
                 ),
           ),
           PeopleHubModuleCard(

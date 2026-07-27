@@ -61,18 +61,36 @@ void _showCreateForm(BuildContext context) {
 }
 ```
 
-## 2. ID Generation
-Do not use `add()` which returns a long alphanumeric ID.
-Instead, manually generate a human-readable ID and use `set()`.
+## 2. ID Generation (Race-Condition Free)
+Do not use `.add()` which returns a long alphanumeric ID.
+Instead, use a Firestore Transaction with a dedicated `counters` collection to ensure atomic, human-readable IDs (e.g., `ENT-042`) without race conditions.
+
+> **Note on `counters` Collection:** The `counters` collection must exist at the root of Firestore. Each document inside it should correspond to a module (e.g., `entities`, `projects`) and contain an integer field `count`. The transaction will automatically create the document if it doesn't exist.
 
 ```dart
-// Example Repository Method
+// Example Repository Method using Transactions for safe ID generation
 Future<void> createEntity(MyEntity entity) async {
-  // Generate e.g. ENT-042
-  final countSnapshot = await _firestore.collection('entities').count().get();
-  final newId = 'ENT-${(countSnapshot.count ?? 0 + 1).toString().padLeft(3, '0')}';
-  
-  final entityWithId = entity.copyWith(id: newId);
-  await _firestore.collection('entities').doc(newId).set(entityWithId.toFirestore());
+  await _firestore.runTransaction((transaction) async {
+    // 1. Reference the counter document
+    final counterRef = _firestore.collection('counters').doc('entities');
+    final counterSnapshot = await transaction.get(counterRef);
+    
+    int currentCount = 0;
+    if (counterSnapshot.exists) {
+      currentCount = counterSnapshot.data()?['count'] ?? 0;
+    }
+    
+    // 2. Increment the counter
+    final newCount = currentCount + 1;
+    transaction.set(counterRef, {'count': newCount}, SetOptions(merge: true));
+    
+    // 3. Format the new ID
+    final generatedId = 'ENT-${newCount.toString().padLeft(3, '0')}';
+    
+    // 4. Create the new entity document
+    final entityRef = _firestore.collection('entities').doc(generatedId);
+    final entityWithId = entity.copyWith(id: generatedId);
+    transaction.set(entityRef, entityWithId.toFirestore());
+  });
 }
 ```

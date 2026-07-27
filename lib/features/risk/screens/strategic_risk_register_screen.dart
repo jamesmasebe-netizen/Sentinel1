@@ -6,7 +6,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/strategic_risk_card.dart';
 import '../widgets/strategic_risk_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Strategic Risk Register — corporate-level risks with likelihood × impact scoring.
 class StrategicRiskRegisterScreen extends ConsumerStatefulWidget {
@@ -77,9 +77,7 @@ class _StrategicRiskRegisterScreenState
                       context: context,
                       title: 'New Strategic Risk',
                       builder:
-                          (ctx) => StrategicRiskForm(
-                            tenantId: ref.read(currentTenantIdProvider) ?? '',
-                          ),
+                          (ctx) => const StrategicRiskForm(),
                     ),
                 icon: const Icon(Icons.shield_rounded, size: 18),
                 label: const Text('Add Risk'),

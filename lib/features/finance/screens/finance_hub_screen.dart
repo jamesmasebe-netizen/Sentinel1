@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../providers/finance_providers.dart';
 import 'chart_of_accounts_view.dart';
 import 'journal_entry_form.dart';
@@ -11,6 +12,7 @@ class FinanceHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final journalEntries = ref.watch(journalEntriesProvider);
     final accounts = ref.watch(chartOfAccountsProvider);
+    final currencyFormatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Finance Hub (General Ledger)')),
@@ -83,14 +85,14 @@ class FinanceHubScreen extends ConsumerWidget {
                           return ListTile(
                             title: Text(entry.description),
                             subtitle: Text(
-                              'Account: ${entry.accountId} • Date: ${entry.date.toLocal().toString().split(' ')[0]}',
+                              'Account: ${entry.id} • Date: ${entry.transactionDate.toLocal().toString().split(' ')[0]}',
                             ),
                             trailing: Text(
-                              '\$${entry.amount.toStringAsFixed(2)}',
+                              currencyFormatter.format(entry.totalDebit),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color:
-                                    entry.amount < 0
+                                    entry.totalDebit < 0
                                         ? Colors.red
                                         : Colors.green,
                               ),

@@ -15,16 +15,20 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
   bool _isSub = false;
 
   final _zoneCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   final _readingCtrl = TextEditingController();
   final _limitCtrl = TextEditingController();
+  final _samplesTakenCtrl = TextEditingController();
   String _hazardType = 'Noise';
   bool _requiresSurveillance = false;
 
   @override
   void dispose() {
     _zoneCtrl.dispose();
+    _locationCtrl.dispose();
     _readingCtrl.dispose();
     _limitCtrl.dispose();
+    _samplesTakenCtrl.dispose();
     super.dispose();
   }
 
@@ -48,9 +52,11 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
             collection: 'hygiene_surveys',
             data: {
               'zoneName': _zoneCtrl.text.trim(),
+              'location': _locationCtrl.text.trim(),
               'hazardType': _hazardType,
               'readingValue': _readingCtrl.text.trim(),
               'legalLimit': _limitCtrl.text.trim(),
+              'samplesTaken': int.tryParse(_samplesTakenCtrl.text.trim()) ?? 0,
               'requiresMedicalSurveillance': _requiresSurveillance,
               'dateConducted': DateTime.now().toIso8601String(),
               'authorId': p.uid,
@@ -81,6 +87,14 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
             decoration: const InputDecoration(
               labelText: 'Zone / Area *',
               prefixIcon: Icon(Icons.place_outlined),
+            ),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _locationCtrl,
+            decoration: const InputDecoration(
+              labelText: 'Location / Equipment',
+              prefixIcon: Icon(Icons.location_on_outlined),
             ),
           ),
           GSpacing.vMd,
@@ -118,6 +132,15 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
                 ),
               ),
             ],
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _samplesTakenCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Samples Taken',
+              prefixIcon: Icon(Icons.science_outlined),
+            ),
           ),
           GSpacing.vMd,
           SwitchListTile(

@@ -11,7 +11,9 @@ import 'training_lms_tab.dart';
 import 'employee_hr_tab.dart';
 import 'employee_activity_tab.dart';
 import '../widgets/detail_row.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../../core/bpf/bpf_ribbon_widget.dart';
+import '../../../core/bpf/hire_to_retire_bpf.dart';
 
 class Employee360ProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -226,6 +228,13 @@ class _Employee360ProfileScreenState
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 32),
+          BpfRibbonWidget(
+            bpfTypeId: 'hire_to_retire',
+            recordType: 'employee',
+            recordId: widget.employeeId,
+            definition: hireToRetireDefinition,
           ),
           const SizedBox(height: 32),
           Text(

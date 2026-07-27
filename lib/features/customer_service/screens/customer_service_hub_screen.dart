@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'omnichannel_ticket_screen.dart';
+import 'omnichannel_ticket_screen.dart';
 import 'knowledge_base_screen.dart';
-
+import 'package:go_router/go_router.dart';
 class CustomerServiceHubScreen extends StatelessWidget {
   const CustomerServiceHubScreen({super.key});
 
@@ -13,14 +14,8 @@ class CustomerServiceHubScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.forum),
-            tooltip: 'Omnichannel Ticketing',
-            onPressed:
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const OmnichannelTicketScreen(),
-                  ),
-                ),
+            tooltip: 'Omnichannel Chat',
+            onPressed: () => context.push('/omnichannel-chat'),
           ),
           IconButton(
             icon: const Icon(Icons.library_books),
@@ -111,15 +106,8 @@ class CustomerServiceHubScreen extends StatelessWidget {
                         'Opened ${index + 1} hours ago • Assigned to Tier ${index % 2 + 1}',
                       ),
                       trailing: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const OmnichannelTicketScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text('View Ticket'),
+                        onPressed: () => context.push('/omnichannel-chat'),
+                        child: const Text('View Chat'),
                       ),
                     );
                   },

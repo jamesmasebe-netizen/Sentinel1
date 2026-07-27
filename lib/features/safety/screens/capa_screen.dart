@@ -8,7 +8,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/capa_form.dart';
 import '../widgets/capa_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// CAPA Management Screen — Create, track, and update corrective/preventive actions.
 /// Mirrors React CAPA tab: linked incidents, RCA, assignment, due dates, status workflow.
@@ -50,9 +50,7 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
     UIUtils.showSideSheet(
       context: context,
       title: 'New Corrective Action',
-      builder:
-          (ctx) =>
-              CAPAForm(tenantId: siteId, onCancel: () => Navigator.pop(ctx)),
+      builder: (ctx) => CAPAForm(onCancel: () => Navigator.pop(ctx)),
     );
   }
 
@@ -106,8 +104,8 @@ class _CAPAScreenState extends ConsumerState<CAPAScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final capas = snapshot.data?.docs ?? [];
-              if (capas.isEmpty) {
+              final capas = snapshot.data?.docs;
+              if (capas == null || capas.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

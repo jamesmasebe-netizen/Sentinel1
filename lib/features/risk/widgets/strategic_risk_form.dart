@@ -5,10 +5,10 @@ import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../../people/widgets/employee_selector.dart';
 
 class StrategicRiskForm extends ConsumerStatefulWidget {
-  final String tenantId;
-  const StrategicRiskForm({super.key, required this.tenantId});
+  const StrategicRiskForm({super.key});
 
   @override
   ConsumerState<StrategicRiskForm> createState() => _StrategicRiskFormState();
@@ -17,8 +17,8 @@ class StrategicRiskForm extends ConsumerStatefulWidget {
 class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
   final _titleCtrl = TextEditingController();
   final _descriptionCtrl = TextEditingController();
-  final _ownerCtrl = TextEditingController();
   final _mitigationCtrl = TextEditingController();
+  String? _ownerId;
   String _category = 'Operational';
   String _likelihood = 'Possible';
   String _impact = 'Significant';
@@ -53,7 +53,6 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
   void dispose() {
     _titleCtrl.dispose();
     _descriptionCtrl.dispose();
-    _ownerCtrl.dispose();
     _mitigationCtrl.dispose();
     super.dispose();
   }
@@ -85,13 +84,13 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
       await ref
           .read(firestoreServiceProvider)
           .createDocument(
-            tenantId: widget.tenantId,
+            tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'strategic_risks',
             data: {
               'title': _titleCtrl.text.trim(),
               'description': _descriptionCtrl.text.trim(),
               'category': _category,
-              'owner': _ownerCtrl.text.trim(),
+              'owner': _ownerId ?? '',
               'likelihood': _likelihood,
               'impact': _impact,
               'riskScore': score,
@@ -108,7 +107,6 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
         UIUtils.showToast(context, 'Strategic risk successfully registered');
         _titleCtrl.clear();
         _descriptionCtrl.clear();
-        _ownerCtrl.clear();
         _mitigationCtrl.clear();
       }
     } catch (e) {
@@ -194,12 +192,10 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
                 ],
               ),
               GSpacing.vMd,
-              TextFormField(
-                controller: _ownerCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Risk Owner',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                ),
+              EmployeeSelector(
+                label: 'Risk Owner',
+                value: _ownerId,
+                onChanged: (val) => setLocalState(() => _ownerId = val),
               ),
               GSpacing.vLg,
               Text(

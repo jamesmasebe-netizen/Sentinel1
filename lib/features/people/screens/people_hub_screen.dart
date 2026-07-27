@@ -7,7 +7,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import 'employee_profiles_screen.dart';
 import '../widgets/people_hub/stream_metric_card.dart';
 import '../widgets/people_hub/people_hub_modules_grid.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// People & Health Hub Dashboard — Material 3 Expressive
 class PeopleHubScreen extends ConsumerWidget {

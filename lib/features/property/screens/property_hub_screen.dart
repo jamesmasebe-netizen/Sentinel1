@@ -7,6 +7,7 @@ import '../providers/property_providers.dart';
 import '../models/property_models.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../widgets/property_form_sheet.dart';
 
 class PropertyHubScreen extends ConsumerStatefulWidget {
   const PropertyHubScreen({super.key});
@@ -33,7 +34,11 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                   'Manage and track real-estate assets across the enterprise',
               trailing: ElevatedButton.icon(
                 onPressed: () {
-                  UIUtils.showToast(context, 'Add Property form opened');
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (context) => const PropertyFormSheet(),
+                  );
                 },
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Add Property'),

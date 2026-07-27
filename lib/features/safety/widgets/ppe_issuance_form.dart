@@ -7,12 +7,7 @@ import '../../people/widgets/employee_selector.dart';
 
 class PPEIssuanceForm extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
-  final String tenantId;
-  const PPEIssuanceForm({
-    super.key,
-    required this.tenantId,
-    required this.onCancel,
-  });
+  const PPEIssuanceForm({super.key, required this.onCancel});
 
   @override
   ConsumerState<PPEIssuanceForm> createState() => _PPEIssuanceFormState();
@@ -89,7 +84,7 @@ class _PPEIssuanceFormState extends ConsumerState<PPEIssuanceForm> {
 
       final firestoreService = ref.read(firestoreServiceProvider);
       await firestoreService.createDocument(
-        tenantId: widget.tenantId,
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
         collection: 'ppe_compliance',
         data: data,
       );

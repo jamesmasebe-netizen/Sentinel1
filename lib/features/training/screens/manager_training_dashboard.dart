@@ -7,7 +7,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/allocate_course_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ManagerTrainingDashboard extends ConsumerStatefulWidget {
   const ManagerTrainingDashboard({super.key});
@@ -24,9 +24,7 @@ class _ManagerTrainingDashboardState
       context: context,
       title: 'Allocate Mandatory Course',
       builder:
-          (ctx) => AllocateCourseForm(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-          ),
+          (ctx) => const AllocateCourseForm(),
     );
   }
 

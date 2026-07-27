@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/hr_models.dart';
 import '../providers/hr_providers.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class RecruitmentDashboardScreen extends ConsumerStatefulWidget {
   const RecruitmentDashboardScreen({super.key});

@@ -6,7 +6,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/ppe_dashboard.dart';
 import '../widgets/ppe_issuance_form.dart';
 import '../widgets/ppe_inspections_list.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class PPEComplianceScreen extends ConsumerStatefulWidget {
   const PPEComplianceScreen({super.key});
@@ -81,7 +81,6 @@ class _PPEComplianceScreenState extends ConsumerState<PPEComplianceScreen> {
 
               if (_showForm)
                 PPEIssuanceForm(
-                  tenantId: ref.read(currentTenantIdProvider)!,
                   onCancel: () => setState(() => _showForm = false),
                 ),
 

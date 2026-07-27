@@ -34,6 +34,22 @@ class SupplyChainHubScreen extends StatelessWidget {
             Icons.precision_manufacturing_outlined,
             const AssetManagementScreen(),
           ),
+          _buildCard(
+            context,
+            'Vendor Performance',
+            Icons.assessment_outlined,
+            const Scaffold(
+              body: Center(child: Text('Vendor Performance — Coming Soon')),
+            ),
+          ),
+          _buildCard(
+            context,
+            'Bin Locations',
+            Icons.grid_view_outlined,
+            const Scaffold(
+              body: Center(child: Text('Bin Locations — Coming Soon')),
+            ),
+          ),
         ],
       ),
     );

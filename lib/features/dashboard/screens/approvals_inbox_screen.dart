@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/providers/app_providers.dart';
 import '../providers/approvals_provider.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ApprovalsInboxScreen extends ConsumerWidget {
   const ApprovalsInboxScreen({super.key});

@@ -7,7 +7,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/hazard_card.dart';
 import '../widgets/hazard_form_sheet.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Hazard Register — CRUD for site hazards with severity, location, and description.
 /// Mirrors React HazardRegister: create form, severity chips, location tagging.
@@ -50,10 +50,7 @@ class _HazardRegisterScreenState extends ConsumerState<HazardRegisterScreen> {
     UIUtils.showSideSheet(
       context: context,
       title: 'Report New Hazard',
-      builder:
-          (ctx) => HazardFormSheet(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-          ),
+      builder: (ctx) => const HazardFormSheet(),
     );
   }
 

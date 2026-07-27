@@ -4,7 +4,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/hr_models.dart';
 import 'employee_selector.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class LeaveApplicationForm extends ConsumerStatefulWidget {
   const LeaveApplicationForm({super.key});
@@ -21,6 +21,7 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
   DateTime? _startDate;
   DateTime? _endDate;
   final _reasonCtrl = TextEditingController();
+  final _medCertCtrl = TextEditingController();
   bool _isLoading = false;
 
   final _leaveTypes = [
@@ -34,6 +35,7 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
   @override
   void dispose() {
     _reasonCtrl.dispose();
+    _medCertCtrl.dispose();
     super.dispose();
   }
 
@@ -91,8 +93,10 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
         startDate: _startDate!,
         endDate: _endDate!,
         status: 'Pending',
-        managerId: _managerId,
+        managerId: _managerId ?? '',
+        approverId: _managerId ?? '',
         reason: _reasonCtrl.text.trim(),
+        medicalCertificateUrl: _medCertCtrl.text.trim().isEmpty ? null : _medCertCtrl.text.trim(),
         siteId: siteId,
       );
 
@@ -198,6 +202,14 @@ class _LeaveApplicationFormState extends ConsumerState<LeaveApplicationForm> {
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Reason (Optional)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _medCertCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Medical Certificate Document URL (Optional)',
                 border: OutlineInputBorder(),
               ),
             ),

@@ -49,10 +49,8 @@ class InventoryDashboardScreen extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(warehouse.location),
+                              Text('Code: ${warehouse.code}'),
                               const SizedBox(height: 8),
-                              if (warehouse.capacity != null)
-                                Text('Capacity: ${warehouse.capacity}'),
                             ],
                           ),
                         ),
@@ -85,20 +83,18 @@ class InventoryDashboardScreen extends ConsumerWidget {
                       child: ListTile(
                         title: Text(item.name),
                         subtitle: Text(
-                          'SKU: ${item.sku} | Category: ${item.category}',
+                          'SKU: ${item.sku} | Type: ${item.itemType}',
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '${item.quantity} ${item.unit}',
+                              '${item.stockLevel} ${item.unitOfMeasure}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            if (item.cost != null)
-                              Text('\$${item.cost!.toStringAsFixed(2)}'),
                           ],
                         ),
                       ),

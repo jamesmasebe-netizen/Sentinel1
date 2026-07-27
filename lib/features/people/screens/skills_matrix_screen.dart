@@ -5,7 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/skill_assessment_form.dart';
 import '../widgets/skill_matrix_card.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Skills Matrix — grid of employees × skill competencies.
 class SkillsMatrixScreen extends ConsumerStatefulWidget {

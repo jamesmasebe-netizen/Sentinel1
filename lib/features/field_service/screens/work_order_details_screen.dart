@@ -1,168 +1,322 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/field_service_models.dart';
+import '../services/field_service_service.dart';
 
-class WorkOrderDetailsScreen extends StatelessWidget {
+class WorkOrderDetailsScreen extends ConsumerStatefulWidget {
   final String workOrderId;
 
   const WorkOrderDetailsScreen({super.key, required this.workOrderId});
 
   @override
+  ConsumerState<WorkOrderDetailsScreen> createState() =>
+      _WorkOrderDetailsScreenState();
+}
+
+class _WorkOrderDetailsScreenState extends ConsumerState<WorkOrderDetailsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Work Order: $workOrderId'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Details', icon: Icon(Icons.info_outline)),
-              Tab(text: 'Safety & Hazards', icon: Icon(Icons.security)),
-              Tab(text: 'Tasks', icon: Icon(Icons.checklist)),
+    final service = ref.watch(fieldServiceServiceProvider);
+
+    return StreamBuilder<WorkOrder?>(
+      stream: service.streamWorkOrder(widget.workOrderId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snapshot.error}')),
+          );
+        }
+
+        final workOrder = snapshot.data;
+        if (workOrder == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Work Order Details')),
+            body: const Center(child: Text('Work Order not found')),
+          );
+        }
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('WO: ${workOrder.workOrderNumber}'),
+            elevation: 0,
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: Theme.of(context).colorScheme.primary,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(text: 'Details', icon: Icon(Icons.info_outline)),
+                Tab(text: 'Tasks', icon: Icon(Icons.checklist)),
+                Tab(text: 'IoT Context', icon: Icon(Icons.sensors)),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildDetailsTab(workOrder),
+              _buildTasksTab(service, workOrder.id),
+              _buildIotTab(workOrder),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailsTab(WorkOrder wo) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        _buildInfoCard(
+          'Description',
+          wo.description ?? 'No description provided.',
+          Icons.description,
         ),
-        body: TabBarView(
+        const SizedBox(height: 16),
+        Row(
           children: [
-            // Tab 1: Details
-            _buildDetailsTab(),
-            // Tab 2: Safety & Hazards
-            _buildSafetyTab(context),
-            // Tab 3: Tasks
-            _buildTasksTab(),
+            Expanded(child: _buildInfoCard('Status', wo.status, Icons.flag)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildInfoCard(
+                'Priority',
+                wo.priority,
+                Icons.priority_high,
+                _getPriorityColor(wo.priority),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildInfoCard(
+          'Customer',
+          'Customer ID: ${wo.customerId}',
+          Icons.business,
+        ),
+        if (wo.assignedTechnicianId != null) ...[
+          const SizedBox(height: 16),
+          _buildInfoCard(
+            'Technician',
+            wo.assignedTechnicianId!,
+            Icons.person_pin,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Color _getPriorityColor(String priority) {
+    switch (priority.toUpperCase()) {
+      case 'HIGH':
+        return Colors.red;
+      case 'MEDIUM':
+        return Colors.orange;
+      case 'LOW':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Widget _buildInfoCard(
+    String title,
+    String content,
+    IconData icon, [
+    Color? iconColor,
+  ]) {
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: (iconColor ?? Colors.blueAccent).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                size: 28,
+                color: iconColor ?? Colors.blueAccent,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    content,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailsTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: const [
-        ListTile(
-          title: Text('Description'),
-          subtitle: Text(
-            'Perform detailed inspection and replace faulty components on Turbine 4 as part of scheduled maintenance.',
-          ),
-        ),
-        Divider(),
-        ListTile(
-          title: Text('Location'),
-          subtitle: Text('Sector 7, North Wing, Level 3'),
-          leading: Icon(Icons.location_on),
-        ),
-        Divider(),
-        ListTile(
-          title: Text('Priority'),
-          subtitle: Text('High'),
-          leading: Icon(Icons.priority_high, color: Colors.red),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSafetyTab(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        Card(
-          color: Colors.red.shade50,
-          shape: RoundedRectangleBorder(
-            side: BorderSide(color: Colors.red.shade200, width: 2),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.warning, color: Colors.red, size: 28),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Permit To Work (PTW) Required',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.red.shade900,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Before proceeding with this work order, a certified Safety PTW must be filled and approved. This work involves high voltage and confined spaces.',
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade700,
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      // Trigger PTW Checklist flow
-                    },
-                    icon: const Icon(Icons.assignment),
-                    label: const Text('Complete Safety PTW Now'),
+  Widget _buildTasksTab(FieldServiceService service, String workOrderId) {
+    return StreamBuilder<List<WorkOrderTask>>(
+      stream: service.streamWorkOrderTasks(workOrderId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        final tasks = snapshot.data ?? [];
+        if (tasks.isEmpty) {
+          return const Center(
+            child: Text('No tasks associated with this Work Order.'),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            final task = tasks[index];
+            final isCompleted = task.status == 'COMPLETED';
+            return Card(
+              elevation: 1,
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: CheckboxListTile(
+                value: isCompleted,
+                activeColor: Colors.green,
+                onChanged: (val) {
+                  final updatedTask = WorkOrderTask(
+                    id: task.id,
+                    taskName: task.taskName,
+                    description: task.description,
+                    status: val == true ? 'COMPLETED' : 'PENDING',
+                    sequenceOrder: task.sequenceOrder,
+                    isMandatory: task.isMandatory,
+                    inspectionTemplateId: task.inspectionTemplateId,
+                    estimatedDurationMins: task.estimatedDurationMins,
+                    actualDurationMins: task.actualDurationMins,
+                    percentComplete: val == true ? 100 : 0,
+                  );
+                  service.updateWorkOrderTask(workOrderId, updatedTask);
+                },
+                title: Text(
+                  task.taskName,
+                  style: TextStyle(
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
+                subtitle: Text(task.description ?? 'No description'),
+                secondary: Icon(
+                  task.isMandatory ? Icons.warning : Icons.task,
+                  color: task.isMandatory ? Colors.redAccent : Colors.grey,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildIotTab(WorkOrder wo) {
+    if (wo.iotContext == null || wo.iotContext!.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.sensors_off, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No IoT Context Available',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 16),
-        Text(
-          'Identified Hazards',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        _buildHazardItem(
-          'High Voltage',
-          'Ensure power is isolated and LOTO (Lockout/Tagout) procedures are followed.',
-        ),
-        _buildHazardItem(
-          'Confined Space',
-          'Adequate ventilation required. Confined space entry permit needed.',
-        ),
-        _buildHazardItem(
-          'Working at Heights',
-          'Fall protection gear (harness) mandatory.',
-        ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildHazardItem(String title, String description) {
-    return ListTile(
-      leading: const Icon(Icons.dangerous, color: Colors.orange),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(description),
-    );
-  }
-
-  Widget _buildTasksTab() {
     return ListView(
       padding: const EdgeInsets.all(16.0),
-      children: [
-        CheckboxListTile(
-          value: false,
-          onChanged: (bool? value) {},
-          title: const Text('Isolate main power supply'),
-        ),
-        CheckboxListTile(
-          value: false,
-          onChanged: (bool? value) {},
-          title: const Text('Remove access panels'),
-        ),
-        CheckboxListTile(
-          value: false,
-          onChanged: (bool? value) {},
-          title: const Text('Inspect rotor assembly'),
-        ),
-      ],
+      children:
+          wo.iotContext!.entries.map((e) {
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(16),
+                leading: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                  ),
+                ),
+                title: Text(
+                  e.key,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    e.value.toString(),
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
     );
   }
 }

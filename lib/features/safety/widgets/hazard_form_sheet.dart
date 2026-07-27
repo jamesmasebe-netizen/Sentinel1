@@ -5,8 +5,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 
 class HazardFormSheet extends ConsumerStatefulWidget {
-  final String tenantId;
-  const HazardFormSheet({super.key, required this.tenantId});
+  const HazardFormSheet({super.key});
 
   @override
   ConsumerState<HazardFormSheet> createState() => _HazardFormSheetState();
@@ -58,7 +57,7 @@ class _HazardFormSheetState extends ConsumerState<HazardFormSheet> {
 
       final firestoreService = ref.read(firestoreServiceProvider);
       await firestoreService.createDocument(
-        tenantId: widget.tenantId,
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
         collection: 'hazards',
         data: data,
       );

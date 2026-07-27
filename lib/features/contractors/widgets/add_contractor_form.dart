@@ -4,6 +4,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddContractorForm extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
@@ -19,15 +20,22 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
   final _nameCtrl = TextEditingController();
   final _regCtrl = TextEditingController();
   final _scopeCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   String? _selectedContactPersonId;
   String _riskRating = 'Medium';
   String _status = 'Active';
+  String _complianceStatus = 'Pending';
+  DateTime? _contractStart;
+  DateTime? _contractEnd;
 
   @override
   void dispose() {
     _nameCtrl.dispose();
     _regCtrl.dispose();
     _scopeCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -44,14 +52,19 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
             collection: 'contractors',
             data: {
               'companyName': _nameCtrl.text.trim(),
-              'contactPersonId': _selectedContactPersonId,
-              'registrationNumber': _regCtrl.text.trim(),
+              'contactPersonId': _selectedContactPersonId ?? '',
+              'email': _emailCtrl.text.trim(),
+              'phone': _phoneCtrl.text.trim(),
+              'companyRegistrationNumber': _regCtrl.text.trim(),
               'scopeOfWork': _scopeCtrl.text.trim(),
               'riskRating': _riskRating,
-              'status': _status,
+              'status': _status.toLowerCase(),
+              'complianceStatus': _complianceStatus.toLowerCase(),
+              'contractStart': _contractStart?.toIso8601String(),
+              'contractEnd': _contractEnd?.toIso8601String(),
               'authorId': p.uid,
-              'siteId': p.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
+              'tenantId': p.tenantId,
+              'createdAt': FieldValue.serverTimestamp(),
             },
           );
       if (mounted) {
@@ -112,6 +125,26 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
             ],
           ),
           GSpacing.vMd,
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _emailCtrl,
+                  decoration: const InputDecoration(labelText: 'Company Email *'),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              GSpacing.hMd,
+              Expanded(
+                child: TextFormField(
+                  controller: _phoneCtrl,
+                  decoration: const InputDecoration(labelText: 'Company Phone'),
+                  keyboardType: TextInputType.phone,
+                ),
+              ),
+            ],
+          ),
+          GSpacing.vMd,
           TextFormField(
             controller: _scopeCtrl,
             decoration: const InputDecoration(labelText: 'Scope of Work'),
@@ -150,6 +183,67 @@ class _AddContractorFormState extends ConsumerState<AddContractorForm> {
                           )
                           .toList(),
                   onChanged: (v) => setState(() => _status = v!),
+                ),
+              ),
+              GSpacing.hMd,
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _complianceStatus,
+                  decoration: const InputDecoration(
+                    labelText: 'Compliance Status',
+                    isDense: true,
+                  ),
+                  items:
+                      ['Compliant', 'Non-compliant', 'Pending']
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
+                          .toList(),
+                  onChanged: (v) => setState(() => _complianceStatus = v!),
+                ),
+              ),
+            ],
+          ),
+          GSpacing.vMd,
+          Row(
+            children: [
+              Expanded(
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: const Text('Contract Start'),
+                  subtitle: Text(
+                    _contractStart != null ? '${_contractStart!.toLocal()}'.split(' ')[0] : 'Select Date',
+                  ),
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now().subtract(const Duration(days: 365 * 5)),
+                      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                    );
+                    if (d != null) setState(() => _contractStart = d);
+                  },
+                ),
+              ),
+              GSpacing.hMd,
+              Expanded(
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: const Text('Contract End'),
+                  subtitle: Text(
+                    _contractEnd != null ? '${_contractEnd!.toLocal()}'.split(' ')[0] : 'Select Date',
+                  ),
+                  onTap: () async {
+                    final d = await showDatePicker(
+                      context: context,
+                      initialDate: _contractStart ?? DateTime.now(),
+                      firstDate: _contractStart ?? DateTime.now().subtract(const Duration(days: 365 * 5)),
+                      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+                    );
+                    if (d != null) setState(() => _contractEnd = d);
+                  },
                 ),
               ),
             ],

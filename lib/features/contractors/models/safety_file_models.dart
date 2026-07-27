@@ -140,3 +140,43 @@ class SafetyFileSubmission {
     };
   }
 }
+
+class ContractorDocument {
+  final String id;
+  final String submissionId;
+  final String name;
+  final String url;
+  final String status; // Pending, Resolved, Rejected
+  final String? feedback;
+
+  ContractorDocument({
+    required this.id,
+    required this.submissionId,
+    required this.name,
+    required this.url,
+    required this.status,
+    this.feedback,
+  });
+
+  factory ContractorDocument.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return ContractorDocument(
+      id: doc.id,
+      submissionId: data['submissionId'] ?? '',
+      name: data['name'] ?? '',
+      url: data['url'] ?? '',
+      status: data['status'] ?? 'Pending',
+      feedback: data['feedback'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'submissionId': submissionId,
+      'name': name,
+      'url': url,
+      'status': status,
+      'feedback': feedback,
+    };
+  }
+}

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Tracks whether the app is locked due to inactivity
@@ -12,20 +13,24 @@ final sessionManagerProvider = Provider<SessionManager>((ref) {
 class SessionManager {
   final Ref _ref;
   Timer? _inactivityTimer;
-  static const _timeoutDuration = Duration(minutes: 5);
+  static const _timeoutDuration = Duration(minutes: 30);
 
   SessionManager(this._ref);
 
   void startSession() {
-    _startTimer();
+    if (!kDebugMode) {
+      _startTimer();
+    }
   }
 
   void userInteracted() {
+    if (kDebugMode) return;
     if (_ref.read(isAppLockedProvider)) return; // Don't reset if already locked
     _startTimer();
   }
 
   void _startTimer() {
+    if (kDebugMode) return;
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(_timeoutDuration, _onTimeout);
   }

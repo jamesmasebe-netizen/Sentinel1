@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../../people/widgets/employee_selector.dart';
 
 class RecordFormSheet extends ConsumerStatefulWidget {
   const RecordFormSheet({super.key});
@@ -13,7 +14,7 @@ class RecordFormSheet extends ConsumerStatefulWidget {
 
 class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
   bool _isSubmitting = false;
-  final _empNameCtrl = TextEditingController();
+  String? _selectedEmployeeId;
   final _idNumCtrl = TextEditingController();
   final _courseCtrl = TextEditingController();
   DateTime _completed = DateTime.now();
@@ -21,14 +22,13 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
 
   @override
   void dispose() {
-    _empNameCtrl.dispose();
     _idNumCtrl.dispose();
     _courseCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submitRecord() async {
-    if (_empNameCtrl.text.isEmpty || _courseCtrl.text.isEmpty) {
+    if (_selectedEmployeeId == null || _courseCtrl.text.isEmpty) {
       UIUtils.showToast(
         context,
         'Please fill in required fields',
@@ -48,7 +48,7 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'training_records',
             data: {
-              'employeeName': _empNameCtrl.text.trim(),
+              'employeeId': _selectedEmployeeId,
               'idNumber': _idNumCtrl.text.trim(),
               'courseName': _courseCtrl.text.trim(),
               'dateCompleted': _completed.toIso8601String(),
@@ -83,12 +83,14 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextFormField(
-                  controller: _empNameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Employee Name *',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
+                EmployeeSelector(
+                  value: _selectedEmployeeId,
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedEmployeeId = val;
+                    });
+                  },
+                  label: 'Select Employee *',
                 ),
                 GSpacing.vLg,
                 TextFormField(

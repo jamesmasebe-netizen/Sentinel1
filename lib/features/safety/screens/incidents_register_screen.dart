@@ -9,7 +9,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../widgets/incident_card.dart';
 import '../widgets/mini_summary_card.dart';
 import 'incident_report_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class IncidentsRegisterScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
@@ -179,11 +179,7 @@ class _IncidentsRegisterScreenState
                         () => UIUtils.showSideSheet(
                           context: context,
                           title: 'Report Incident',
-                          builder:
-                              (ctx) => IncidentReportForm(
-                                tenantId:
-                                    ref.read(currentTenantIdProvider) ?? '',
-                              ),
+                          builder: (ctx) => const IncidentReportForm(),
                         ),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(

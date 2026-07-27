@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'ui_indexer.dart';
 import 'widgets/feedback_bottom_sheet.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import '../../core/providers/app_providers.dart';
 
 class FeedbackOverlay extends ConsumerStatefulWidget {

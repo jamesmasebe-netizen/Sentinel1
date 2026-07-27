@@ -17,8 +17,7 @@ import '../widgets/incident_photo_capture_section.dart';
 import '../widgets/incident_cost_tracking_fields.dart';
 
 class IncidentReportForm extends ConsumerStatefulWidget {
-  final String tenantId;
-  const IncidentReportForm({super.key, required this.tenantId});
+  const IncidentReportForm({super.key});
 
   @override
   ConsumerState<IncidentReportForm> createState() => _IncidentReportFormState();
@@ -106,9 +105,9 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
         'severity': _severity,
         'location': _locationController.text.trim(),
         'status': 'Open',
-        'reporterId': _selectedReporterId ?? profile.uid,
+        'reportedBy': _selectedReporterId ?? profile.uid,
         'reporterName': 'Selected Employee',
-        'siteId': profile.tenantId,
+        'tenantId': profile.tenantId,
         'contractorId': _selectedContractorId,
         'dateOfIncident': _dateOfIncident.toIso8601String(),
         'createdAt': DateTime.now().toIso8601String(),

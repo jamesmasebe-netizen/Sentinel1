@@ -5,7 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/bowtie_card.dart';
 import '../widgets/bowtie_form.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Bow-Tie Analysis — register for threat/barrier/consequence chains.
 class BowtieScreen extends ConsumerStatefulWidget {

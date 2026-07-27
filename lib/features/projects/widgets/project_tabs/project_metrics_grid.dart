@@ -8,7 +8,7 @@ import '../../../safety/screens/capa_screen.dart';
 import '../../../safety/screens/permit_to_work_screen.dart';
 import '../../models/project_models.dart';
 import '../../providers/project_providers.dart';
-import 'package:xm_system/core/providers/app_providers.dart';
+
 
 class ProjectMetricsGrid extends ConsumerWidget {
   final Project project;
@@ -51,9 +51,7 @@ class ProjectMetricsGrid extends ConsumerWidget {
               context: context,
               title: 'Report Incident',
               builder:
-                  (ctx) => IncidentReportForm(
-                    tenantId: ref.read(currentTenantIdProvider) ?? '',
-                  ),
+                  (ctx) => const IncidentReportForm(),
             );
           },
         ),

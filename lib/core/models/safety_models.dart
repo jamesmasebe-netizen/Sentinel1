@@ -197,6 +197,9 @@ class Contractor {
   final String? phone;
   final String status; // active, suspended, blacklisted, expired
   final String? complianceStatus; // compliant, non_compliant, pending
+  final String? companyRegistrationNumber;
+  final String? scopeOfWork;
+  final String? riskRating;
   final DateTime? contractStart;
   final DateTime? contractEnd;
   final List<Map<String, dynamic>> workers;
@@ -212,6 +215,9 @@ class Contractor {
     this.phone,
     this.status = 'active',
     this.complianceStatus = 'pending',
+    this.companyRegistrationNumber,
+    this.scopeOfWork,
+    this.riskRating,
     this.contractStart,
     this.contractEnd,
     this.workers = const [],
@@ -230,6 +236,9 @@ class Contractor {
       phone: data['phone'],
       status: data['status'] ?? 'active',
       complianceStatus: data['complianceStatus'] ?? 'pending',
+      companyRegistrationNumber: data['companyRegistrationNumber'] ?? data['registrationNumber'],
+      scopeOfWork: data['scopeOfWork'],
+      riskRating: data['riskRating'],
       contractStart: (data['contractStart'] as Timestamp?)?.toDate(),
       contractEnd: (data['contractEnd'] as Timestamp?)?.toDate(),
       workers: List<Map<String, dynamic>>.from(data['workers'] ?? []),
@@ -246,6 +255,9 @@ class Contractor {
     'phone': phone,
     'status': status,
     'complianceStatus': complianceStatus,
+    'companyRegistrationNumber': companyRegistrationNumber,
+    'scopeOfWork': scopeOfWork,
+    'riskRating': riskRating,
     'contractStart':
         contractStart != null ? Timestamp.fromDate(contractStart!) : null,
     'contractEnd':

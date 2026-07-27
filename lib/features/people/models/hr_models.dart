@@ -1,56 +1,460 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Helper to convert Firestore Timestamp to DateTime
+DateTime? _timestampToDateTime(dynamic timestamp) {
+  if (timestamp == null) return null;
+  if (timestamp is Timestamp) return timestamp.toDate();
+  if (timestamp is String) return DateTime.tryParse(timestamp);
+  return null;
+}
+
+dynamic _dateTimeToTimestamp(DateTime? date) {
+  if (date == null) return null;
+  return Timestamp.fromDate(date);
+}
+
+class EmployeeProfile {
+  final String id;
+  final String firstName;
+  final String lastName;
+  final String? preferredName;
+  final String workEmail;
+  final String personalEmail;
+  final String phoneNumber;
+  final DateTime? hireDate;
+  final DateTime? terminationDate;
+  final String employmentStatus;
+  final String positionId;
+  final String departmentId;
+  final String managerEmployeeId;
+  final bool missingMandatorySafetyTraining;
+
+  EmployeeProfile({
+    required this.id,
+    required this.firstName,
+    required this.lastName,
+    this.preferredName,
+    required this.workEmail,
+    required this.personalEmail,
+    required this.phoneNumber,
+    this.hireDate,
+    this.terminationDate,
+    required this.employmentStatus,
+    required this.positionId,
+    required this.departmentId,
+    required this.managerEmployeeId,
+    this.missingMandatorySafetyTraining = false,
+  });
+
+  factory EmployeeProfile.fromJson(Map<String, dynamic> json, String id) {
+    return EmployeeProfile(
+      id: id,
+      firstName: json['firstName'] ?? '',
+      lastName: json['lastName'] ?? '',
+      preferredName: json['preferredName'],
+      workEmail: json['workEmail'] ?? '',
+      personalEmail: json['personalEmail'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
+      hireDate: _timestampToDateTime(json['hireDate']),
+      terminationDate: _timestampToDateTime(json['terminationDate']),
+      employmentStatus: json['employmentStatus'] ?? '',
+      positionId: json['positionId'] ?? '',
+      departmentId: json['departmentId'] ?? '',
+      managerEmployeeId: json['managerEmployeeId'] ?? '',
+      missingMandatorySafetyTraining:
+          json['missingMandatorySafetyTraining'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'firstName': firstName,
+      'lastName': lastName,
+      if (preferredName != null) 'preferredName': preferredName,
+      'workEmail': workEmail,
+      'personalEmail': personalEmail,
+      'phoneNumber': phoneNumber,
+      if (hireDate != null) 'hireDate': _dateTimeToTimestamp(hireDate),
+      if (terminationDate != null)
+        'terminationDate': _dateTimeToTimestamp(terminationDate),
+      'employmentStatus': employmentStatus,
+      'positionId': positionId,
+      'departmentId': departmentId,
+      'managerEmployeeId': managerEmployeeId,
+      'missingMandatorySafetyTraining': missingMandatorySafetyTraining,
+    };
+  }
+}
+
 class LeaveRequest {
   final String id;
-  final String employeeId;
-  final String employeeName;
-  final String leaveType; // Annual, Sick, Maternity, OHS Mandatory
+  final String leaveTypeId;
   final DateTime startDate;
   final DateTime endDate;
-  final String status; // Pending, Approved, Rejected
-  final String? managerId;
-  final String? reason;
+  final double totalHoursRequested;
+  final String status;
+  final String approverId;
+  final String reason;
+  final String? medicalCertificateUrl;
+  final String employeeId;
+  final String employeeName;
+  final String leaveType;
+  final String managerId;
   final String siteId;
 
   LeaveRequest({
     required this.id,
-    required this.employeeId,
-    required this.employeeName,
-    required this.leaveType,
-    required this.startDate,
-    required this.endDate,
+    this.leaveTypeId = '',
+    DateTime? startDate,
+    DateTime? endDate,
+    this.totalHoursRequested = 0.0,
     required this.status,
-    this.managerId,
-    this.reason,
-    required this.siteId,
-  });
+    this.approverId = '',
+    required this.reason,
+    this.medicalCertificateUrl,
+    this.employeeId = '',
+    this.employeeName = '',
+    this.leaveType = '',
+    this.managerId = '',
+    this.siteId = '',
+  }) : startDate = startDate ?? DateTime.now(),
+       endDate = endDate ?? DateTime.now();
+
+  factory LeaveRequest.fromJson(Map<String, dynamic> json, String id) {
+    return LeaveRequest(
+      id: id,
+      leaveTypeId: json['leaveTypeId'],
+      startDate: _timestampToDateTime(json['startDate']),
+      endDate: _timestampToDateTime(json['endDate']),
+      totalHoursRequested: (json['totalHoursRequested'] ?? 0).toDouble(),
+      status: json['status'] ?? '',
+      approverId: json['approverId'],
+      reason: json['reason'] ?? '',
+      medicalCertificateUrl: json['medicalCertificateUrl'],
+      employeeId: json['employeeId'],
+      employeeName: json['employeeName'],
+      leaveType: json['leaveType'],
+      managerId: json['managerId'],
+      siteId: json['siteId'],
+    );
+  }
 
   factory LeaveRequest.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return LeaveRequest(
-      id: doc.id,
-      employeeId: data['employeeId'] ?? '',
-      employeeName: data['employeeName'] ?? '',
-      leaveType: data['leaveType'] ?? 'Annual',
-      startDate: DateTime.parse(data['startDate']),
-      endDate: DateTime.parse(data['endDate']),
-      status: data['status'] ?? 'Pending',
-      managerId: data['managerId'],
-      reason: data['reason'],
-      siteId: data['siteId'] ?? '',
-    );
+    return LeaveRequest.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+
+  Map<String, dynamic> toJson() {
+    return toFirestore();
   }
 
   Map<String, dynamic> toFirestore() {
     return {
+      'leaveTypeId': leaveTypeId,
+      'startDate': _dateTimeToTimestamp(startDate),
+      'endDate': _dateTimeToTimestamp(endDate),
+      'totalHoursRequested': totalHoursRequested,
+      'status': status,
+      'approverId': approverId,
+      'reason': reason,
+      if (medicalCertificateUrl != null)
+        'medicalCertificateUrl': medicalCertificateUrl,
       'employeeId': employeeId,
       'employeeName': employeeName,
       'leaveType': leaveType,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
-      'status': status,
       'managerId': managerId,
-      'reason': reason,
+      'siteId': siteId,
+    };
+  }
+}
+
+class CompensationPlan {
+  final String id;
+  final String name;
+  final String type;
+  final Map<String, dynamic> eligibilityRules;
+  final double targetPercentage;
+  final String? vestingScheduleId;
+
+  CompensationPlan({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.eligibilityRules,
+    required this.targetPercentage,
+    this.vestingScheduleId,
+  });
+
+  factory CompensationPlan.fromJson(Map<String, dynamic> json, String id) {
+    return CompensationPlan(
+      id: id,
+      name: json['name'] ?? '',
+      type: json['type'] ?? '',
+      eligibilityRules: Map<String, dynamic>.from(
+        json['eligibilityRules'] ?? {},
+      ),
+      targetPercentage: (json['targetPercentage'] ?? 0).toDouble(),
+      vestingScheduleId: json['vestingScheduleId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'type': type,
+      'eligibilityRules': eligibilityRules,
+      'targetPercentage': targetPercentage,
+      if (vestingScheduleId != null) 'vestingScheduleId': vestingScheduleId,
+    };
+  }
+}
+
+class BenefitEnrollment {
+  final String id;
+  final String planId;
+  final String planType;
+  final String coverageTier;
+  final String status;
+  final DateTime? effectiveDate;
+  final List<String> dependentsCovered;
+  final double employeeContribution;
+  final double employerContribution;
+
+  BenefitEnrollment({
+    required this.id,
+    required this.planId,
+    required this.planType,
+    required this.coverageTier,
+    required this.status,
+    this.effectiveDate,
+    required this.dependentsCovered,
+    required this.employeeContribution,
+    required this.employerContribution,
+  });
+
+  factory BenefitEnrollment.fromJson(Map<String, dynamic> json, String id) {
+    return BenefitEnrollment(
+      id: id,
+      planId: json['planId'] ?? '',
+      planType: json['planType'] ?? '',
+      coverageTier: json['coverageTier'] ?? '',
+      status: json['status'] ?? '',
+      effectiveDate: _timestampToDateTime(json['effectiveDate']),
+      dependentsCovered: List<String>.from(json['dependentsCovered'] ?? []),
+      employeeContribution: (json['employeeContribution'] ?? 0).toDouble(),
+      employerContribution: (json['employerContribution'] ?? 0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'planId': planId,
+      'planType': planType,
+      'coverageTier': coverageTier,
+      'status': status,
+      if (effectiveDate != null)
+        'effectiveDate': _dateTimeToTimestamp(effectiveDate),
+      'dependentsCovered': dependentsCovered,
+      'employeeContribution': employeeContribution,
+      'employerContribution': employerContribution,
+    };
+  }
+}
+
+class PerformanceReview {
+  final String id;
+  final String cycleId;
+  final String managerId;
+  final Map<String, dynamic> selfEvaluation;
+  final Map<String, dynamic> managerEvaluation;
+  final List<dynamic> peerFeedback;
+  final dynamic overallRating;
+  final String status;
+  final String employeeId;
+  final String reviewerId;
+  final String reviewPeriod;
+  final double score;
+  final String feedback;
+  final DateTime completedDate;
+  final String siteId;
+
+  PerformanceReview({
+    required this.id,
+    this.cycleId = '',
+    this.managerId = '',
+    Map<String, dynamic>? selfEvaluation,
+    Map<String, dynamic>? managerEvaluation,
+    List<dynamic>? peerFeedback,
+    this.overallRating,
+    this.status = '',
+    this.employeeId = '',
+    this.reviewerId = '',
+    this.reviewPeriod = '',
+    this.score = 0.0,
+    this.feedback = '',
+    DateTime? completedDate,
+    this.siteId = '',
+  }) : completedDate = completedDate ?? DateTime.now(),
+       selfEvaluation = selfEvaluation ?? {},
+       managerEvaluation = managerEvaluation ?? {},
+       peerFeedback = peerFeedback ?? [];
+
+  factory PerformanceReview.fromJson(Map<String, dynamic> json, String id) {
+    return PerformanceReview(
+      id: id,
+      cycleId: json['cycleId'],
+      managerId: json['managerId'],
+      selfEvaluation:
+          json['selfEvaluation'] != null
+              ? Map<String, dynamic>.from(json['selfEvaluation'])
+              : null,
+      managerEvaluation:
+          json['managerEvaluation'] != null
+              ? Map<String, dynamic>.from(json['managerEvaluation'])
+              : null,
+      peerFeedback:
+          json['peerFeedback'] != null
+              ? List<dynamic>.from(json['peerFeedback'])
+              : null,
+      overallRating: json['overallRating'],
+      status: json['status'],
+      employeeId: json['employeeId'],
+      reviewerId: json['reviewerId'],
+      reviewPeriod: json['reviewPeriod'],
+      score: json['score']?.toDouble(),
+      feedback: json['feedback'],
+      completedDate: _timestampToDateTime(json['completedDate']),
+      siteId: json['siteId'],
+    );
+  }
+
+  factory PerformanceReview.fromFirestore(DocumentSnapshot doc) {
+    return PerformanceReview.fromJson(
+      doc.data() as Map<String, dynamic>,
+      doc.id,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return toFirestore();
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'cycleId': cycleId,
+      'managerId': managerId,
+      'selfEvaluation': selfEvaluation,
+      'managerEvaluation': managerEvaluation,
+      'peerFeedback': peerFeedback,
+      if (overallRating != null) 'overallRating': overallRating,
+      'status': status,
+      'employeeId': employeeId,
+      'reviewerId': reviewerId,
+      'reviewPeriod': reviewPeriod,
+      'score': score,
+      'feedback': feedback,
+      'completedDate': _dateTimeToTimestamp(completedDate),
+      'siteId': siteId,
+    };
+  }
+}
+
+class Candidate {
+  final String id;
+  final String requisitionId;
+  final String name;
+  final String title;
+  final String email;
+  final String department;
+  final String stage;
+  final String resumeUrl;
+  final DateTime appliedDate;
+
+  Candidate({
+    this.id = '',
+    this.requisitionId = '',
+    this.name = '',
+    this.title = '',
+    this.email = '',
+    this.department = '',
+    this.stage = '',
+    this.resumeUrl = '',
+    DateTime? appliedDate,
+  }) : appliedDate = appliedDate ?? DateTime.now();
+
+  factory Candidate.fromJson(Map<String, dynamic> json, String id) {
+    return Candidate(
+      id: id,
+      requisitionId: json['requisitionId'] ?? '',
+      name: json['name'] ?? '',
+      title: json['title'] ?? '',
+      email: json['email'] ?? '',
+      department: json['department'] ?? '',
+      stage: json['stage'] ?? '',
+      resumeUrl: json['resumeUrl'] ?? '',
+      appliedDate: _timestampToDateTime(json['appliedDate']),
+    );
+  }
+
+  factory Candidate.fromFirestore(DocumentSnapshot doc) {
+    return Candidate.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'requisitionId': requisitionId,
+      'name': name,
+      'title': title,
+      'email': email,
+      'department': department,
+      'stage': stage,
+      'resumeUrl': resumeUrl,
+      'appliedDate': _dateTimeToTimestamp(appliedDate),
+    };
+  }
+}
+
+class JobRequisition {
+  final String id;
+  final String title;
+  final String department;
+  final String description;
+  final String status;
+  final DateTime postedDate;
+  final String siteId;
+
+  JobRequisition({
+    this.id = '',
+    this.title = '',
+    this.department = '',
+    this.description = '',
+    this.status = '',
+    DateTime? postedDate,
+    this.siteId = '',
+  }) : postedDate = postedDate ?? DateTime.now();
+
+  factory JobRequisition.fromJson(Map<String, dynamic> json, String id) {
+    return JobRequisition(
+      id: id,
+      title: json['title'] ?? '',
+      department: json['department'] ?? '',
+      description: json['description'] ?? '',
+      status: json['status'] ?? '',
+      postedDate: _timestampToDateTime(json['postedDate']),
+      siteId: json['siteId'] ?? '',
+    );
+  }
+
+  factory JobRequisition.fromFirestore(DocumentSnapshot doc) {
+    return JobRequisition.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      'department': department,
+      'description': description,
+      'status': status,
+      'postedDate': _dateTimeToTimestamp(postedDate),
       'siteId': siteId,
     };
   }
@@ -62,41 +466,45 @@ class PayrollLedger {
   final String employeeName;
   final double baseSalary;
   final double bonuses;
-  final double deductions; // Tax, UI, etc.
+  final double deductions;
   final DateTime periodStart;
   final DateTime periodEnd;
-  final String status; // Draft, Processed, Paid
+  final String status;
   final String siteId;
-
-  PayrollLedger({
-    required this.id,
-    required this.employeeId,
-    required this.employeeName,
-    required this.baseSalary,
-    required this.bonuses,
-    required this.deductions,
-    required this.periodStart,
-    required this.periodEnd,
-    required this.status,
-    required this.siteId,
-  });
 
   double get netPay => baseSalary + bonuses - deductions;
 
-  factory PayrollLedger.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  PayrollLedger({
+    this.id = '',
+    this.employeeId = '',
+    this.employeeName = '',
+    this.baseSalary = 0.0,
+    this.bonuses = 0.0,
+    this.deductions = 0.0,
+    DateTime? periodStart,
+    DateTime? periodEnd,
+    this.status = '',
+    this.siteId = '',
+  }) : periodStart = periodStart ?? DateTime.now(),
+       periodEnd = periodEnd ?? DateTime.now();
+
+  factory PayrollLedger.fromJson(Map<String, dynamic> json, String id) {
     return PayrollLedger(
-      id: doc.id,
-      employeeId: data['employeeId'] ?? '',
-      employeeName: data['employeeName'] ?? '',
-      baseSalary: (data['baseSalary'] ?? 0.0).toDouble(),
-      bonuses: (data['bonuses'] ?? 0.0).toDouble(),
-      deductions: (data['deductions'] ?? 0.0).toDouble(),
-      periodStart: DateTime.parse(data['periodStart']),
-      periodEnd: DateTime.parse(data['periodEnd']),
-      status: data['status'] ?? 'Draft',
-      siteId: data['siteId'] ?? '',
+      id: id,
+      employeeId: json['employeeId'],
+      employeeName: json['employeeName'],
+      baseSalary: json['baseSalary']?.toDouble(),
+      bonuses: json['bonuses']?.toDouble(),
+      deductions: json['deductions']?.toDouble(),
+      periodStart: _timestampToDateTime(json['periodStart']),
+      periodEnd: _timestampToDateTime(json['periodEnd']),
+      status: json['status'],
+      siteId: json['siteId'],
     );
+  }
+
+  factory PayrollLedger.fromFirestore(DocumentSnapshot doc) {
+    return PayrollLedger.fromJson(doc.data() as Map<String, dynamic>, doc.id);
   }
 
   Map<String, dynamic> toFirestore() {
@@ -106,145 +514,9 @@ class PayrollLedger {
       'baseSalary': baseSalary,
       'bonuses': bonuses,
       'deductions': deductions,
-      'periodStart': periodStart.toIso8601String(),
-      'periodEnd': periodEnd.toIso8601String(),
+      'periodStart': _dateTimeToTimestamp(periodStart),
+      'periodEnd': _dateTimeToTimestamp(periodEnd),
       'status': status,
-      'siteId': siteId,
-    };
-  }
-}
-
-class JobRequisition {
-  final String id;
-  final String title;
-  final String department;
-  final String description;
-  final String status; // Open, Closed, Draft
-  final DateTime postedDate;
-  final String siteId;
-
-  JobRequisition({
-    required this.id,
-    required this.title,
-    required this.department,
-    required this.description,
-    required this.status,
-    required this.postedDate,
-    required this.siteId,
-  });
-
-  factory JobRequisition.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return JobRequisition(
-      id: doc.id,
-      title: data['title'] ?? '',
-      department: data['department'] ?? '',
-      description: data['description'] ?? '',
-      status: data['status'] ?? 'Open',
-      postedDate: DateTime.parse(data['postedDate']),
-      siteId: data['siteId'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'title': title,
-      'department': department,
-      'description': description,
-      'status': status,
-      'postedDate': postedDate.toIso8601String(),
-      'siteId': siteId,
-    };
-  }
-}
-
-class Candidate {
-  final String id;
-  final String requisitionId;
-  final String name;
-  final String email;
-  final String resumeUrl;
-  final String stage; // Applied, Screening, Interview, Offer, Hired, Rejected
-  final DateTime appliedDate;
-
-  Candidate({
-    required this.id,
-    required this.requisitionId,
-    required this.name,
-    required this.email,
-    required this.resumeUrl,
-    required this.stage,
-    required this.appliedDate,
-  });
-
-  factory Candidate.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return Candidate(
-      id: doc.id,
-      requisitionId: data['requisitionId'] ?? '',
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
-      resumeUrl: data['resumeUrl'] ?? '',
-      stage: data['stage'] ?? 'Applied',
-      appliedDate: DateTime.parse(data['appliedDate']),
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'requisitionId': requisitionId,
-      'name': name,
-      'email': email,
-      'resumeUrl': resumeUrl,
-      'stage': stage,
-      'appliedDate': appliedDate.toIso8601String(),
-    };
-  }
-}
-
-class PerformanceReview {
-  final String id;
-  final String employeeId;
-  final String reviewerId;
-  final String reviewPeriod; // e.g., "Q3 2026"
-  final double score; // 1.0 to 5.0
-  final String feedback;
-  final DateTime completedDate;
-  final String siteId;
-
-  PerformanceReview({
-    required this.id,
-    required this.employeeId,
-    required this.reviewerId,
-    required this.reviewPeriod,
-    required this.score,
-    required this.feedback,
-    required this.completedDate,
-    required this.siteId,
-  });
-
-  factory PerformanceReview.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return PerformanceReview(
-      id: doc.id,
-      employeeId: data['employeeId'] ?? '',
-      reviewerId: data['reviewerId'] ?? '',
-      reviewPeriod: data['reviewPeriod'] ?? '',
-      score: (data['score'] ?? 0.0).toDouble(),
-      feedback: data['feedback'] ?? '',
-      completedDate: DateTime.parse(data['completedDate']),
-      siteId: data['siteId'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'employeeId': employeeId,
-      'reviewerId': reviewerId,
-      'reviewPeriod': reviewPeriod,
-      'score': score,
-      'feedback': feedback,
-      'completedDate': completedDate.toIso8601String(),
       'siteId': siteId,
     };
   }
@@ -254,32 +526,35 @@ class OHSAppointment {
   final String id;
   final String appointeeId;
   final String appointeeName;
-  final String statutoryReference; // e.g., "OHS Act 16.2 Assignee"
+  final String statutoryReference;
   final DateTime appointedDate;
-  final String status; // Active, Revoked
+  final String status;
   final String siteId;
 
   OHSAppointment({
-    required this.id,
-    required this.appointeeId,
-    required this.appointeeName,
-    required this.statutoryReference,
-    required this.appointedDate,
-    required this.status,
-    required this.siteId,
-  });
+    this.id = '',
+    this.appointeeId = '',
+    this.appointeeName = '',
+    this.statutoryReference = '',
+    DateTime? appointedDate,
+    this.status = '',
+    this.siteId = '',
+  }) : appointedDate = appointedDate ?? DateTime.now();
+
+  factory OHSAppointment.fromJson(Map<String, dynamic> json, String id) {
+    return OHSAppointment(
+      id: id,
+      appointeeId: json['appointeeId'] ?? '',
+      appointeeName: json['appointeeName'] ?? '',
+      statutoryReference: json['statutoryReference'] ?? '',
+      appointedDate: _timestampToDateTime(json['appointedDate']),
+      status: json['status'] ?? '',
+      siteId: json['siteId'] ?? '',
+    );
+  }
 
   factory OHSAppointment.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    return OHSAppointment(
-      id: doc.id,
-      appointeeId: data['appointeeId'] ?? '',
-      appointeeName: data['appointeeName'] ?? '',
-      statutoryReference: data['statutoryReference'] ?? '',
-      appointedDate: DateTime.parse(data['appointedDate']),
-      status: data['status'] ?? 'Active',
-      siteId: data['siteId'] ?? '',
-    );
+    return OHSAppointment.fromJson(doc.data() as Map<String, dynamic>, doc.id);
   }
 
   Map<String, dynamic> toFirestore() {
@@ -287,7 +562,7 @@ class OHSAppointment {
       'appointeeId': appointeeId,
       'appointeeName': appointeeName,
       'statutoryReference': statutoryReference,
-      'appointedDate': appointedDate.toIso8601String(),
+      'appointedDate': _dateTimeToTimestamp(appointedDate),
       'status': status,
       'siteId': siteId,
     };

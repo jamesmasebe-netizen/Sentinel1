@@ -5,7 +5,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import 'waste_form.dart';
 import 'waste_list_item.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class WasteManifestsTab extends ConsumerStatefulWidget {
   const WasteManifestsTab({super.key});

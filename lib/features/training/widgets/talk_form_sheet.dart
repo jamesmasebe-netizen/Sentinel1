@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/widgets/searchable_multi_select.dart';
+import '../../people/providers/employee_providers.dart';
 
 class TalkFormSheet extends ConsumerStatefulWidget {
   const TalkFormSheet({super.key});
@@ -15,14 +17,13 @@ class _TalkFormSheetState extends ConsumerState<TalkFormSheet> {
   bool _isSubmitting = false;
   final _topicCtrl = TextEditingController();
   final _talkLocCtrl = TextEditingController();
-  final _attendeesCtrl = TextEditingController();
+  List<String> _attendees = [];
   final DateTime _talkDate = DateTime.now();
 
   @override
   void dispose() {
     _topicCtrl.dispose();
     _talkLocCtrl.dispose();
-    _attendeesCtrl.dispose();
     super.dispose();
   }
 
@@ -36,12 +37,11 @@ class _TalkFormSheetState extends ConsumerState<TalkFormSheet> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
 
-      final attendees =
-          _attendeesCtrl.text
-              .split(',')
-              .map((a) => a.trim())
-              .where((a) => a.isNotEmpty)
-              .toList();
+      if (_attendees.isEmpty) {
+        UIUtils.showToast(context, 'Please select at least one attendee', type: ToastType.error);
+        setState(() => _isSubmitting = false);
+        return;
+      }
 
       await ref
           .read(firestoreServiceProvider)
@@ -53,7 +53,7 @@ class _TalkFormSheetState extends ConsumerState<TalkFormSheet> {
               'date': _talkDate.toIso8601String(),
               'conductorName': profile.displayName,
               'location': _talkLocCtrl.text.trim(),
-              'attendees': attendees,
+              'attendees': _attendees,
               'authorId': profile.uid,
               'siteId': profile.tenantId,
               'createdAt': DateTime.now().toIso8601String(),
@@ -99,14 +99,25 @@ class _TalkFormSheetState extends ConsumerState<TalkFormSheet> {
                   ),
                 ),
                 GSpacing.vLg,
-                TextFormField(
-                  controller: _attendeesCtrl,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Attendees',
-                    hintText: 'Enter names separated by commas',
-                    prefixIcon: Icon(Icons.people_outline),
-                  ),
+                ref.watch(employeesProvider).when(
+                  data: (employees) {
+                    final options = employees.map((e) => e.id).toList();
+                    final labels = <String, String>{for (var e in employees) e.id: e.fullName};
+                    return SearchableStringMultiSelect(
+                      label: 'Attendees',
+                      hintText: 'Search attendees...',
+                      availableItems: options,
+                      itemLabels: labels,
+                      selectedItems: _attendees,
+                      onChanged: (val) {
+                        setState(() {
+                          _attendees = val;
+                        });
+                      },
+                    );
+                  },
+                  loading: () => const CircularProgressIndicator(),
+                  error: (e, s) => Text('Error loading employees: $e'),
                 ),
                 GSpacing.vMd,
                 Text(

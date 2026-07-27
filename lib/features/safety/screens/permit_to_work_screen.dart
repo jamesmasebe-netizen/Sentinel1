@@ -6,7 +6,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/permit_card.dart';
 import '../widgets/permit_form_sheet.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Permit to Work module — create, approve, and manage permits.
 /// Mirrors React PermitToWork: types, LOTO, contractor compliance gate, status workflow.

@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EquipmentInspectionsTab extends ConsumerWidget {
   const EquipmentInspectionsTab({super.key});
@@ -30,18 +30,17 @@ class EquipmentInspectionsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final siteId = ref.watch(currentTenantIdProvider);
+    final currentTenantId = ref.watch(currentTenantIdProvider);
     final fs = ref.watch(firestoreProvider);
     return StreamBuilder<QuerySnapshot>(
       stream:
-          siteId == null
+          currentTenantId == null
               ? null
               : fs
                   .tenantCollection(
-                    ref.watch(currentTenantIdProvider) ?? "",
+                    currentTenantId,
                     'equipment',
                   )
-                  .where('siteId', isEqualTo: siteId)
                   .where('daysUntilInspection', isLessThanOrEqualTo: 30)
                   .orderBy('daysUntilInspection')
                   .limit(50)

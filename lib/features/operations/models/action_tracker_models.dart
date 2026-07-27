@@ -14,13 +14,45 @@ class ActionItem {
     required this.dueDate,
     required this.assignee,
   });
-  ActionItem copyWith({String? status}) => ActionItem(
-    id: id,
-    collectionName: collectionName,
-    type: type,
-    title: title,
+
+  factory ActionItem.fromJson(Map<String, dynamic> json, String id) {
+    return ActionItem(
+      id: id,
+      collectionName: json['collectionName'] ?? '',
+      type: json['type'] ?? '',
+      title: json['title'] ?? '',
+      status: json['status'] ?? 'Pending',
+      dueDate: json['dueDate'] ?? '',
+      assignee: json['assignee'] ?? 'Unassigned',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'collectionName': collectionName,
+      'type': type,
+      'title': title,
+      'status': status,
+      'dueDate': dueDate,
+      'assignee': assignee,
+    };
+  }
+
+  ActionItem copyWith({
+    String? id,
+    String? collectionName,
+    String? type,
+    String? title,
+    String? status,
+    String? dueDate,
+    String? assignee,
+  }) => ActionItem(
+    id: id ?? this.id,
+    collectionName: collectionName ?? this.collectionName,
+    type: type ?? this.type,
+    title: title ?? this.title,
     status: status ?? this.status,
-    dueDate: dueDate,
-    assignee: assignee,
+    dueDate: dueDate ?? this.dueDate,
+    assignee: assignee ?? this.assignee,
   );
 }

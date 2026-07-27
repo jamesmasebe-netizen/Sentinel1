@@ -5,7 +5,7 @@ import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EsgMetricsTab extends ConsumerStatefulWidget {
   const EsgMetricsTab({super.key});
@@ -49,7 +49,7 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
               'unit': _esgUnit,
               'period': _esgPeriod,
               'authorId': p.uid,
-              'siteId': p.tenantId,
+              'siteId': ref.read(currentTenantIdProvider) ?? '',
               'createdAt': DateTime.now().toIso8601String(),
             },
           );

@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../../../core/widgets/searchable_multi_select.dart';
+import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
 
 void showPermitForm(BuildContext context) {
   UIUtils.showSideSheet(
@@ -24,21 +27,30 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
 
   // Form Fields
   String _type = 'Hot Work';
+  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
+  final _areaController = TextEditingController();
   DateTime? _validFrom;
   DateTime? _validTo;
   bool _lotoRequired = false;
+  final _riskAssessmentIdController = TextEditingController();
+  String? _approverId;
+  List<String> _workers = [];
 
   @override
   void dispose() {
+    _titleController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
+    _areaController.dispose();
+    _riskAssessmentIdController.dispose();
     super.dispose();
   }
 
   Future<void> _submitPermit() async {
-    if (_descriptionController.text.isEmpty ||
+    if (_titleController.text.isEmpty ||
+        _descriptionController.text.isEmpty ||
         _locationController.text.isEmpty ||
         _validFrom == null ||
         _validTo == null) {
@@ -57,15 +69,20 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
 
       final data = {
         'type': _type,
+        'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'location': _locationController.text.trim(),
-        'validFrom': _validFrom!.toIso8601String(),
-        'validTo': _validTo!.toIso8601String(),
+        'area': _areaController.text.trim(),
+        'startDate': _validFrom!.toIso8601String(),
+        'endDate': _validTo!.toIso8601String(),
         'lotoRequired': _lotoRequired,
         'status': 'Requested',
-        'applicantId': profile.uid,
+        'requestedBy': profile.uid,
         'applicantName': profile.displayName,
-        'siteId': profile.tenantId,
+        'approverId': _approverId,
+        'riskAssessmentId': _riskAssessmentIdController.text.trim(),
+        'workers': _workers,
+        'tenantId': profile.tenantId,
         'createdAt': DateTime.now().toIso8601String(),
       };
 
@@ -125,10 +142,26 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
           ),
           GSpacing.vMd,
           TextFormField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'Permit Title *',
+              prefixIcon: Icon(Icons.title_rounded),
+            ),
+          ),
+          GSpacing.vMd,
+          TextFormField(
             controller: _locationController,
             decoration: const InputDecoration(
               labelText: 'Location *',
               prefixIcon: Icon(Icons.location_on_rounded),
+            ),
+          ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _areaController,
+            decoration: const InputDecoration(
+              labelText: 'Area',
+              prefixIcon: Icon(Icons.map_rounded),
             ),
           ),
           GSpacing.vMd,
@@ -210,6 +243,41 @@ class _PermitFormContentState extends ConsumerState<PermitFormContent> {
               }
             },
           ),
+          GSpacing.vMd,
+          TextFormField(
+            controller: _riskAssessmentIdController,
+            decoration: const InputDecoration(
+              labelText: 'Risk Assessment ID (Optional)',
+              prefixIcon: Icon(Icons.assignment_rounded),
+            ),
+          ),
+          GSpacing.vMd,
+          EmployeeSelector(
+            label: 'Approving Authority',
+            value: _approverId,
+            onChanged: (val) => setState(() => _approverId = val),
+          ),
+          GSpacing.vMd,
+          ref
+              .watch(employeesProvider)
+              .when(
+                data: (employees) {
+                  final options = employees.map((e) => e.id).toList();
+                  final labels = <String, String>{
+                    for (var e in employees) e.id: e.fullName,
+                  };
+                  return SearchableStringMultiSelect(
+                    label: 'Workers Assigned',
+                    hintText: 'Search workers...',
+                    availableItems: options,
+                    itemLabels: labels,
+                    selectedItems: _workers,
+                    onChanged: (vals) => setState(() => _workers = vals),
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => Text('Error loading employees: $e'),
+              ),
           GSpacing.vMd,
           SwitchListTile(
             contentPadding: EdgeInsets.zero,

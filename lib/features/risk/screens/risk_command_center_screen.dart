@@ -6,7 +6,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/kpi_card.dart';
 import '../widgets/risk_matrix_widget.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Risk Command Center — KPI cards + risk distribution overview.
 class RiskCommandCenterScreen extends ConsumerWidget {

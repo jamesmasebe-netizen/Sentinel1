@@ -5,6 +5,7 @@ import '../models/crm_models.dart';
 import '../services/crm_service.dart';
 import 'pipeline_kanban_screen.dart';
 import 'quote_generation_screen.dart';
+import 'account_list_screen.dart';
 
 class CrmHubScreen extends ConsumerWidget {
   const CrmHubScreen({super.key});
@@ -118,6 +119,20 @@ class CrmHubScreen extends ConsumerWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const PipelineKanbanScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 16),
+              _buildActionCard(
+                context: context,
+                title: 'Accounts',
+                icon: Icons.business,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AccountListScreen(),
                     ),
                   );
                 },

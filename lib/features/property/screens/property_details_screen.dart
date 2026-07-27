@@ -9,6 +9,7 @@ import '../widgets/property_facility_tab.dart';
 import '../widgets/property_esg_tab.dart';
 import '../widgets/property_leases_tab.dart';
 import '../widgets/property_hero_header.dart';
+import '../widgets/property_form_sheet.dart';
 
 class PropertyDetailsScreen extends ConsumerStatefulWidget {
   final String propertyId;
@@ -55,7 +56,11 @@ class _PropertyDetailsScreenState extends ConsumerState<PropertyDetailsScreen>
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () {
-                  UIUtils.showToast(context, 'Edit Property form opened');
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (context) => PropertyFormSheet(property: property),
+                  );
                 },
               ),
               IconButton(

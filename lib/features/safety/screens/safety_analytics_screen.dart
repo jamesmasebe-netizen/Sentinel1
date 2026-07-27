@@ -8,7 +8,7 @@ import '../widgets/kpi_card.dart';
 import '../widgets/bar_chart.dart';
 import '../widgets/breakdown_card.dart';
 import '../widgets/risk_zone.dart';
-import 'package:xm_system/core/utils/tenant_firestore_extension.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Safety Analytics — KPI cards, incident trend chart, and risk zone assessment.
 class SafetyAnalyticsScreen extends ConsumerWidget {
