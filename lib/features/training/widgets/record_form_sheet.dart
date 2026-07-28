@@ -4,6 +4,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
 
 class RecordFormSheet extends ConsumerStatefulWidget {
   const RecordFormSheet({super.key});
@@ -41,6 +42,9 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
       final status = _expiry.isAfter(DateTime.now()) ? 'Active' : 'Expired';
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final selectedEmployee =
+          employees.where((e) => e.id == _selectedEmployeeId).firstOrNull;
 
       await ref
           .read(firestoreServiceProvider)
@@ -49,6 +53,7 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
             collection: 'training_records',
             data: {
               'employeeId': _selectedEmployeeId,
+              'employeeName': selectedEmployee?.fullName ?? 'Unknown Employee',
               'idNumber': _idNumCtrl.text.trim(),
               'courseName': _courseCtrl.text.trim(),
               'dateCompleted': _completed.toIso8601String(),

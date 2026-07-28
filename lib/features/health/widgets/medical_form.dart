@@ -4,6 +4,7 @@ import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
 
 class MedicalForm extends ConsumerStatefulWidget {
   const MedicalForm({super.key});
@@ -47,6 +48,9 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final selectedEmployee =
+          employees.where((e) => e.id == _selectedEmployeeId).firstOrNull;
       await ref
           .read(firestoreServiceProvider)
           .createDocument(
@@ -54,6 +58,7 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
             collection: 'medical_records',
             data: {
               'employeeId': _selectedEmployeeId,
+              'employeeName': selectedEmployee?.fullName ?? 'Unknown Employee',
               'idNumber': _medIdCtrl.text.trim(),
               'medicalType': _medType,
               'status': _medStatus,

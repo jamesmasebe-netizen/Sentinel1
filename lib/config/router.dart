@@ -26,6 +26,7 @@ import '../features/people/screens/people_hub_screen.dart';
 import '../features/people/screens/hr_hub_screen.dart';
 import '../features/people/screens/okr_dashboard_screen.dart';
 import '../features/safety/screens/safety_hub_screen.dart';
+import '../features/compliance/screens/compliance_docs_screen.dart';
 import '../features/risk/screens/risk_hub_screen.dart';
 import '../features/operations/screens/schedule_board_screen.dart';
 import '../features/operations/screens/action_tracker_screen.dart';
@@ -39,16 +40,8 @@ import '../features/settings/screens/settings_screen.dart';
 import '../features/settings/screens/offline_queue_screen.dart';
 import '../features/property/screens/property_hub_screen.dart';
 import '../features/property/screens/property_details_screen.dart';
-import '../features/projects/screens/project_dashboard_screen.dart';
-import '../features/projects/screens/project_details_screen.dart';
-import '../features/finance/screens/finance_hub_screen.dart';
-import '../features/supply_chain/screens/supply_chain_hub_screen.dart';
-import '../features/projects/screens/project_operations_hub_screen.dart';
-import '../features/field_service/screens/field_service_hub_screen.dart';
-import '../features/crm/screens/crm_hub_screen.dart';
-import '../features/customer_service/screens/customer_service_hub_screen.dart';
 import '../features/equipment/screens/loto_management_screen.dart';
-import '../core/widgets/app_shell.dart';
+import '../features/equipment/screens/equipment_management_screen.dart';
 
 
 import '../features/copilot/screens/copilot_panel.dart';
@@ -149,6 +142,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 (c, s) => const NoTransitionPage(child: SafetyHubScreen()),
           ),
           GoRoute(
+            path: '/compliance',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: ComplianceDocsScreen()),
+          ),
+          GoRoute(
             path: '/mrp-dashboard',
             pageBuilder: (c, s) => const NoTransitionPage(child: MrpDashboardScreen()),
           ),
@@ -240,6 +238,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/loto-management',
             pageBuilder: (c, s) => const NoTransitionPage(child: LotoManagementScreen()),
+          ),
+          GoRoute(
+            path: '/equipment',
+            pageBuilder:
+                (c, s) => const NoTransitionPage(child: EquipmentManagementScreen()),
           ),
           GoRoute(
             path: '/properties',

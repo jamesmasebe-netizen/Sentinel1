@@ -69,7 +69,7 @@ class _FirstAidTabState extends ConsumerState<FirstAidTab> {
                     : fs
                         .tenantCollection(
                           ref.watch(currentTenantIdProvider) ?? "",
-                          'first_aid_log',
+                          'first_aid_logs',
                         )
                         .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)

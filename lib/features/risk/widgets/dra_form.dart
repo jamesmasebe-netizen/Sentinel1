@@ -28,6 +28,38 @@ class _DRAFormState extends ConsumerState<DRAForm> {
   bool _isSafe = false;
   bool _isSubmitting = false;
 
+  // Same risk-matrix pattern as hira_form.dart, so DRA gets a real riskLevel
+  // instead of leaving risk_command_center_screen.dart's KPI grid always at 0.
+  String _likelihood = 'Possible';
+  String _severity = 'Major';
+  static const _likelihoods = [
+    'Rare',
+    'Unlikely',
+    'Possible',
+    'Likely',
+    'Almost Certain',
+  ];
+  static const _severities = [
+    'Negligible',
+    'Minor',
+    'Moderate',
+    'Major',
+    'Catastrophic',
+  ];
+
+  int _riskScore(String likelihood, String severity) {
+    final l = _likelihoods.indexOf(likelihood) + 1;
+    final s = _severities.indexOf(severity) + 1;
+    return l * s;
+  }
+
+  String _riskLevel(int score) {
+    if (score >= 16) return 'Extreme';
+    if (score >= 10) return 'High';
+    if (score >= 5) return 'Medium';
+    return 'Low';
+  }
+
   @override
   void dispose() {
     _taskCtrl.dispose();
@@ -50,6 +82,7 @@ class _DRAFormState extends ConsumerState<DRAForm> {
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
+      final score = _riskScore(_likelihood, _severity);
       await ref
           .read(firestoreServiceProvider)
           .createDocument(
@@ -61,6 +94,16 @@ class _DRAFormState extends ConsumerState<DRAForm> {
               'description': _hazards.join(', '),
               'activity': _taskCtrl.text.trim(),
               'area': _locCtrl.text.trim(),
+              // taskDescription/location/task are the field names dra_card.dart and
+              // risk_command_center_screen.dart actually read (2 different keys for the
+              // same concept, verified directly) — see docs/fixes/FIX_LIST.md F-306.
+              'taskDescription': _taskCtrl.text.trim(),
+              'location': _locCtrl.text.trim(),
+              'task': _taskCtrl.text.trim(),
+              'likelihood': _likelihood,
+              'severity': _severity,
+              'riskLevel': _riskLevel(score),
+              'status': 'Pending',
               'hazardsIdentified': _hazards,
               'controlsApplied': _controls,
               'teamMembers': _teamMembers,
@@ -126,6 +169,60 @@ class _DRAFormState extends ConsumerState<DRAForm> {
                   labelText: 'Location *',
                   prefixIcon: Icon(Icons.location_on_rounded),
                 ),
+              ),
+              GSpacing.vLg,
+              Text(
+                'Risk Matrix Evaluation',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              GSpacing.vMd,
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _likelihood,
+                      decoration: const InputDecoration(
+                        labelText: 'Likelihood',
+                      ),
+                      items:
+                          _likelihoods
+                              .map(
+                                (l) => DropdownMenuItem(
+                                  value: l,
+                                  child: Text(
+                                    l,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (v) => setLocalState(() => _likelihood = v!),
+                    ),
+                  ),
+                  GSpacing.hMd,
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: _severity,
+                      decoration: const InputDecoration(labelText: 'Severity'),
+                      items:
+                          _severities
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(
+                                    s,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                      onChanged: (v) => setLocalState(() => _severity = v!),
+                    ),
+                  ),
+                ],
               ),
               GSpacing.vLg,
               Text(

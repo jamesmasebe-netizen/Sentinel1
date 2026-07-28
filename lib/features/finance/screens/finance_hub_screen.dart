@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/finance_providers.dart';
 import 'chart_of_accounts_view.dart';
 import 'journal_entry_form.dart';
@@ -10,7 +11,7 @@ class FinanceHubScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final journalEntries = ref.watch(journalEntriesProvider);
+    final journalEntriesAsync = ref.watch(journalEntriesStreamProvider);
     final accountsAsync = ref.watch(glAccountsStreamProvider);
     final currencyFormatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
 
@@ -37,7 +38,11 @@ class FinanceHubScreen extends ConsumerWidget {
                       loading: () => const Text('Total Accounts: Loading...'),
                       error: (err, st) => const Text('Total Accounts: Error loading'),
                     ),
-                    Text('Total Journal Entries: ${journalEntries.length}'),
+                    journalEntriesAsync.when(
+                      data: (entries) => Text('Total Journal Entries: ${entries.length}'),
+                      loading: () => const Text('Total Journal Entries: Loading...'),
+                      error: (err, st) => const Text('Total Journal Entries: Error loading'),
+                    ),
                   ],
                 ),
               ),
@@ -50,22 +55,20 @@ class FinanceHubScreen extends ConsumerWidget {
               children: [
                 ElevatedButton.icon(
                   onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ChartOfAccountsView(),
-                        ),
+                      () => UIUtils.showSideSheet(
+                        context: context,
+                        title: 'Chart of Accounts',
+                        builder: (ctx) => const ChartOfAccountsView(),
                       ),
                   icon: const Icon(Icons.account_balance),
                   label: const Text('Chart of Accounts'),
                 ),
                 ElevatedButton.icon(
                   onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const JournalEntryForm(),
-                        ),
+                      () => UIUtils.showSideSheet(
+                        context: context,
+                        title: 'New Journal Entry',
+                        builder: (ctx) => const JournalEntryForm(),
                       ),
                   icon: const Icon(Icons.add_card),
                   label: const Text('New Journal Entry'),
@@ -79,31 +82,37 @@ class FinanceHubScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child:
-                  journalEntries.isEmpty
-                      ? const Center(child: Text('No journal entries yet.'))
-                      : ListView.builder(
-                        itemCount: journalEntries.length,
-                        itemBuilder: (context, index) {
-                          final entry = journalEntries.reversed.toList()[index];
-                          return ListTile(
-                            title: Text(entry.description),
-                            subtitle: Text(
-                              'Account: ${entry.id} • Date: ${entry.transactionDate.toLocal().toString().split(' ')[0]}',
-                            ),
-                            trailing: Text(
-                              currencyFormatter.format(entry.totalDebit),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    entry.totalDebit < 0
-                                        ? Colors.red
-                                        : Colors.green,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+              child: journalEntriesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, st) => Center(child: Text('Error loading entries: $err')),
+                data: (journalEntries) {
+                  if (journalEntries.isEmpty) {
+                    return const Center(child: Text('No journal entries yet.'));
+                  }
+                  return ListView.builder(
+                    itemCount: journalEntries.length,
+                    itemBuilder: (context, index) {
+                      final entry = journalEntries.reversed.toList()[index];
+                      return ListTile(
+                        title: Text(entry.description),
+                        subtitle: Text(
+                          'Account: ${entry.id} • Date: ${entry.transactionDate.toLocal().toString().split(' ')[0]}',
+                        ),
+                        trailing: Text(
+                          currencyFormatter.format(entry.totalDebit),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                entry.totalDebit < 0
+                                    ? Colors.red
+                                    : Colors.green,
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),

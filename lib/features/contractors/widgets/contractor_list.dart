@@ -6,6 +6,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'contractor_projects_sheet.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../people/providers/employee_providers.dart';
 
 class ContractorList extends ConsumerStatefulWidget {
   final String searchQuery;
@@ -26,6 +27,7 @@ class _ContractorListState extends ConsumerState<ContractorList> {
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentTenantIdProvider);
     final fs = ref.watch(firestoreProvider);
+    final employees = ref.watch(employeesProvider).valueOrNull ?? [];
 
     return StreamBuilder<QuerySnapshot>(
       stream:
@@ -95,7 +97,7 @@ class _ContractorListState extends ConsumerState<ContractorList> {
                             ),
                           ),
                           Text(
-                            '${d['contactPerson'] ?? ''} • ${d['scopeOfWork'] ?? ''}',
+                            '${employees.where((e) => e.id == d['contactPersonId']).firstOrNull?.fullName ?? ''} • ${d['scopeOfWork'] ?? ''}',
                             style: TextStyle(
                               fontSize: 11,
                               color:

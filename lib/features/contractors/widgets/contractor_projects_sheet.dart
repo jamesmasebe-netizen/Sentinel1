@@ -78,7 +78,7 @@ class _ContractorProjectsSheetState
           await fs
               .tenantCollection(
                 ref.watch(currentTenantIdProvider) ?? "",
-                'safetyFileSubmissions',
+                'safety_file_submissions',
               )
               .where('contractorId', isEqualTo: contractorId)
               .where('projectId', isEqualTo: projectId)

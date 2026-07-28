@@ -32,6 +32,8 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
     try {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final employeeNames = {for (var e in employees) e.id: e.fullName};
 
       // Create enrollment for each selected employee
       for (final empId in _enrolledEmployees) {
@@ -42,10 +44,14 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
               collection: 'training_enrollments',
               data: {
                 'employeeId': empId,
+                'employeeName': employeeNames[empId] ?? 'Unknown Employee',
                 'courseId': _courseIdCtrl.text.trim(),
                 'courseName': _courseCtrl.text.trim(),
                 'dueDate': _dueDate.toIso8601String(),
                 'enrollmentDate': DateTime.now().toIso8601String(),
+                // manager_training_dashboard.dart orders by this field — without it, an
+                // allocation is invisible on that dashboard (see docs/fixes/FIX_LIST.md F-009)
+                'assignedAt': DateTime.now().toIso8601String(),
                 'status': 'Assigned',
                 'authorId': profile.uid,
                 'siteId': profile.tenantId,

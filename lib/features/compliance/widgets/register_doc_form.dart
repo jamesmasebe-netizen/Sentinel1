@@ -46,7 +46,7 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
           .read(firestoreServiceProvider)
           .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'compliance_documents',
+            collection: 'compliance_docs',
             data: {
               'title': _titleCtrl.text.trim(),
               'referenceNumber': _refCtrl.text.trim(),

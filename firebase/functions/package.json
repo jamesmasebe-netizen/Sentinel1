@@ -6,7 +6,8 @@
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "npm run build && firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "backfill:contractor-status": "tsc scripts/backfill-contractor-status.ts --outDir lib/scripts --module commonjs --esModuleInterop --target es2017 --skipLibCheck --strict --noImplicitReturns --noUnusedLocals && node lib/scripts/backfill-contractor-status.js"
   },
   "main": "lib/index.js",
   "dependencies": {

@@ -1,6 +1,5 @@
 import '../models/finance_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/chart_of_accounts.dart';
 
 import '../services/finance_service.dart';
 
@@ -9,8 +8,18 @@ final glAccountsStreamProvider = StreamProvider<List<GeneralLedgerAccount>>((ref
   return service.streamAllGLAccounts();
 });
 
-final journalEntriesProvider = StateProvider<List<JournalEntry>>((ref) => []);
-final invoicesProvider = StateProvider<List<Invoice>>((ref) => []);
+// F-312: both used to be StateProviders seeded with [] and never written to,
+// so FinanceHubScreen could never show a real journal entry. FinanceService
+// already has the real collection-wide streams (streamAllJournalEntries()/
+// streamAllInvoices()) — they just weren't wired to any provider.
+final journalEntriesStreamProvider = StreamProvider<List<JournalEntry>>((ref) {
+  final service = ref.watch(financeServiceProvider);
+  return service.streamAllJournalEntries();
+});
+final invoicesStreamProvider = StreamProvider<List<Invoice>>((ref) {
+  final service = ref.watch(financeServiceProvider);
+  return service.streamAllInvoices();
+});
 
 final journalEntryStreamProvider = StreamProvider.family<JournalEntry?, String>(
   (ref, id) {

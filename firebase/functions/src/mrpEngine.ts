@@ -21,7 +21,9 @@ export const runMrp = functions.https.onCall(async (request) => {
         const inventoryMap: { [itemId: string]: number } = {};
         inventorySnap.docs.forEach(doc => {
             const data = doc.data();
-            inventoryMap[doc.id] = data.quantityOnHand || 0;
+            // F-201: was data.quantityOnHand, a key the Dart client never writes.
+            // stock_level is what InventoryItem/ScmService actually persist.
+            inventoryMap[doc.id] = data.stock_level || 0;
         });
 
         // 2. Fetch open Sales Orders (Demand)

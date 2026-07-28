@@ -75,7 +75,27 @@ class FinanceService {
         .toList();
   }
 
+  // docs/schema_finance.md's core principle: "Posted transactions cannot be
+  // deleted or modified. Corrections require a reversing entry." Neither
+  // method enforced this before (F-311) — check the CURRENTLY PERSISTED
+  // status, not the incoming object's, since legitimately transitioning a
+  // draft *into* POSTED must still be allowed.
+  static const _immutableStatuses = {'POSTED', 'REVERSED'};
+
+  Future<void> _assertMutable(String id, String action) async {
+    final doc =
+        await _tenantDoc.collection('fin_journal_headers').doc(id).get();
+    final currentStatus = doc.data()?['status'] as String?;
+    if (currentStatus != null && _immutableStatuses.contains(currentStatus)) {
+      throw StateError(
+        'Cannot $action journal entry $id: it is $currentStatus. '
+        'Posted/reversed entries are immutable — create a reversing entry instead.',
+      );
+    }
+  }
+
   Future<void> updateJournalEntry(JournalEntry entry) async {
+    await _assertMutable(entry.id, 'modify');
     await _tenantDoc
         .collection('fin_journal_headers')
         .doc(entry.id)
@@ -83,6 +103,7 @@ class FinanceService {
   }
 
   Future<void> deleteJournalEntry(String id) async {
+    await _assertMutable(id, 'delete');
     await _tenantDoc.collection('fin_journal_headers').doc(id).delete();
   }
 
