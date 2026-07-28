@@ -7,9 +7,10 @@ import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 final coursesProvider = StreamProvider<List<Course>>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return firestore.tenantCollection("", 'courses').snapshots().map((snap) {
+  final tenantId = ref.watch(currentTenantIdProvider) ?? "";
+  return firestore.tenantCollection(tenantId, 'courses').snapshots().map((snap) {
     if (snap.docs.isEmpty) {
-      _seedDummyCourses(firestore);
+      _seedDummyCourses(firestore, tenantId);
       return [];
     }
     return snap.docs.map((doc) => Course.fromMap(doc.data(), doc.id)).toList();
@@ -19,11 +20,12 @@ final coursesProvider = StreamProvider<List<Course>>((ref) {
 final enrollmentsProvider = StreamProvider<List<Enrollment>>((ref) {
   final firestore = ref.watch(firestoreProvider);
   final profile = ref.watch(userProfileProvider).valueOrNull;
+  final tenantId = ref.watch(currentTenantIdProvider) ?? "";
 
   if (profile == null) return Stream.value([]);
 
   return firestore
-      .tenantCollection("", 'enrollments')
+      .tenantCollection(tenantId, 'enrollments')
       .where('employeeId', isEqualTo: profile.uid)
       .snapshots()
       .map(
@@ -34,7 +36,7 @@ final enrollmentsProvider = StreamProvider<List<Enrollment>>((ref) {
       );
 });
 
-void _seedDummyCourses(FirebaseFirestore firestore) {
+void _seedDummyCourses(FirebaseFirestore firestore, String tenantId) {
   final dummyCourses = [
     {
       'title': 'Safety Basics 101',
@@ -68,7 +70,7 @@ void _seedDummyCourses(FirebaseFirestore firestore) {
 
   for (var i = 0; i < dummyCourses.length; i++) {
     firestore
-        .tenantCollection("", 'courses')
+        .tenantCollection(tenantId, 'courses')
         .doc('CRS-00${i + 1}')
         .set(dummyCourses[i]);
   }

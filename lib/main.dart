@@ -106,9 +106,17 @@ void main() async {
     } catch (_) {}
   }
 
+  // ─── Offline sync service (F-507: was never initialized — the write queue
+  // FirestoreService and OfflineQueueScreen both depend on threw
+  // LateInitializationError on first real use) ───
+  final container = ProviderContainer(
+    overrides: [firestoreProvider.overrideWithValue(firestore)],
+  );
+  await container.read(offlineSyncServiceProvider).initialize();
+
   runApp(
-    ProviderScope(
-      overrides: [firestoreProvider.overrideWithValue(firestore)],
+    UncontrolledProviderScope(
+      container: container,
       child: const XMSystemApp(),
     ),
   );

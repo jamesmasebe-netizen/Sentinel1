@@ -12,7 +12,7 @@ Future<Map<String, List<Map<String, dynamic>>>> fetchSafetyComplianceData(
   // 1. Fetch risk assessment details
   for (final id in riskAssessmentIds) {
     final hira =
-        await fs.tenantCollection('', 'risk_assessments').doc(id).get();
+        await fs.tenantCollection(project.tenantId, 'risk_assessments').doc(id).get();
     if (hira.exists) {
       risksList.add({
         'id': id,
@@ -23,7 +23,7 @@ Future<Map<String, List<Map<String, dynamic>>>> fetchSafetyComplianceData(
       continue;
     }
     final dra =
-        await fs.tenantCollection('', 'dynamic_risk_assessments').doc(id).get();
+        await fs.tenantCollection(project.tenantId, 'dynamic_risk_assessments').doc(id).get();
     if (dra.exists) {
       risksList.add({
         'id': id,
@@ -35,7 +35,7 @@ Future<Map<String, List<Map<String, dynamic>>>> fetchSafetyComplianceData(
       continue;
     }
     final strat =
-        await fs.tenantCollection('', 'strategic_risks').doc(id).get();
+        await fs.tenantCollection(project.tenantId, 'strategic_risks').doc(id).get();
     if (strat.exists) {
       risksList.add({
         'id': id,
@@ -50,7 +50,7 @@ Future<Map<String, List<Map<String, dynamic>>>> fetchSafetyComplianceData(
   if (riskAssessmentIds.isNotEmpty) {
     final permitSnap =
         await fs
-            .tenantCollection('', 'permits')
+            .tenantCollection(project.tenantId, 'permits')
             .where('siteId', isEqualTo: project.tenantId)
             .get();
     for (final doc in permitSnap.docs) {
@@ -65,7 +65,7 @@ Future<Map<String, List<Map<String, dynamic>>>> fetchSafetyComplianceData(
   // 3. Fetch Action Items for this project
   final actionSnap =
       await fs
-          .tenantCollection('', 'actionItems')
+          .tenantCollection(project.tenantId, 'actionItems')
           .where('siteId', isEqualTo: project.tenantId)
           .where('sourceId', isEqualTo: project.id)
           .get();

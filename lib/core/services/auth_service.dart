@@ -51,6 +51,10 @@ class AuthService {
 
       // Fetch or create user profile
       final profile = await _getOrCreateProfile(user);
+      // Custom claims (role/tenantId) are set asynchronously by the syncUserClaims Cloud
+      // Function trigger on the users/{uid} write above — force a refresh so this session
+      // picks them up as soon as possible instead of only on the next natural token refresh.
+      await user.getIdToken(true);
       _currentProfile = profile;
       _profileController.add(profile);
       return profile;
@@ -73,6 +77,10 @@ class AuthService {
 
       // Fetch or create user profile
       final profile = await _getOrCreateProfile(user);
+      // Custom claims (role/tenantId) are set asynchronously by the syncUserClaims Cloud
+      // Function trigger on the users/{uid} write above — force a refresh so this session
+      // picks them up as soon as possible instead of only on the next natural token refresh.
+      await user.getIdToken(true);
       _currentProfile = profile;
       _profileController.add(profile);
       return profile;
@@ -89,6 +97,10 @@ class AuthService {
       if (user == null) return null;
 
       final profile = await _getOrCreateProfile(user);
+      // Custom claims (role/tenantId) are set asynchronously by the syncUserClaims Cloud
+      // Function trigger on the users/{uid} write above — force a refresh so this session
+      // picks them up as soon as possible instead of only on the next natural token refresh.
+      await user.getIdToken(true);
       _currentProfile = profile;
       _profileController.add(profile);
       return profile;

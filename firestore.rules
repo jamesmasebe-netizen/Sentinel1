@@ -216,13 +216,428 @@ service cloud.firestore {
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
 
+      // --- F-001: collections below were previously undeclared and silently blocked by the catch-all ---
+
+      // Safety — CAPAs, BBS observations, PPE
+      match /capas/{capaId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isSheqOfficer();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /bbs_observations/{obsId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId); // Any employee can log a BBS observation
+        allow update, delete: if belongsToTenant(tenantId) && isSheqOfficer();
+      }
+      match /ppe_compliance/{recordId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /ppe_inventory/{itemId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Health — medical records need tighter read access than the module default (sensitive personal data)
+      match /medical_records/{recordId} {
+        allow read: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow create, update: if belongsToTenant(tenantId) && isSheqOfficer();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /hygiene_surveys/{surveyId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      // Both spellings declared — code writes 'first_aid_logs', reads 'first_aid_log' (see docs/fixes/FIX_LIST.md F-104)
+      match /first_aid_logs/{logId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /first_aid_log/{logId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Training
+      match /courses/{courseId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /enrollments/{enrollmentId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /training_enrollments/{enrollmentId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /toolbox_talks/{talkId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Workers' Comp — COIDA claims are sensitive (injury/medical data), same read restriction as medical_records
+      match /coida_claims/{claimId} {
+        allow read: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Compliance — both spellings declared, see docs/fixes/FIX_LIST.md F-108/F-109
+      match /compliance_docs/{docId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /compliance_documents/{docId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Environment
+      match /waste_manifests/{manifestId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /environmental_spills/{spillId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId); // Any employee can report a spill
+        allow update, delete: if belongsToTenant(tenantId) && isSheqOfficer();
+      }
+      match /esg_metrics/{metricId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Operations
+      match /actionItems/{itemId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId); // Anyone can raise an action item
+        allow update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /dynamic_risk_assessments/{assessmentId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isSheqOfficer();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /inventory_items/{itemId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /warehouses/{warehouseId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      // Integration configs hold API keys/webhook secrets — admin-only, not the standard tenant-read default
+      match /integrations/{integrationId} {
+        allow read, write: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Risk
+      match /strategic_risks/{riskId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /bowtie_analyses/{analysisId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isSheqOfficer();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Finance
+      match /fin_ap_invoices/{invoiceId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /fin_ar_invoices/{invoiceId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /fin_journal_headers/{entryId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+
+        // Journal line items subcollection
+        match /lines/{lineId} {
+          allow read: if belongsToTenant(tenantId);
+          allow create, update: if belongsToTenant(tenantId) && isManager();
+          allow delete: if belongsToTenant(tenantId) && isAdmin();
+        }
+      }
+      match /fin_chart_of_accounts/{accountId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /fin_tax_codes/{codeId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /budgetPlans/{planId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /costCenters/{centerId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Customer Service
+      match /cs_tickets/{ticketId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId);
+        allow update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+
+        // Ticket message thread subcollection
+        match /messages/{messageId} {
+          allow read: if belongsToTenant(tenantId);
+          allow create: if belongsToTenant(tenantId);
+          allow update, delete: if belongsToTenant(tenantId) && isAdmin();
+        }
+      }
+      match /cs_assets/{assetId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /cs_knowledge_articles/{articleId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /sla_kpi_instances/{instanceId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId); // System/Cloud Function-generated
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Field Service
+      match /route_plans/{planId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /customer_assets/{assetId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /iot_devices/{deviceId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Property (all 6 collections — this module's form is real and reachable, unlike most instances of this pattern)
+      match /properties/{propertyId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /property_projects/{projectId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /property_utilities/{utilityId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /legal_appointments/{appointmentId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /property_leases/{leaseId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /property_assets/{assetId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Public careers portal — reachable pre-authentication (see docs/fixes/FIX_LIST.md F-501 for the
+      // routing/tenant-resolution half of this fix; these overrides make the rule itself permissive)
+      match /job_requisitions/{reqId} {
+        allow read: if true;
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /job_applications/{applicationId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create: if true;
+        allow update, delete: if belongsToTenant(tenantId) && isManager();
+      }
+
+      // Emergency
+      match /emergency_drills/{drillId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /emergency_equipment/{equipmentId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Supply Chain
+      match /assets/{assetId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /sales_orders/{orderId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /transfer_orders/{orderId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /mrp_suggestions/{suggestionId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /warehouseBinLocations/{binId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /vendorPerformanceMetrics/{metricId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /boms/{bomId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      // purchase_orders already declared above — add its po_lines subcollection here
+      match /purchase_orders/{poId}/po_lines/{lineId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // People — sensitive HR data, tighter read access than the module default
+      match /payroll_ledgers/{ledgerId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /compensation_plans/{planId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /performance_reviews/{reviewId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /leave_requests/{requestId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /benefit_enrollments/{enrollmentId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /invites/{inviteId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /candidates/{candidateId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // CRM
+      match /contacts/{contactId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /campaigns/{campaignId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /customerJourneys/{journeyId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /activities/{activityId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /deals/{dealId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // Notifications
+      match /notifications/{notificationId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /fcm_tokens/{tokenId} {
+        allow read, write: if belongsToTenant(tenantId);
+      }
+
+      // Billing — tenant's own subscription record; only admins manage it, Cloud Functions (Stripe webhook) bypass rules via Admin SDK
+      match /subscription/{docId} {
+        allow read: if belongsToTenant(tenantId);
+        allow write: if belongsToTenant(tenantId) && isAdmin();
+      }
+
       // Catch-all — read-only for tenant members, no writes allowed
       match /{collection}/{docId} {
         allow read: if belongsToTenant(tenantId);
         allow write: if false;
       }
     }
-    
+
     // Global user profiles (outside tenant scope)
     match /users/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;

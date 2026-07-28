@@ -259,7 +259,9 @@ export const sendEmergencyBroadcast = onCall(
 // 6. INCIDENT CREATED TRIGGER — notify managers on Critical/Fatal
 // ============================================================================
 export const onIncidentCreated = onDocumentCreated(
-  { document: "incidents/{incidentId}", region: "europe-west1" },
+  // F-010: was "incidents/{incidentId}" — every incident is actually written
+  // tenant-scoped (tenants/{tenantId}/incidents/{id}), so this trigger never fired.
+  { document: "tenants/{tenantId}/incidents/{incidentId}", region: "europe-west1" },
   async (event) => {
     const incident = event.data?.data();
     if (!incident) return;
@@ -312,7 +314,10 @@ export const checkPermitExpiry = onSchedule(
   async () => {
     const in24h = new Date();
     in24h.setHours(in24h.getHours() + 24);
-    const permitsSnap = await db.collection("permits")
+    // F-010: was db.collection("permits") — permits are tenant-scoped
+    // (tenants/{tenantId}/permits), so this always queried an empty flat
+    // collection. collectionGroup() matches every tenant's subcollection.
+    const permitsSnap = await db.collectionGroup("permits")
       .where("status", "==", "Approved")
       .where("expiryDate", "<=", in24h.toISOString())
       .get();
@@ -344,7 +349,9 @@ export const checkCoidaOverdue = onSchedule(
   async () => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const overdueSnap = await db.collection("incidents")
+    // F-010: was db.collection("incidents") — same flat-vs-tenant-scoped mismatch
+    // as onIncidentCreated above.
+    const overdueSnap = await db.collectionGroup("incidents")
       .where("severity", "in", ["Major", "Critical", "Fatal"])
       .where("coidaSubmitted", "==", false)
       .where("createdAt", "<=", sevenDaysAgo.toISOString())
@@ -370,7 +377,9 @@ export const checkTrainingExpiry = onSchedule(
   async () => {
     const in30days = new Date();
     in30days.setDate(in30days.getDate() + 30);
-    const expiringSnap = await db.collection("training_records")
+    // F-010: was db.collection("training_records") — same flat-vs-tenant-scoped
+    // mismatch as the other 3 functions in this file.
+    const expiringSnap = await db.collectionGroup("training_records")
       .where("expiryDate", "<=", in30days.toISOString())
       .where("notificationSent", "!=", true)
       .limit(50)
@@ -565,6 +574,7 @@ export const onInvoiceStatusChanged = onDocumentUpdated(
     }
   }
 );
+export * from './authClaims';
 export * from './mrpEngine';
 export * from './aiEngine';
 export * from './iotEngine';
