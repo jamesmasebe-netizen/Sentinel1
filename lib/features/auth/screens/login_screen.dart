@@ -62,7 +62,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
     try {
-      ref.read(isMockLoggedInProvider.notifier).state = true;
+      // F-501: was setting isMockLoggedInProvider directly (client-side only,
+      // no real Firebase Auth token). Use the real anonymous-auth path instead,
+      // so at least request.auth is genuinely populated for rule checks.
+      await ref.read(authServiceProvider).devBypassLogin();
     } catch (e) {
       if (mounted) {
         setState(() {

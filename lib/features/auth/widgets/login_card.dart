@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 
@@ -66,31 +67,35 @@ class LoginCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: XMTheme.spacingMd),
-
-          // Dev Bypass Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: isLoading ? null : onDevBypassLogin,
-              icon: const Icon(Icons.developer_mode, size: 20),
-              label: const Text('Bypass Login (Dev)'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(XMTheme.radiusSm),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+          // Dev Bypass Button — debug builds only (F-501: this was unconditionally
+          // visible in release builds with no build-flavor/feature-flag gate).
+          if (kDebugMode) ...[
+            const SizedBox(height: XMTheme.spacingMd),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: isLoading ? null : onDevBypassLogin,
+                icon: const Icon(Icons.developer_mode, size: 20),
+                label: const Text('Bypass Login (Dev)'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(XMTheme.radiusSm),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
 
           if (error != null) ...[
             const SizedBox(height: XMTheme.spacingMd),
