@@ -241,4 +241,22 @@ class FieldServiceService {
               .toList();
         });
   }
+  Stream<List<Territory>> streamTerritories() {
+    return _tenantDoc.collection('fs_territories').snapshots().map((snap) => snap.docs.map((d) => Territory.fromJson(d.data(), d.id)).toList());
+  }
+  Stream<List<IncidentType>> streamIncidentTypes() {
+    return _tenantDoc.collection('fs_incident_types').snapshots().map((snap) => snap.docs.map((d) => IncidentType.fromJson(d.data(), d.id)).toList());
+  }
+  Stream<List<ServiceType>> streamServiceTypes() {
+    return _tenantDoc.collection('fs_service_types').snapshots().map((snap) => snap.docs.map((d) => ServiceType.fromJson(d.data(), d.id)).toList());
+  }
+  Stream<List<WorkOrderSubstatus>> streamWorkOrderSubstatuses() {
+    return _tenantDoc.collection('fs_wo_substatuses').snapshots().map((snap) => snap.docs.map((d) => WorkOrderSubstatus.fromJson(d.data(), d.id)).toList());
+  }
+  Stream<List<Agreement>> streamAgreements() {
+    return _tenantDoc.collection('fs_agreements').snapshots().map((snap) => snap.docs.map((d) => Agreement.fromJson(d.data(), d.id)).toList());
+  }
+  Stream<List<CustomerAsset>> streamAllCustomerAssets() {
+    return _tenantDoc.collection('customer_assets').snapshots().map((snap) => snap.docs.map((d) => CustomerAsset.fromJson(d.data(), d.id)).toList());
+  }
 }

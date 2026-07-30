@@ -1,32 +1,30 @@
 import 'package:flutter/material.dart';
-import 'omnichannel_ticket_screen.dart';
-import 'omnichannel_ticket_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'knowledge_base_screen.dart';
-import 'package:go_router/go_router.dart';
-class CustomerServiceHubScreen extends StatelessWidget {
+import 'ticket_detail_screen.dart';
+import '../widgets/ticket_form.dart';
+import '../services/customer_service_service.dart';
+import '../../../core/utils/ui_utils.dart';
+
+class CustomerServiceHubScreen extends ConsumerWidget {
   const CustomerServiceHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Customer Service Hub'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.forum),
-            tooltip: 'Omnichannel Chat',
-            onPressed: () => context.push('/omnichannel-chat'),
-          ),
-          IconButton(
             icon: const Icon(Icons.library_books),
             tooltip: 'Knowledge Base',
-            onPressed:
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const KnowledgeBaseScreen(),
-                  ),
-                ),
+            onPressed: () {
+              UIUtils.showSideSheet(
+                context: context,
+                title: 'Knowledge Base',
+                builder: (_) => const KnowledgeBaseScreen(),
+              );
+            },
           ),
         ],
       ),
@@ -86,36 +84,57 @@ class CustomerServiceHubScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: Card(
-                child: ListView.builder(
-                  itemCount: 10,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            index % 3 == 0 ? Colors.red : Colors.green,
-                        child: Icon(
-                          index % 3 == 0 ? Icons.warning : Icons.check,
-                          color: Colors.white,
-                        ),
-                      ),
-                      title: Text(
-                        'Case #${1000 + index} - Issue with ${['Login', 'Billing', 'App Crash'][index % 3]}',
-                      ),
-                      subtitle: Text(
-                        'Opened ${index + 1} hours ago • Assigned to Tier ${index % 2 + 1}',
-                      ),
-                      trailing: ElevatedButton(
-                        onPressed: () => context.push('/omnichannel-chat'),
-                        child: const Text('View Chat'),
-                      ),
-                    );
-                  },
-                ),
+              child: ref.watch(ticketsProvider).when(
+                data: (tickets) {
+                  if (tickets.isEmpty) {
+                    return const Center(child: Text('No open cases.'));
+                  }
+                  return Card(
+                    child: ListView.builder(
+                      itemCount: tickets.length,
+                      itemBuilder: (context, index) {
+                        final ticket = tickets[index];
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: ticket.status == 'Resolved' ? Colors.green : Colors.red,
+                            child: Icon(
+                              ticket.status == 'Resolved' ? Icons.check : Icons.warning,
+                              color: Colors.white,
+                            ),
+                          ),
+                          title: Text('${ticket.ticketId} - ${ticket.title}'),
+                          subtitle: Text('Status: ${ticket.status} • Priority: ${ticket.priority}'),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              UIUtils.showSideSheet(
+                                context: context,
+                                title: 'Ticket Detail',
+                                builder: (_) => TicketDetailScreen(ticketId: ticket.id),
+                              );
+                            },
+                            child: const Text('View Ticket'),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, st) => Center(child: Text('Error: $e')),
               ),
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          UIUtils.showSideSheet(
+            context: context,
+            title: 'New Ticket',
+            builder: (_) => const TicketForm(),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

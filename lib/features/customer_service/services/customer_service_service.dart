@@ -7,6 +7,18 @@ final customerServiceServiceProvider = Provider<CustomerServiceService>((ref) {
   return CustomerServiceService(ref.watch(tenantDocProvider));
 });
 
+final ticketsProvider = StreamProvider<List<Ticket>>((ref) {
+  return ref.watch(customerServiceServiceProvider).streamTickets();
+});
+
+final knowledgeArticlesProvider = StreamProvider<List<KnowledgeArticle>>((ref) {
+  return ref.watch(customerServiceServiceProvider).streamKnowledgeArticles();
+});
+
+final csAssetsProvider = StreamProvider<List<CsAsset>>((ref) {
+  return ref.watch(customerServiceServiceProvider).streamAssets();
+});
+
 class CustomerServiceService {
   final DocumentReference _tenantDoc;
 
@@ -15,7 +27,7 @@ class CustomerServiceService {
   // --- Tickets ---
 
   Future<String> createTicket(Ticket ticket) async {
-    final docRef = await _tenantDoc.firestore
+    final docRef = await _tenantDoc
         .collection('cs_tickets')
         .add(ticket.toJson());
     return docRef.id;
@@ -30,7 +42,7 @@ class CustomerServiceService {
   }
 
   Future<void> updateTicket(Ticket ticket) async {
-    await _tenantDoc.firestore
+    await _tenantDoc
         .collection('cs_tickets')
         .doc(ticket.id)
         .update(ticket.toJson());
@@ -54,7 +66,7 @@ class CustomerServiceService {
     String ticketId,
     TicketMessage message,
   ) async {
-    final docRef = await _tenantDoc.firestore
+    final docRef = await _tenantDoc
         .collection('cs_tickets')
         .doc(ticketId)
         .collection('messages')
@@ -63,7 +75,7 @@ class CustomerServiceService {
   }
 
   Stream<List<TicketMessage>> streamTicketMessages(String ticketId) {
-    return _tenantDoc.firestore
+    return _tenantDoc
         .collection('cs_tickets')
         .doc(ticketId)
         .collection('messages')
@@ -79,7 +91,7 @@ class CustomerServiceService {
   // --- Knowledge Articles ---
 
   Future<String> createKnowledgeArticle(KnowledgeArticle article) async {
-    final docRef = await _tenantDoc.firestore
+    final docRef = await _tenantDoc
         .collection('cs_knowledge_articles')
         .add(article.toJson());
     return docRef.id;
@@ -87,7 +99,7 @@ class CustomerServiceService {
 
   Future<KnowledgeArticle?> getKnowledgeArticle(String articleId) async {
     final doc =
-        await _tenantDoc.firestore
+        await _tenantDoc
             .collection('cs_knowledge_articles')
             .doc(articleId)
             .get();
@@ -98,14 +110,14 @@ class CustomerServiceService {
   }
 
   Future<void> updateKnowledgeArticle(KnowledgeArticle article) async {
-    await _tenantDoc.firestore
+    await _tenantDoc
         .collection('cs_knowledge_articles')
         .doc(article.id)
         .update(article.toJson());
   }
 
   Future<void> deleteKnowledgeArticle(String articleId) async {
-    await _tenantDoc.firestore
+    await _tenantDoc
         .collection('cs_knowledge_articles')
         .doc(articleId)
         .delete();
@@ -127,7 +139,7 @@ class CustomerServiceService {
     String ticketId,
     SlaInstance slaInstance,
   ) async {
-    final docRef = await _tenantDoc.firestore
+    final docRef = await _tenantDoc
         .collection('cs_tickets')
         .doc(ticketId)
         .collection('sla_kpi_instances')
@@ -136,7 +148,7 @@ class CustomerServiceService {
   }
 
   Stream<List<SlaInstance>> streamSlaInstances(String ticketId) {
-    return _tenantDoc.firestore
+    return _tenantDoc
         .collection('cs_tickets')
         .doc(ticketId)
         .collection('sla_kpi_instances')
@@ -164,7 +176,7 @@ class CustomerServiceService {
   }
 
   Future<void> updateAsset(CsAsset asset) async {
-    await _tenantDoc.firestore
+    await _tenantDoc
         .collection('cs_assets')
         .doc(asset.id)
         .update(asset.toJson());

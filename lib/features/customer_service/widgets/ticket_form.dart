@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/customer_service_models.dart';
 import '../services/customer_service_service.dart';
+import '../../../core/widgets/entity_selector.dart';
+import '../../people/models/employee.dart';
+import '../../people/providers/employee_providers.dart';
 
 class TicketForm extends ConsumerStatefulWidget {
   final Ticket? initialTicket;
@@ -18,6 +22,11 @@ class _TicketFormState extends ConsumerState<TicketForm> {
 
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _customerIdController;
+  late TextEditingController _contactIdController;
+  late TextEditingController _workstreamIdController;
+  late TextEditingController _queueIdController;
+  late TextEditingController _entitlementIdController;
 
   String _status = 'New';
   String _priority = 'Medium';
@@ -25,6 +34,9 @@ class _TicketFormState extends ConsumerState<TicketForm> {
   String _channel = 'Email';
   bool _isEscalated = false;
   bool _isLoading = false;
+
+  String? _assignedTo;
+  String? _assetId;
 
   @override
   void initState() {
@@ -35,17 +47,30 @@ class _TicketFormState extends ConsumerState<TicketForm> {
     _descriptionController = TextEditingController(
       text: widget.initialTicket?.description ?? '',
     );
+    _customerIdController = TextEditingController(text: widget.initialTicket?.customerId ?? '');
+    _contactIdController = TextEditingController(text: widget.initialTicket?.contactId ?? '');
+    _workstreamIdController = TextEditingController(text: widget.initialTicket?.workstreamId ?? '');
+    _queueIdController = TextEditingController(text: widget.initialTicket?.queueId ?? '');
+    _entitlementIdController = TextEditingController(text: widget.initialTicket?.entitlementId ?? '');
+
     _status = widget.initialTicket?.status ?? 'New';
     _priority = widget.initialTicket?.priority ?? 'Medium';
     _severity = widget.initialTicket?.severity ?? '3';
     _channel = widget.initialTicket?.channel ?? 'Email';
     _isEscalated = widget.initialTicket?.isEscalated ?? false;
+    _assignedTo = widget.initialTicket?.assignedTo;
+    _assetId = widget.initialTicket?.assetId;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _customerIdController.dispose();
+    _contactIdController.dispose();
+    _workstreamIdController.dispose();
+    _queueIdController.dispose();
+    _entitlementIdController.dispose();
     super.dispose();
   }
 
@@ -68,6 +93,13 @@ class _TicketFormState extends ConsumerState<TicketForm> {
         severity: _severity,
         channel: _channel,
         isEscalated: _isEscalated,
+        assignedTo: _assignedTo,
+        assetId: _assetId,
+        customerId: _customerIdController.text.trim().isEmpty ? null : _customerIdController.text.trim(),
+        contactId: _contactIdController.text.trim().isEmpty ? null : _contactIdController.text.trim(),
+        workstreamId: _workstreamIdController.text.trim().isEmpty ? null : _workstreamIdController.text.trim(),
+        queueId: _queueIdController.text.trim().isEmpty ? null : _queueIdController.text.trim(),
+        entitlementId: _entitlementIdController.text.trim().isEmpty ? null : _entitlementIdController.text.trim(),
         createdAt: widget.initialTicket?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -79,16 +111,12 @@ class _TicketFormState extends ConsumerState<TicketForm> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ticket saved successfully')),
-        );
+        UIUtils.showToast(context, 'Ticket saved successfully');
         widget.onSaved?.call();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving ticket: $e')));
+        UIUtils.showToast(context, 'Error saving ticket: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {
@@ -202,6 +230,64 @@ class _TicketFormState extends ConsumerState<TicketForm> {
             value: _isEscalated,
             onChanged: (value) => setState(() => _isEscalated = value),
             contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 16),
+          EntitySelector<Employee>(
+            asyncEntities: ref.watch(employeesProvider),
+            value: _assignedTo,
+            onChanged: (val) => setState(() => _assignedTo = val),
+            label: 'Assigned To',
+            idMapper: (employee) => employee.id,
+            displayMapper: (employee) => employee.fullName,
+          ),
+          const SizedBox(height: 16),
+          EntitySelector<CsAsset>(
+            asyncEntities: ref.watch(csAssetsProvider),
+            value: _assetId,
+            onChanged: (val) => setState(() => _assetId = val),
+            label: 'Asset',
+            idMapper: (asset) => asset.id,
+            displayMapper: (asset) => asset.name,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _customerIdController,
+            decoration: const InputDecoration(
+              labelText: 'Customer ID',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _contactIdController,
+            decoration: const InputDecoration(
+              labelText: 'Contact ID',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _workstreamIdController,
+            decoration: const InputDecoration(
+              labelText: 'Workstream ID',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _queueIdController,
+            decoration: const InputDecoration(
+              labelText: 'Queue ID',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _entitlementIdController,
+            decoration: const InputDecoration(
+              labelText: 'Entitlement ID',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 24),
           ElevatedButton(

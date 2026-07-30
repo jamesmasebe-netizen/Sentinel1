@@ -5,10 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/job_application_form.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
-import 'package:sentinel1/core/providers/app_providers.dart';
 
 class PublicCareersScreen extends ConsumerStatefulWidget {
-  const PublicCareersScreen({super.key});
+  final String tenantSlug;
+  const PublicCareersScreen({super.key, required this.tenantSlug});
 
   @override
   ConsumerState<PublicCareersScreen> createState() =>
@@ -17,9 +17,47 @@ class PublicCareersScreen extends ConsumerStatefulWidget {
 
 class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
   final _firestore = FirebaseFirestore.instance;
+  String? _tenantId;
+  bool _isLoadingTenant = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveTenant();
+  }
+
+  Future<void> _resolveTenant() async {
+    try {
+      final doc = await _firestore.collection('public_tenant_directory').doc(widget.tenantSlug).get();
+      if (doc.exists) {
+        setState(() {
+          _tenantId = doc.data()?['tenantId'] as String?;
+          _isLoadingTenant = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Company not found';
+          _isLoadingTenant = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error loading careers portal';
+        _isLoadingTenant = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingTenant) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_error != null || _tenantId == null) {
+      return Scaffold(body: Center(child: Text(_error ?? 'Tenant not found')));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sentinel Careers'),
@@ -34,14 +72,10 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream:
-            _firestore
-                .tenantCollection(
-                  ref.watch(currentTenantIdProvider) ?? "",
-                  'job_requisitions',
-                )
-                .where('status', isEqualTo: 'Published')
-                .snapshots(),
+        stream: _firestore
+            .tenantCollection(_tenantId!, 'job_requisitions')
+            .where('status', isEqualTo: 'Published')
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -123,6 +157,7 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                                             (ctx) => JobApplicationForm(
                                               jobId: jobs[index].id,
                                               jobTitle: job['jobTitle'],
+                                              tenantId: _tenantId!,
                                             ),
                                       );
                                     },

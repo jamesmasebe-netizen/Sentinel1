@@ -5,6 +5,11 @@ import '../models/crm_models.dart';
 import '../providers/crm_providers.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/lead_to_cash_bpf.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
+import '../../../core/bpf/bpf_service.dart';
+import '../../../core/utils/ui_utils.dart';
+import 'package:go_router/go_router.dart';
+import 'opportunity_detail_screen.dart';
 
 class LeadDetailScreen extends ConsumerWidget {
   final String leadId;
@@ -74,9 +79,33 @@ class LeadDetailScreen extends ConsumerWidget {
                           onPressed:
                               lead.isConverted
                                   ? null
-                                  : () {
-                                    // TODO: Implement Convert Lead
-                                  },
+                                  : () async {
+                                      try {
+                                        final orchestrator = ref.read(bpfOrchestratorProvider);
+                                        final bpfService = ref.read(bpfServiceProvider);
+                                        String? bpfId;
+                                        final bpfs = await bpfService.streamBpfInstancesByRecord('leadId', lead.id).first;
+                                        if (bpfs.isNotEmpty) {
+                                          bpfId = bpfs.first.id;
+                                        } else {
+                                          bpfId = await bpfService.startBpf('lead_to_cash', 'lead', 'leadId', lead.id);
+                                        }
+                                        final oppId = await orchestrator.convertLeadToOpportunity(lead, bpfId);
+                                        if (context.mounted) {
+                                          UIUtils.showToast(context, 'Lead converted successfully');
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => OpportunityDetailScreen(opportunityId: oppId),
+                                            ),
+                                          );
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          UIUtils.showToast(context, 'Error converting lead: $e');
+                                        }
+                                      }
+                                    },
                           icon: const Icon(Icons.transform),
                           label: Text(
                             lead.isConverted

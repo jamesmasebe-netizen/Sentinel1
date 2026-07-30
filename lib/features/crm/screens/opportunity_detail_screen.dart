@@ -6,6 +6,9 @@ import '../providers/crm_providers.dart';
 import 'quote_detail_screen.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/lead_to_cash_bpf.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
+import '../../../core/bpf/bpf_service.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class OpportunityDetailScreen extends ConsumerWidget {
   final String opportunityId;
@@ -59,6 +62,40 @@ class OpportunityDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       _buildQuotesSection(ref),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: FilledButton.icon(
+                          onPressed: () async {
+                              try {
+                                final orchestrator = ref.read(bpfOrchestratorProvider);
+                                final bpfService = ref.read(bpfServiceProvider);
+                                String? bpfId;
+                                final bpfs = await bpfService.streamBpfInstancesByRecord('opportunityId', opportunity.id).first;
+                                if (bpfs.isNotEmpty) {
+                                  bpfId = bpfs.first.id;
+                                } else {
+                                  bpfId = await bpfService.startBpf('lead_to_cash', 'opportunity', 'opportunityId', opportunity.id);
+                                }
+                                final quoteId = await orchestrator.createQuoteFromOpportunity(opportunity, bpfId);
+                                if (context.mounted) {
+                                  UIUtils.showToast(context, 'Quote generated successfully');
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => QuoteDetailScreen(quoteId: quoteId)),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  UIUtils.showToast(context, 'Error generating quote: $e');
+                                }
+                              }
+                          },
+                          icon: const Icon(Icons.request_quote),
+                          label: const Text('Generate Quote'),
+                        ),
+                      ),
                       const SizedBox(height: 24),
                       Text(
                         'Activity History',

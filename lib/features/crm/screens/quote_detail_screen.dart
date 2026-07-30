@@ -4,8 +4,12 @@ import 'package:intl/intl.dart';
 import '../models/crm_models.dart';
 import '../providers/crm_providers.dart';
 import 'opportunity_detail_screen.dart';
+import '../../projects/screens/project_detail_screen.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/lead_to_cash_bpf.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
+import '../../../core/bpf/bpf_service.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class QuoteDetailScreen extends ConsumerWidget {
   final String quoteId;
@@ -82,6 +86,42 @@ class QuoteDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       _buildRelatedEntities(context, quote),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: FilledButton.icon(
+                          onPressed: quote.status == 'Accepted' ? null : () async {
+                              try {
+                                final orchestrator = ref.read(bpfOrchestratorProvider);
+                                final bpfService = ref.read(bpfServiceProvider);
+                                String? bpfId;
+                                final bpfs = await bpfService.streamBpfInstancesByRecord('quoteId', quote.id).first;
+                                if (bpfs.isNotEmpty) {
+                                  bpfId = bpfs.first.id;
+                                } else {
+                                  bpfId = await bpfService.startBpf('lead_to_cash', 'quote', 'quoteId', quote.id);
+                                }
+                                final projectId = await orchestrator.createProjectFromQuote(quote, bpfId);
+                                if (context.mounted) {
+                                  UIUtils.showToast(context, 'Project created successfully (ID: $projectId)');
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProjectDetailScreen(projectId: projectId),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  UIUtils.showToast(context, 'Error accepting quote: $e');
+                                }
+                              }
+                          },
+                          icon: const Icon(Icons.check_circle),
+                          label: Text(quote.status == 'Accepted' ? 'Quote Accepted' : 'Accept Quote & Create Project'),
+                        ),
+                      ),
                     ],
                   ),
                 ),

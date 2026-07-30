@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/customer_service_models.dart';
 import '../services/customer_service_service.dart';
@@ -86,16 +87,12 @@ class _KnowledgeArticleFormState extends ConsumerState<KnowledgeArticleForm> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Knowledge Article saved successfully')),
-        );
+        UIUtils.showToast(context, 'Knowledge Article saved successfully');
         widget.onSaved?.call();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error saving article: $e')));
+        UIUtils.showToast(context, 'Error saving article: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {

@@ -5,6 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../models/field_service_models.dart';
 import '../services/field_service_service.dart';
+import '../providers/field_service_providers.dart';
+import '../../crm/providers/crm_providers.dart';
+import '../../crm/models/crm_models.dart';
+import '../../../core/widgets/entity_selector.dart';
 
 class WorkOrderForm extends ConsumerStatefulWidget {
   final WorkOrder? initialWorkOrder;
@@ -35,11 +39,13 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
   late TextEditingController _territoryIdController;
   late TextEditingController _locationLatController;
   late TextEditingController _locationLngController;
-  late TextEditingController _addressController;
-  late TextEditingController _schedulingController;
-  late TextEditingController _safetyRequirementsController;
-  late TextEditingController _iotContextController;
-  late TextEditingController _financialsController;
+  late TextEditingController _addrStreetController;
+  late TextEditingController _addrCityController;
+  late TextEditingController _schedStartController;
+  late TextEditingController _schedEndController;
+  late TextEditingController _safetyPpeController;
+  late TextEditingController _iotDeviceIdController;
+  late TextEditingController _finEstCostController;
   bool _isMobileOfflineSynced = false;
 
   @override
@@ -96,20 +102,26 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
     _locationLngController = TextEditingController(
       text: widget.initialWorkOrder?.location?.longitude.toString() ?? '',
     );
-    _addressController = TextEditingController(
-      text: widget.initialWorkOrder?.address != null ? jsonEncode(widget.initialWorkOrder!.address) : '',
+    _addrStreetController = TextEditingController(
+      text: widget.initialWorkOrder?.address?['street'] ?? '',
     );
-    _schedulingController = TextEditingController(
-      text: widget.initialWorkOrder?.scheduling != null ? jsonEncode(widget.initialWorkOrder!.scheduling) : '',
+    _addrCityController = TextEditingController(
+      text: widget.initialWorkOrder?.address?['city'] ?? '',
     );
-    _safetyRequirementsController = TextEditingController(
-      text: widget.initialWorkOrder?.safetyRequirements != null ? jsonEncode(widget.initialWorkOrder!.safetyRequirements) : '',
+    _schedStartController = TextEditingController(
+      text: widget.initialWorkOrder?.scheduling?['scheduled_start'] ?? '',
     );
-    _iotContextController = TextEditingController(
-      text: widget.initialWorkOrder?.iotContext != null ? jsonEncode(widget.initialWorkOrder!.iotContext) : '',
+    _schedEndController = TextEditingController(
+      text: widget.initialWorkOrder?.scheduling?['scheduled_end'] ?? '',
     );
-    _financialsController = TextEditingController(
-      text: widget.initialWorkOrder?.financials != null ? jsonEncode(widget.initialWorkOrder!.financials) : '',
+    _safetyPpeController = TextEditingController(
+      text: widget.initialWorkOrder?.safetyRequirements?['ppe_required'] ?? '',
+    );
+    _iotDeviceIdController = TextEditingController(
+      text: widget.initialWorkOrder?.iotContext?['device_id'] ?? '',
+    );
+    _finEstCostController = TextEditingController(
+      text: widget.initialWorkOrder?.financials?['estimated_cost']?.toString() ?? '',
     );
     _isMobileOfflineSynced = widget.initialWorkOrder?.isMobileOfflineSynced ?? false;
   }
@@ -133,11 +145,13 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
     _territoryIdController.dispose();
     _locationLatController.dispose();
     _locationLngController.dispose();
-    _addressController.dispose();
-    _schedulingController.dispose();
-    _safetyRequirementsController.dispose();
-    _iotContextController.dispose();
-    _financialsController.dispose();
+    _addrStreetController.dispose();
+    _addrCityController.dispose();
+    _schedStartController.dispose();
+    _schedEndController.dispose();
+    _safetyPpeController.dispose();
+    _iotDeviceIdController.dispose();
+    _finEstCostController.dispose();
     super.dispose();
   }
 
@@ -173,11 +187,27 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
         location: _locationLatController.text.isNotEmpty && _locationLngController.text.isNotEmpty
             ? GeoPoint(double.parse(_locationLatController.text), double.parse(_locationLngController.text))
             : null,
-        address: _addressController.text.isNotEmpty ? jsonDecode(_addressController.text) : null,
-        scheduling: _schedulingController.text.isNotEmpty ? jsonDecode(_schedulingController.text) : null,
-        safetyRequirements: _safetyRequirementsController.text.isNotEmpty ? jsonDecode(_safetyRequirementsController.text) : null,
-        iotContext: _iotContextController.text.isNotEmpty ? jsonDecode(_iotContextController.text) : null,
-        financials: _financialsController.text.isNotEmpty ? jsonDecode(_financialsController.text) : null,
+        address: (_addrStreetController.text.isNotEmpty || _addrCityController.text.isNotEmpty)
+            ? {
+                'street': _addrStreetController.text,
+                'city': _addrCityController.text,
+              }
+            : null,
+        scheduling: (_schedStartController.text.isNotEmpty || _schedEndController.text.isNotEmpty)
+            ? {
+                'scheduled_start': _schedStartController.text,
+                'scheduled_end': _schedEndController.text,
+              }
+            : null,
+        safetyRequirements: _safetyPpeController.text.isNotEmpty
+            ? {'ppe_required': _safetyPpeController.text}
+            : null,
+        iotContext: _iotDeviceIdController.text.isNotEmpty
+            ? {'device_id': _iotDeviceIdController.text}
+            : null,
+        financials: _finEstCostController.text.isNotEmpty
+            ? {'estimated_cost': double.tryParse(_finEstCostController.text) ?? 0.0}
+            : null,
         isMobileOfflineSynced: _isMobileOfflineSynced,
         createdAt: widget.initialWorkOrder?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
@@ -219,25 +249,31 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
                 (value) => value == null || value.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _statusController,
+          DropdownButtonFormField<String>(
+            value: kWorkOrderStatuses.contains(_statusController.text) ? _statusController.text : 'DRAFT',
             decoration: const InputDecoration(labelText: 'Status'),
-            validator:
-                (value) => value == null || value.isEmpty ? 'Required' : null,
+            items: kWorkOrderStatuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            onChanged: (val) {
+              if (val != null) _statusController.text = val;
+            },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _priorityController,
+          DropdownButtonFormField<String>(
+            value: kWorkOrderPriorities.contains(_priorityController.text) ? _priorityController.text : 'LOW',
             decoration: const InputDecoration(labelText: 'Priority'),
-            validator:
-                (value) => value == null || value.isEmpty ? 'Required' : null,
+            items: kWorkOrderPriorities.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
+            onChanged: (val) {
+              if (val != null) _priorityController.text = val;
+            },
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _customerIdController,
-            decoration: const InputDecoration(labelText: 'Customer ID'),
-            validator:
-                (value) => value == null || value.isEmpty ? 'Required' : null,
+          EntitySelector<Account>(
+            value: _customerIdController.text.isEmpty ? null : _customerIdController.text,
+            onChanged: (val) => setState(() => _customerIdController.text = val ?? ''),
+            label: 'Customer',
+            asyncEntities: ref.watch(accountsStreamProvider),
+            idMapper: (a) => a.id,
+            displayMapper: (a) => a.name,
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -252,34 +288,58 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
             maxLines: 3,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _substatusIdController,
-            decoration: const InputDecoration(labelText: 'Substatus ID'),
+          EntitySelector<WorkOrderSubstatus>(
+            value: _substatusIdController.text.isEmpty ? null : _substatusIdController.text,
+            onChanged: (val) => setState(() => _substatusIdController.text = val ?? ''),
+            label: 'Substatus',
+            asyncEntities: ref.watch(woSubstatusesStreamProvider),
+            idMapper: (s) => s.id,
+            displayMapper: (s) => s.name,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _incidentTypeIdController,
-            decoration: const InputDecoration(labelText: 'Incident Type ID'),
+          EntitySelector<IncidentType>(
+            value: _incidentTypeIdController.text.isEmpty ? null : _incidentTypeIdController.text,
+            onChanged: (val) => setState(() => _incidentTypeIdController.text = val ?? ''),
+            label: 'Incident Type',
+            asyncEntities: ref.watch(incidentTypesStreamProvider),
+            idMapper: (t) => t.id,
+            displayMapper: (t) => t.name,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _serviceTypeIdController,
-            decoration: const InputDecoration(labelText: 'Service Type ID'),
+          EntitySelector<ServiceType>(
+            value: _serviceTypeIdController.text.isEmpty ? null : _serviceTypeIdController.text,
+            onChanged: (val) => setState(() => _serviceTypeIdController.text = val ?? ''),
+            label: 'Service Type',
+            asyncEntities: ref.watch(serviceTypesStreamProvider),
+            idMapper: (t) => t.id,
+            displayMapper: (t) => t.name,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _billingAccountIdController,
-            decoration: const InputDecoration(labelText: 'Billing Account ID'),
+          EntitySelector<Account>(
+            value: _billingAccountIdController.text.isEmpty ? null : _billingAccountIdController.text,
+            onChanged: (val) => setState(() => _billingAccountIdController.text = val ?? ''),
+            label: 'Billing Account',
+            asyncEntities: ref.watch(accountsStreamProvider),
+            idMapper: (a) => a.id,
+            displayMapper: (a) => a.name,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _agreementIdController,
-            decoration: const InputDecoration(labelText: 'Agreement ID'),
+          EntitySelector<Agreement>(
+            value: _agreementIdController.text.isEmpty ? null : _agreementIdController.text,
+            onChanged: (val) => setState(() => _agreementIdController.text = val ?? ''),
+            label: 'Agreement',
+            asyncEntities: ref.watch(agreementsStreamProvider),
+            idMapper: (a) => a.id,
+            displayMapper: (a) => a.title,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _assetIdController,
-            decoration: const InputDecoration(labelText: 'Asset ID'),
+          EntitySelector<CustomerAsset>(
+            value: _assetIdController.text.isEmpty ? null : _assetIdController.text,
+            onChanged: (val) => setState(() => _assetIdController.text = val ?? ''),
+            label: 'Asset',
+            asyncEntities: ref.watch(allCustomerAssetsStreamProvider),
+            idMapper: (a) => a.id,
+            displayMapper: (a) => a.assetName,
           ),
           const SizedBox(height: 16),
           EmployeeSelector(
@@ -302,9 +362,13 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
             label: 'Dispatcher ID',
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _territoryIdController,
-            decoration: const InputDecoration(labelText: 'Territory ID'),
+          EntitySelector<Territory>(
+            value: _territoryIdController.text.isEmpty ? null : _territoryIdController.text,
+            onChanged: (val) => setState(() => _territoryIdController.text = val ?? ''),
+            label: 'Territory',
+            asyncEntities: ref.watch(territoriesStreamProvider),
+            idMapper: (t) => t.id,
+            displayMapper: (t) => t.name,
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -319,34 +383,93 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: 16),
+          const Divider(),
+          const Text('Address', style: TextStyle(fontWeight: FontWeight.bold)),
           TextFormField(
-            controller: _addressController,
-            decoration: const InputDecoration(labelText: 'Address (JSON)'),
-            maxLines: 2,
+            controller: _addrStreetController,
+            decoration: const InputDecoration(labelText: 'Street'),
+          ),
+          TextFormField(
+            controller: _addrCityController,
+            decoration: const InputDecoration(labelText: 'City'),
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const Text('Scheduling', style: TextStyle(fontWeight: FontWeight.bold)),
+          TextFormField(
+            controller: _schedStartController,
+            decoration: const InputDecoration(
+              labelText: 'Scheduled Start',
+              suffixIcon: Icon(Icons.calendar_today),
+            ),
+            readOnly: true,
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+              if (date != null && mounted) {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
+                if (time != null) {
+                  final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                  _schedStartController.text = dt.toIso8601String();
+                }
+              }
+            },
           ),
           const SizedBox(height: 16),
           TextFormField(
-            controller: _schedulingController,
-            decoration: const InputDecoration(labelText: 'Scheduling (JSON)'),
-            maxLines: 2,
+            controller: _schedEndController,
+            decoration: const InputDecoration(
+              labelText: 'Scheduled End',
+              suffixIcon: Icon(Icons.calendar_today),
+            ),
+            readOnly: true,
+            onTap: () async {
+              final date = await showDatePicker(
+                context: context,
+                initialDate: DateTime.now(),
+                firstDate: DateTime(2000),
+                lastDate: DateTime(2100),
+              );
+              if (date != null && mounted) {
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
+                if (time != null) {
+                  final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                  _schedEndController.text = dt.toIso8601String();
+                }
+              }
+            },
           ),
           const SizedBox(height: 16),
+          const Divider(),
+          const Text('Safety Requirements', style: TextStyle(fontWeight: FontWeight.bold)),
           TextFormField(
-            controller: _safetyRequirementsController,
-            decoration: const InputDecoration(labelText: 'Safety Requirements (JSON)'),
-            maxLines: 2,
+            controller: _safetyPpeController,
+            decoration: const InputDecoration(labelText: 'PPE Required'),
           ),
           const SizedBox(height: 16),
+          const Divider(),
+          const Text('IoT Context', style: TextStyle(fontWeight: FontWeight.bold)),
           TextFormField(
-            controller: _iotContextController,
-            decoration: const InputDecoration(labelText: 'IoT Context (JSON)'),
-            maxLines: 2,
+            controller: _iotDeviceIdController,
+            decoration: const InputDecoration(labelText: 'IoT Device ID'),
           ),
           const SizedBox(height: 16),
+          const Divider(),
+          const Text('Financials', style: TextStyle(fontWeight: FontWeight.bold)),
           TextFormField(
-            controller: _financialsController,
-            decoration: const InputDecoration(labelText: 'Financials (JSON)'),
-            maxLines: 2,
+            controller: _finEstCostController,
+            decoration: const InputDecoration(labelText: 'Estimated Cost'),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: 16),
           SwitchListTile(

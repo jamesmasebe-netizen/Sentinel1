@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/crm_models.dart';
 import '../services/crm_service.dart';
+import '../providers/crm_providers.dart';
 import '../../people/widgets/employee_selector.dart';
-
+import '../../../core/widgets/entity_selector.dart';
 class QuoteForm extends ConsumerStatefulWidget {
   final Quote? quote;
 
@@ -152,25 +153,22 @@ class _QuoteFormState extends ConsumerState<QuoteForm> {
               onSaved: (v) => quoteNumber = v?.trim() ?? '',
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              initialValue: opportunityId,
-              decoration: const InputDecoration(
-                labelText: 'Opportunity ID',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.business_center),
-              ),
-              validator: (v) => v == null || v.isEmpty ? 'Required' : null,
-              onSaved: (v) => opportunityId = v?.trim() ?? '',
+            EntitySelector<Opportunity>(
+              label: 'Opportunity',
+              value: opportunityId.isEmpty ? null : opportunityId,
+              asyncEntities: ref.watch(opportunitiesStreamProvider),
+              idMapper: (o) => o.id,
+              displayMapper: (o) => o.name,
+              onChanged: (v) => setState(() => opportunityId = v ?? ''),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              initialValue: accountId,
-              decoration: const InputDecoration(
-                labelText: 'Account ID',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.account_balance),
-              ),
-              onSaved: (v) => accountId = v?.trim() ?? '',
+            EntitySelector<Account>(
+              label: 'Account',
+              value: accountId.isEmpty ? null : accountId,
+              asyncEntities: ref.watch(accountsStreamProvider),
+              idMapper: (a) => a.id,
+              displayMapper: (a) => a.name,
+              onChanged: (v) => setState(() => accountId = v ?? ''),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(

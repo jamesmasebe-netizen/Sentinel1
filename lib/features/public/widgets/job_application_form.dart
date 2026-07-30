@@ -6,11 +6,13 @@ import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 class JobApplicationForm extends StatefulWidget {
   final String jobId;
   final String jobTitle;
+  final String tenantId;
 
   const JobApplicationForm({
     super.key,
     required this.jobId,
     required this.jobTitle,
+    required this.tenantId,
   });
 
   @override
@@ -32,7 +34,7 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
 
     try {
       await FirebaseFirestore.instance
-          .tenantCollection("", 'job_applications')
+          .tenantCollection(widget.tenantId, 'job_applications')
           .add({
             'jobId': widget.jobId,
             'jobTitle': widget.jobTitle,

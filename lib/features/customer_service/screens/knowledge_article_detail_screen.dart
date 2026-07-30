@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/customer_service_models.dart';
 import '../services/customer_service_service.dart';
+import '../widgets/knowledge_article_form.dart';
+import '../../../core/utils/ui_utils.dart';
 
 final articleFutureProvider = FutureProvider.family<KnowledgeArticle?, String>((
   ref,
@@ -33,9 +35,18 @@ class KnowledgeArticleDetailScreen extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              // Edit action
-            },
+            onPressed: articleAsync.valueOrNull == null
+                ? null
+                : () {
+                    UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Edit Article',
+                      builder: (_) => KnowledgeArticleForm(
+                        initialArticle: articleAsync.value,
+                        onSaved: () => ref.invalidate(articleFutureProvider(articleId)),
+                      ),
+                    );
+                  },
           ),
         ],
       ),

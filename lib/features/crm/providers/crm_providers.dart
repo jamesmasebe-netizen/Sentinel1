@@ -39,3 +39,11 @@ final leadsStreamProvider = StreamProvider<List<Lead>>(
 final campaignsStreamProvider = StreamProvider<List<Campaign>>(
   (ref) => ref.watch(crmServiceProvider).streamCampaigns(),
 );
+final opportunitiesStreamProvider = StreamProvider<List<Opportunity>>(
+  (ref) => ref.watch(crmServiceProvider).streamOpportunities(),
+);
+final contactsStreamProvider = StreamProvider.family<List<Contact>, String>((ref, accountId) {
+  if (accountId.isEmpty) return Stream.value([]);
+  return ref.watch(crmServiceProvider).streamContacts(accountId);
+});
+

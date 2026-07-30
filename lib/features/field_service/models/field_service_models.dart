@@ -1,5 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Canonical WorkOrder.status values — see docs/schema_field_service.md.
+const kWorkOrderStatuses = [
+  'DRAFT',
+  'SCHEDULED',
+  'DISPATCHED',
+  'TRAVELING',
+  'IN_PROGRESS',
+  'ON_HOLD',
+  'COMPLETED',
+  'CANCELED',
+];
+
+/// Canonical WorkOrder.priority values — see docs/schema_field_service.md.
+const kWorkOrderPriorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
 class WorkOrder {
   final String id;
   final String workOrderNumber;
@@ -374,4 +389,45 @@ class IotDevice {
         'telemetry_thresholds': telemetryThresholds,
     };
   }
+}
+
+// Lightweight lookup models for Field Service
+class Territory {
+  final String id;
+  final String name;
+  Territory({required this.id, required this.name});
+  factory Territory.fromJson(Map<String, dynamic> json, String id) => Territory(id: id, name: json['name'] ?? '');
+  Map<String, dynamic> toJson() => {'name': name};
+}
+
+class IncidentType {
+  final String id;
+  final String name;
+  IncidentType({required this.id, required this.name});
+  factory IncidentType.fromJson(Map<String, dynamic> json, String id) => IncidentType(id: id, name: json['name'] ?? '');
+  Map<String, dynamic> toJson() => {'name': name};
+}
+
+class ServiceType {
+  final String id;
+  final String name;
+  ServiceType({required this.id, required this.name});
+  factory ServiceType.fromJson(Map<String, dynamic> json, String id) => ServiceType(id: id, name: json['name'] ?? '');
+  Map<String, dynamic> toJson() => {'name': name};
+}
+
+class WorkOrderSubstatus {
+  final String id;
+  final String name;
+  WorkOrderSubstatus({required this.id, required this.name});
+  factory WorkOrderSubstatus.fromJson(Map<String, dynamic> json, String id) => WorkOrderSubstatus(id: id, name: json['name'] ?? '');
+  Map<String, dynamic> toJson() => {'name': name};
+}
+
+class Agreement {
+  final String id;
+  final String title;
+  Agreement({required this.id, required this.title});
+  factory Agreement.fromJson(Map<String, dynamic> json, String id) => Agreement(id: id, title: json['title'] ?? '');
+  Map<String, dynamic> toJson() => {'title': title};
 }

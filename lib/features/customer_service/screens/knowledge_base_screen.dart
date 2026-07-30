@@ -1,7 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/customer_service_service.dart';
+import '../widgets/knowledge_article_form.dart';
+import 'knowledge_article_detail_screen.dart';
+import '../../../core/utils/ui_utils.dart';
+import 'package:intl/intl.dart';
 
-class KnowledgeBaseScreen extends StatelessWidget {
+class KnowledgeBaseScreen extends ConsumerStatefulWidget {
   const KnowledgeBaseScreen({super.key});
+
+  @override
+  ConsumerState<KnowledgeBaseScreen> createState() => _KnowledgeBaseScreenState();
+}
+
+class _KnowledgeBaseScreenState extends ConsumerState<KnowledgeBaseScreen> {
+  static const _categories = [
+    ('Getting Started', Icons.article),
+    ('Account Management', Icons.account_circle),
+    ('Billing & Payments', Icons.payment),
+    ('Security & Privacy', Icons.security),
+    ('Troubleshooting', Icons.build),
+  ];
+
+  String _selectedCategory = _categories.first.$1;
 
   @override
   Widget build(BuildContext context) {
@@ -21,32 +42,13 @@ class KnowledgeBaseScreen extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.article),
-                  title: const Text('Getting Started'),
-                  selected: true,
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(Icons.account_circle),
-                  title: const Text('Account Management'),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(Icons.payment),
-                  title: const Text('Billing & Payments'),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(Icons.security),
-                  title: const Text('Security & Privacy'),
-                  onTap: () {},
-                ),
-                ListTile(
-                  leading: const Icon(Icons.build),
-                  title: const Text('Troubleshooting'),
-                  onTap: () {},
-                ),
+                for (final (name, icon) in _categories)
+                  ListTile(
+                    leading: Icon(icon),
+                    title: Text(name),
+                    selected: _selectedCategory == name,
+                    onTap: () => setState(() => _selectedCategory = name),
+                  ),
               ],
             ),
           ),
@@ -69,57 +71,80 @@ class KnowledgeBaseScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'Popular Articles in "Getting Started"',
+                    'Articles in "$_selectedCategory"',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            childAspectRatio: 3 / 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                      itemCount: 6,
-                      itemBuilder: (context, index) {
-                        return Card(
-                          elevation: 2,
-                          child: InkWell(
-                            onTap: () {},
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(
-                                    Icons.menu_book,
-                                    color: Colors.blue,
-                                    size: 32,
-                                  ),
-                                  const Spacer(),
-                                  Text(
-                                    'How to setup your account - Part ${index + 1}',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Last updated 2 days ago',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
+                    child: ref.watch(knowledgeArticlesProvider).when(
+                      data: (allArticles) {
+                        final articles = allArticles
+                            .where((a) => a.categories.contains(_selectedCategory))
+                            .toList();
+                        if (articles.isEmpty) {
+                          return Center(
+                            child: Text('No articles found in "$_selectedCategory".'),
+                          );
+                        }
+                        return GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                childAspectRatio: 3 / 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
                               ),
-                            ),
-                          ),
+                          itemCount: articles.length,
+                          itemBuilder: (context, index) {
+                            final article = articles[index];
+                            return Card(
+                              elevation: 2,
+                              child: InkWell(
+                                onTap: () {
+                                  UIUtils.showSideSheet(
+                                    context: context,
+                                    title: article.title,
+                                    builder: (_) => KnowledgeArticleDetailScreen(articleId: article.id),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(
+                                        Icons.menu_book,
+                                        color: Colors.blue,
+                                        size: 32,
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        article.title,
+                                        style:
+                                            Theme.of(context).textTheme.titleMedium,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        article.updatedAt != null
+                                            ? 'Last updated ${DateFormat.yMMMd().format(article.updatedAt!)}'
+                                            : 'Not yet updated',
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (e, st) => Center(child: Text('Error: $e')),
                     ),
                   ),
                 ],
@@ -127,6 +152,16 @@ class KnowledgeBaseScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          UIUtils.showSideSheet(
+            context: context,
+            title: 'New Article',
+            builder: (_) => const KnowledgeArticleForm(),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

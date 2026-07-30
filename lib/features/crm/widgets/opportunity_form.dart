@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/crm_models.dart';
 import '../services/crm_service.dart';
+import '../providers/crm_providers.dart';
 import '../../people/widgets/employee_selector.dart';
-
+import '../../../core/widgets/entity_selector.dart';
 class OpportunityForm extends ConsumerStatefulWidget {
   final Opportunity? opportunity;
 
@@ -203,24 +204,25 @@ class _OpportunityFormState extends ConsumerState<OpportunityForm> {
               onSaved: (v) => stage = v ?? 'Prospecting',
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              initialValue: accountId,
-              decoration: const InputDecoration(
-                labelText: 'Account ID',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.account_balance),
-              ),
-              onSaved: (v) => accountId = v?.trim() ?? '',
+            EntitySelector<Account>(
+              label: 'Account',
+              value: accountId.isEmpty ? null : accountId,
+              asyncEntities: ref.watch(accountsStreamProvider),
+              idMapper: (a) => a.id,
+              displayMapper: (a) => a.name,
+              onChanged: (v) => setState(() {
+                accountId = v ?? '';
+                primaryContactId = ''; // Reset contact if account changes
+              }),
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              initialValue: primaryContactId,
-              decoration: const InputDecoration(
-                labelText: 'Primary Contact ID',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
-              ),
-              onSaved: (v) => primaryContactId = v?.trim() ?? '',
+            EntitySelector<Contact>(
+              label: 'Primary Contact',
+              value: primaryContactId.isEmpty ? null : primaryContactId,
+              asyncEntities: ref.watch(contactsStreamProvider(accountId)),
+              idMapper: (c) => c.id,
+              displayMapper: (c) => '${c.firstName} ${c.lastName}',
+              onChanged: (v) => setState(() => primaryContactId = v ?? ''),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
