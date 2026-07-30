@@ -9,7 +9,9 @@ import '../models/equipment_models.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'package:intl/intl.dart';
 import '../widgets/loto_badge.dart';
-
+import '../../../core/automation/loto_automation.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../widgets/loto_return_dialog.dart';
 class AssetDetailScreen extends ConsumerWidget {
   final String assetId;
 
@@ -27,30 +29,58 @@ class AssetDetailScreen extends ConsumerWidget {
         .doc(assetId)
         .get();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Asset Detail'),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {},
+    return FutureBuilder<DocumentSnapshot>(
+      future: docFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+          return const Scaffold(body: Center(child: Text('Asset not found')));
+        }
+
+        final asset = EquipmentModel.fromFirestore(snapshot.data!);
+        final profile = ref.watch(userProfileProvider).valueOrNull;
+        final isMgrOrSheq = isLotoReleaseAuthorized(profile?.role);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Asset Detail'),
+            elevation: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () {},
+              ),
+              PopupMenuButton<String>(
+                onSelected: (val) {
+                  if (val == 'isolate') {
+                    _showIsolateDialog(context, ref, asset);
+                  } else if (val == 'return') {
+                    showLotoReturnDialog(
+                      context,
+                      ref,
+                      equipmentId: asset.id ?? '',
+                      equipmentName: asset.equipmentName,
+                    );
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  if (asset.status != 'Locked Out')
+                    const PopupMenuItem(
+                      value: 'isolate',
+                      child: Text('Isolate / Lock Out Equipment'),
+                    ),
+                  if (asset.status == 'Locked Out' && isMgrOrSheq)
+                    const PopupMenuItem(
+                      value: 'return',
+                      child: Text('Verify & Return to Service'),
+                    ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
-      body: FutureBuilder<DocumentSnapshot>(
-        future: docFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(child: Text('Asset not found'));
-          }
-
-          final asset = EquipmentModel.fromFirestore(snapshot.data!);
-
-          return Column(
+          body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeaderCard(context, asset),
@@ -69,9 +99,9 @@ class AssetDetailScreen extends ConsumerWidget {
                 ),
               ),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -171,4 +201,70 @@ class AssetDetailScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _showIsolateDialog(BuildContext context, WidgetRef ref, EquipmentModel asset) {
+    final reasonCtrl = TextEditingController();
+    bool isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          return AlertDialog(
+            title: const Text('Isolate / Lock Out Equipment'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Please provide a reason for locking out this equipment. This action will generate a mandatory inspection work order.'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: reasonCtrl,
+                  decoration: const InputDecoration(labelText: 'Reason / Hazard Identified *'),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: isSubmitting ? null : () async {
+                  if (reasonCtrl.text.trim().isEmpty) {
+                    UIUtils.showToast(context, 'Reason is required', type: ToastType.error);
+                    return;
+                  }
+                  setState(() => isSubmitting = true);
+                  try {
+                    final profile = ref.read(userProfileProvider).valueOrNull;
+                    if (profile == null) throw Exception('Not logged in');
+                    
+                    await ref.read(lotoAutomationProvider).lockoutFailedEquipment(
+                      equipmentId: asset.id ?? '',
+                      equipmentName: asset.equipmentName,
+                      reason: reasonCtrl.text.trim(),
+                      reportedById: profile.uid,
+                    );
+                    
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      UIUtils.showToast(context, 'Equipment locked out successfully', type: ToastType.success);
+                    }
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      UIUtils.showToast(context, '$e', type: ToastType.error);
+                      setState(() => isSubmitting = false);
+                    }
+                  }
+                },
+                child: isSubmitting ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Lock Out'),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
+
 }

@@ -8,6 +8,9 @@ import '../../people/widgets/employee_selector.dart';
 import '../screens/asset_detail_screen.dart';
 import 'equipment_list_item.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../../../core/bpf/bpf_service.dart';
+import '../../../../core/bpf/bpf_orchestrator.dart';
+import '../models/equipment_models.dart';
 
 class EquipmentAssetTab extends ConsumerStatefulWidget {
   final String? initialSearch;
@@ -52,7 +55,7 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
+      final newId = await ref
           .read(firestoreServiceProvider)
           .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
@@ -64,8 +67,7 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
               'location': _locCtrl.text.trim(),
               'manufacturer': _mfgCtrl.text.trim(),
               'category': _category,
-              'status': _status,
-              'assignedToId': _assignedToId,
+              'status': _assignedToId != null ? 'Operational' : _status,
               'nextInspectionDate': _nextInsp.toIso8601String(),
               'daysUntilInspection':
                   _nextInsp.difference(DateTime.now()).inDays,
@@ -73,6 +75,28 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
               'createdAt': DateTime.now().toIso8601String(),
             },
           );
+
+      if (_assignedToId != null) {
+        final bpfService = ref.read(bpfServiceProvider);
+        // recordType 'equipment' must match AssetDetailScreen's BpfRibbonWidget
+        // lookup (asset_detail_screen.dart), which queries linkedRecordIds.equipment.
+        final bpfId = await bpfService.startBpf('asset_lifecycle', 'equipment', 'equipment', newId);
+        final eq = EquipmentModel(
+          id: newId,
+          equipmentName: _nameCtrl.text.trim(),
+          assetTag: _tagCtrl.text.trim(),
+          location: _locCtrl.text.trim(),
+          manufacturer: _mfgCtrl.text.trim(),
+          category: _category,
+          status: 'Operational',
+          nextInspectionDate: _nextInsp,
+          daysUntilInspection: _nextInsp.difference(DateTime.now()).inDays,
+          authorId: p.uid,
+          createdAt: DateTime.now(),
+          tenantId: ref.read(currentTenantIdProvider) ?? '',
+        );
+        await ref.read(bpfOrchestratorProvider).deployEquipment(eq, _assignedToId!, bpfId);
+      }
       if (mounted) {
         UIUtils.showToast(
           context,
@@ -251,6 +275,7 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
                         items:
                             [
                                   'Operational',
+                                  'Deployed',
                                   'Under Maintenance',
                                   'Out of Service',
                                   'Decommissioned',

@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/scm_models.dart';
 import '../services/scm_service.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
+import '../../crm/providers/crm_providers.dart';
+import '../../crm/models/crm_models.dart';
+import '../../../core/widgets/entity_selector.dart';
 
 class PurchaseOrderForm extends ConsumerStatefulWidget {
   final PurchaseOrder? initialData;
@@ -85,10 +89,16 @@ class _PurchaseOrderFormState extends ConsumerState<PurchaseOrderForm> {
       );
 
       final service = ref.read(scmServiceProvider);
+      final orchestrator = ref.read(bpfOrchestratorProvider);
+      
       if (widget.initialData == null) {
-        await service.createPurchaseOrder(po);
+        await orchestrator.createPurchaseOrder(po);
       } else {
-        await service.updatePurchaseOrder(po);
+        if (po.status == 'Received' && widget.initialData!.status != 'Received') {
+          await orchestrator.receivePurchaseOrderGoods(po);
+        } else {
+          await service.updatePurchaseOrder(po);
+        }
       }
 
       if (mounted) {
@@ -127,12 +137,13 @@ class _PurchaseOrderFormState extends ConsumerState<PurchaseOrderForm> {
                 (value) => value == null || value.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _vendorIdController,
-            decoration: const InputDecoration(
-              labelText: 'Vendor ID',
-              border: OutlineInputBorder(),
-            ),
+          EntitySelector<Account>(
+            value: _vendorIdController.text.isEmpty ? null : _vendorIdController.text,
+            onChanged: (val) => setState(() => _vendorIdController.text = val ?? ''),
+            label: 'Vendor',
+            asyncEntities: ref.watch(accountsStreamProvider),
+            idMapper: (a) => a.id,
+            displayMapper: (a) => a.name,
           ),
           const SizedBox(height: 16),
           TextFormField(

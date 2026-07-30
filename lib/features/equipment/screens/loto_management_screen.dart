@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/loto_providers.dart';
-import '../../../core/automation/loto_automation.dart';
 import 'package:sentinel1/core/widgets/ds_widgets.dart';
 import '../../../core/providers/app_providers.dart';
+import '../widgets/loto_return_dialog.dart';
 
 class LotoManagementScreen extends ConsumerWidget {
   const LotoManagementScreen({super.key});
@@ -11,6 +11,8 @@ class LotoManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lockedOutAsync = ref.watch(lockedOutEquipmentProvider);
+    final profile = ref.watch(userProfileProvider).valueOrNull;
+    final canRelease = isLotoReleaseAuthorized(profile?.role);
 
     return Scaffold(
       appBar: AppBar(
@@ -40,20 +42,18 @@ class LotoManagementScreen extends ConsumerWidget {
                     Text('Date: ${eq['lockoutDate'] ?? 'Unknown'}'),
                     GSpacing.vLg,
                     ElevatedButton(
-                      onPressed: () async {
-                        final automation = ref.read(lotoAutomationProvider);
-                        await automation.releaseLockout(
-                          equipmentId: eq['id'],
-                          releasedById: ref.read(userProfileProvider).valueOrNull?.uid ?? 'unknown',
-                          workOrderId: eq['lockoutWorkOrderId'] ?? 'UNKNOWN',
-                        );
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Equipment released from LOTO.')),
-                          );
-                        }
-                      },
-                      child: const Text('Inspect & Release'),
+                      onPressed: canRelease
+                          ? () => showLotoReturnDialog(
+                                context,
+                                ref,
+                                equipmentId: eq['id'],
+                                equipmentName: eq['name'] ?? 'Unknown Equipment',
+                                workOrderId: eq['lockoutWorkOrderId'],
+                              )
+                          : null,
+                      child: Text(
+                        canRelease ? 'Inspect & Release' : 'Inspect & Release (Manager/SHEQ only)',
+                      ),
                     ),
                   ],
                 ),

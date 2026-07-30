@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../../../core/widgets/ds_widgets.dart';
@@ -23,14 +24,10 @@ class _MrpDashboardScreenState extends ConsumerState<MrpDashboardScreen> {
       final result = await callable.call({'tenantId': tenantId});
       
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('MRP Run Complete. ${result.data['suggestionsGenerated']} suggestions generated.')),
-      );
+      UIUtils.showToast(context, 'MRP Run Complete. ${result.data['suggestionsGenerated']} suggestions generated.');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('MRP Run Failed: $e'), backgroundColor: Colors.red),
-      );
+      UIUtils.showToast(context, 'MRP Run Failed: $e', type: ToastType.error);
     } finally {
       if (mounted) {
         setState(() => _isRunningMrp = false);
@@ -89,9 +86,7 @@ class _MrpDashboardScreenState extends ConsumerState<MrpDashboardScreen> {
                         trailing: ElevatedButton(
                           onPressed: () {
                             // TODO: Convert to Purchase Order / Prod Order
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Conversion to PO coming soon...')),
-                            );
+                            UIUtils.showToast(context, 'Conversion to PO coming soon...');
                           },
                           child: Text('Create ${sug.type}'),
                         ),

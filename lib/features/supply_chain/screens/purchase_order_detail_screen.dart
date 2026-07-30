@@ -5,6 +5,8 @@ import '../providers/scm_streams_provider.dart';
 import 'package:intl/intl.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/procure_to_pay_bpf.dart';
+import '../widgets/purchase_order_line_form.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class PurchaseOrderDetailScreen extends ConsumerWidget {
   final String poId;
@@ -60,7 +62,7 @@ class PurchaseOrderDetailScreen extends ConsumerWidget {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _buildLinesTab(context, linesAsync),
+                      _buildLinesTab(context, linesAsync, po.id),
                       _buildDetailsTab(context, po),
                     ],
                   ),
@@ -182,8 +184,20 @@ class PurchaseOrderDetailScreen extends ConsumerWidget {
   Widget _buildLinesTab(
     BuildContext context,
     AsyncValue<List<PurchaseOrderLine>> linesAsync,
+    String poId,
   ) {
-    return linesAsync.when(
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          UIUtils.showSideSheet(
+            context: context,
+            title: 'Add Line Item',
+            builder: (context) => PurchaseOrderLineForm(poId: poId),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
+      body: linesAsync.when(
       data: (lines) {
         if (lines.isEmpty) {
           return const Center(child: Text('No order lines found.'));
@@ -236,6 +250,7 @@ class PurchaseOrderDetailScreen extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
     );
   }
 

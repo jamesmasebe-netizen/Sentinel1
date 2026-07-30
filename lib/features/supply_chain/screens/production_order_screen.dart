@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/ds_widgets.dart';
 
@@ -37,9 +38,7 @@ class _ProductionOrderScreenState extends ConsumerState<ProductionOrderScreen> {
             title: 'Manufacturing & Assembly',
             trailing: ElevatedButton.icon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('New Production Order coming soon')),
-                );
+                UIUtils.showToast(context, 'New Production Order coming soon');
               },
               icon: const Icon(Icons.add),
               label: const Text('New Order'),
@@ -72,9 +71,7 @@ class _ProductionOrderScreenState extends ConsumerState<ProductionOrderScreen> {
                     trailing: PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'complete') {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Order marked as Completed. Inventory updated.')),
-                          );
+                          UIUtils.showToast(context, 'Order marked as Completed. Inventory updated.');
                         }
                       },
                       itemBuilder: (context) => [
