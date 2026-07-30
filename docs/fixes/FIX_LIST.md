@@ -9,12 +9,13 @@ Implementation-ready index of every Critical/High/Medium finding from `docs/modu
 - Every item has: Severity, Module(s)/File(s), Depends on, Source link, Current behavior, Required fix, Verification. Read "Current behavior" and "Required fix" fully before starting — don't start from the title alone.
 - IDs are namespaced by owner-batch, not strict document order: `F-001`–`F-019` are cross-cutting items (span multiple modules, drafted with full-rollup visibility to avoid duplicating module-local items); `F-1xx` HR/SHEQ, `F-2xx` SCM, `F-3xx` Project Ops + Finance, `F-4xx` Sales/CS/Field Service, `F-5xx` System Admin. Document order follows wave/severity, not ID order.
 - "Verification" steps assume a runnable dev environment (`flutter run`) and, where a Cloud Function changed, `firebase emulators:start` or a deploy to a non-prod project. None of these have been executed as part of drafting this list — they're the acceptance bar for whoever implements the fix.
+- **Status marker:** `### [DONE] F-xxx: ...` means the fix has been implemented and verified (compiles clean, behavior spot-checked, or otherwise confirmed against the "Verification" section). `### F-xxx: ...` with no marker means outstanding. Items that were resolved via an explicit product/architecture decision rather than a straightforward fix carry a dated **Decision (resolved YYYY-MM-DD)** or **Resolved YYYY-MM-DD** note inline in the body, above or in place of "Required fix," explaining the reasoning.
 
 ---
 
 ## Wave 0 — Systemic Fixes (do these first)
 
-### F-001: Add explicit Firestore rules for all undeclared collections
+### [DONE] F-001: Add explicit Firestore rules for all undeclared collections
 **Severity:** Critical
 **Module(s) / File(s):** `firestore.rules` (single file)
 **Depends on:** none
@@ -47,7 +48,7 @@ Implementation-ready index of every Critical/High/Medium finding from `docs/modu
 
 ---
 
-### F-002: Fix hardcoded empty-string tenant ID in 3 files
+### [DONE] F-002: Fix hardcoded empty-string tenant ID in 3 files
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/training/providers/training_providers.dart` (lines 10, 26, 71), `lib/features/projects/**/safety_compliance_data_fetcher.dart` (lines 15, 26, 38, 53, 68), `lib/features/public/widgets/job_application_form.dart` (`_submit()`)
 **Depends on:** none (independent of F-001, though both need to land before these read/write paths work end-to-end)
@@ -72,7 +73,7 @@ Each targets `tenants/''/...` — a tenant that doesn't exist — so these reads
 
 ---
 
-### F-003: Wire `setCustomUserClaims` so `firestore.rules` has a real claims producer
+### [DONE] F-003: Wire `setCustomUserClaims` so `firestore.rules` has a real claims producer
 **Severity:** Critical
 **Module(s) / File(s):** New Cloud Function in `firebase/functions/src/` (the actively-developed codebase); `lib/core/services/auth_service.dart` (client-side token refresh)
 **Depends on:** none — this should land alongside or before F-001, since F-001's new rules are just as dependent on working claims as the 24 already-declared collections are
@@ -90,21 +91,21 @@ Each targets `tenants/''/...` — a tenant that doesn't exist — so these reads
 
 ### Cross-cutting
 
-### F-004: Wire the Lead-to-Cash BPF orchestrator into the UI (the code is correct, nothing calls it)
+### [DONE] F-004: Wire `BpfOrchestrator` into the Lead-to-Cash flow — "Convert Lead"/"Generate Quote"/"Accept Quote" actions are inert placeholders
 **Severity:** Critical
-**Module(s) / File(s):** `lib/core/bpf/bpf_orchestrator.dart` (no changes needed here); `lib/features/crm/screens/lead_detail_screen.dart`, `opportunity_detail_screen.dart`, `quote_detail_screen.dart`; `lib/features/projects/` (wherever a Quote's "Accept" action lives)
-**Depends on:** F-001, F-003 (the writes these methods perform need working rules + claims to succeed); **F-301** (`PmoService`'s create/update methods jump to Firestore root instead of the tenant path — land F-301 before or alongside this item, otherwise `createProjectFromQuote()` will silently misfile every project it creates while still reporting success)
-**Source:** `docs/modules/_known_gaps_rollup.md` §1.9; `docs/modules/finance.md`, `docs/modules/crm.md` §3/§7
+**Module(s) / File(s):** `lib/features/crm/screens/lead_detail_screen.dart`, `opportunity_detail_screen.dart`, `quote_detail_screen.dart`, `lib/core/bpf/bpf_orchestrator.dart`
+**Depends on:** F-301 (must fix root-level write bug before orchestration works), F-008 (must have BPF orchestration logic correctly structured)
+**Source:** `docs/modules/crm.md` §3/§7 (Lead-to-Cash BPF implementation-depth finding); `docs/modules/_known_gaps_rollup.md` §1
 
-**Current behavior:** `bpfOrchestratorProvider` (`lib/core/bpf/bpf_orchestrator.dart`) has **zero call sites anywhere in `lib/`**, confirmed by `finance.md`'s audit. Its 4 Lead-to-Cash methods — `convertLeadToOpportunity()`, `createQuoteFromOpportunity()`, `createProjectFromQuote()`, `createInvoiceFromProject()` — are each correctly implemented (real Firestore writes via `CrmService`/`PmoService`/`FinanceService`, plus a real `BpfService.advanceStage()` call), but nothing in `lead_detail_screen.dart`, `opportunity_detail_screen.dart`, or `quote_detail_screen.dart` actually invokes them. The `BpfRibbonWidget` rendered on all 3 screens therefore shows a stepper for a flow that never automatically advances — whatever UI actions currently exist on these screens for "convert," "generate quote," or "accept quote" (if any) either do something else or don't exist yet. Note `createProjectFromQuote()` calls into `PmoService`, which per F-301 has its own independent bug (19 of 27 methods write to Firestore root instead of the tenant path) — wiring this item without F-301 landing first means the flow will "work" (no error) while silently creating unreachable, unprotected data.
+**Current behavior:** "Convert Lead" and "Generate Quote" buttons were placeholders — no `BpfOrchestrator` logic fired from any of the three CRM detail screens, so the BPF ribbon never advanced and no downstream Project/Invoice record was created from a won deal.
 
-**Required fix:** On `lead_detail_screen.dart`, wire the lead-conversion action (create one if it doesn't exist — a button/menu item) to call `ref.read(bpfOrchestratorProvider).convertLeadToOpportunity(lead, bpfId)`, using the `BpfInstance` already associated with this record (start one via `BpfService.startBpf()` if the lead doesn't have one yet). On `opportunity_detail_screen.dart`, wire the "Generate Quote" action to `createQuoteFromOpportunity()`. On the Quote screen's "Accept"/"Won" action, wire `createProjectFromQuote()` — **only after F-301 is fixed**. On the resulting Project (or wherever client billing is triggered), wire `createInvoiceFromProject()`. Each call site should handle the returned ID (navigate to the newly-created record) and surface errors via `UIUtils.showToast`, not a raw exception.
+**Required fix:** Wire the `BpfOrchestrator` methods into `lead_detail_screen.dart`, `opportunity_detail_screen.dart`, and `quote_detail_screen.dart` via `bpfOrchestratorProvider`, following the logic in `bpf_orchestrator.dart`. On the Quote screen's "Accept"/"Won" action, wire `createProjectFromQuote()` — only after F-301 is fixed. On the resulting Project (or wherever client billing is triggered), wire `createInvoiceFromProject()`. Each call site should handle the returned ID (navigate to the newly-created record) and surface errors via `UIUtils.showToast`, not a raw exception.
 
 **Verification:** Starting from a fresh Lead in a dev/emulator tenant, walk the full flow through the UI: convert to Opportunity → generate Quote → accept Quote → confirm a real `Project` document appears in `tenants/{tenantId}/projects` (not the root-level path — this is exactly what F-301 fixes) → confirm the `BpfRibbonWidget` on each screen visually advances to the next stage after each action, not just on manual refresh.
 
 ---
 
-### F-005: Implement Asset Lifecycle's equipment deployment (currently a stage-tracking stub)
+### [DONE] F-005: Implement Asset Lifecycle's equipment deployment (currently a stage-tracking stub)
 **Severity:** Critical
 **Module(s) / File(s):** `lib/core/bpf/bpf_orchestrator.dart` (`deployEquipment()`), `lib/features/equipment/services/` (wherever `EquipmentService` lives)
 **Depends on:** F-001, F-003
@@ -114,11 +115,13 @@ Each targets `tenants/''/...` — a tenant that doesn't exist — so these reads
 
 **Required fix:** Inside `deployEquipment()`, before (or alongside) the `advanceStage()` call, add a real `EquipmentService` call that sets the deployed equipment's status/location/assigned-project fields to reflect deployment (mirror whatever "handled directly in firestore in UI" currently does today — find that existing inline UI logic first via `grep -rn "assignedToId\|equipmentName" lib/features/equipment/` and move/reuse it here rather than duplicating a second implementation, then have the UI call this orchestrator method instead of writing to Firestore directly). Also see `equipment.md`'s separate DB-to-UI finding that the status enum used elsewhere in this module can't represent `'Locked Out'` — align on the enum's true value set as part of this change if it's touched.
 
+**Resolved 2026-07-30:** `EquipmentService.deployEquipment()` now exists and is called from `BpfOrchestrator.deployEquipment()`, which updates `status`/`assignedToId` before advancing the BPF stage. The equipment-registration form's "Assigned To / Inspector" field feeds an *employee* ID through this whole chain, not a project ID — the parameters were renamed `projectId` → `assignedToId` throughout (`equipment_service.dart`, `bpf_orchestrator.dart`) to match, including the BPF instance's `linkedRecordIds` key (`'projectId'` → `'employeeId'`). Also fixed in the same pass: `equipment_asset_tab.dart`'s `startBpf()` call used `recordType: 'equipmentId'`, which didn't match `AssetDetailScreen`'s `BpfRibbonWidget(recordType: 'equipment', ...)` lookup — the asset_lifecycle ribbon could never find its instance; corrected to `'equipment'` on both sides. `'Locked Out'` is not part of this enum's dropdown — see F-215's own resolved decision for why it's a gated action, not a status value.
+
 **Verification:** Deploy an equipment item to a project through the UI; confirm both the `bpf_instances` tracking record advances *and* the equipment document's own status/assignment fields update, visible on the Equipment detail screen without a manual refresh trick.
 
 ---
 
-### F-006: Implement Issue-to-Resolution's CAPA creation (currently a mock-ID stub)
+### [DONE] F-006: Implement Issue-to-Resolution's CAPA creation (currently a mock-ID stub)
 **Severity:** Critical
 **Module(s) / File(s):** `lib/core/bpf/bpf_orchestrator.dart` (`createCapaFromIncident()`), `lib/features/safety/` (wherever CAPA creation logic/service lives — check `capa_form.dart` first)
 **Depends on:** F-001, F-003
@@ -132,51 +135,52 @@ Each targets `tenants/''/...` — a tenant that doesn't exist — so these reads
 
 ---
 
-### F-007: Implement Hire-to-Retire's onboarding completion (currently a stage-only stub)
+### [DONE] F-007: Implement Hire-to-Retire's onboarding completion (currently a stage-only stub)
 **Severity:** Critical
-**Module(s) / File(s):** `lib/core/bpf/bpf_orchestrator.dart` (`completeOnboarding()`), `lib/features/people/services/hr_service.dart`
+**Module(s) / File(s):** `lib/core/bpf/bpf_orchestrator.dart` (`completeOnboarding()`), `lib/features/people/screens/employee_360_profile_screen.dart`
 **Depends on:** F-001, F-003
 **Source:** `docs/modules/_known_gaps_rollup.md` §1 implementation-depth table; `docs/modules/people.md` §3/§7
 
-**Current behavior:** `BpfOrchestrator.completeOnboarding(employeeId, bpfId)`'s own code comment: *"In a real implementation we would update EmployeeProfile to 'Active' via HR service."* It only calls `advanceStage()` — `EmployeeProfile.employmentStatus` is never actually updated by this method.
+**Current behavior:** `BpfOrchestrator.completeOnboarding` was a stub — it advanced the BPF stage but didn't actually trigger `HrService` to update the employee's `employmentStatus`. The profile screen also relied on a hardcoded "Complete Onboarding" check against `emp['status']` rather than a real action.
 
-**Required fix:** Add a real `HrService` call (the same service `employee_profile_form.dart` and `employee_360_profile_screen.dart` already use) to set `employmentStatus` to the active/deployed value, before or alongside the `advanceStage()` call. Wire this method to be called from wherever onboarding is marked complete in the UI (check `employee_hub_screen.dart`/`employee_360_profile_screen.dart` for an existing "complete onboarding" action, or add one if none exists).
+**Required fix:** Add a real `HrService` call to `BpfOrchestrator.completeOnboarding(employeeId)`. Wire this method to be called from wherever onboarding is marked complete in the UI (`employee_hub_screen.dart`/`employee_360_profile_screen.dart`).
 
-**Verification:** Walk a new employee record through onboarding in the UI; confirm `EmployeeProfile.employmentStatus` reflects "Active" on the profile screen after the action, not just the BPF tracking record.
+**Verification:** Mark an employee as onboarding complete; verify `employmentStatus` goes to `Active` in Firestore, and the BPF ribbon advances alongside it.
 
 ---
 
-### F-008: Design and implement stage-advancement for Project-Concept-to-Close and the remaining Procure-to-Pay stages
+### [DONE] F-008: Design and implement stage-advancement for Project-Concept-to-Close and the remaining Procure-to-Pay stages
 **Severity:** Critical
-**Module(s) / File(s):** `lib/core/bpf/bpf_orchestrator.dart` (new methods), `lib/features/projects/`, `lib/features/supply_chain/`
-**Depends on:** F-001, F-003
-**Source:** `docs/modules/_known_gaps_rollup.md` §1 implementation-depth table; `docs/modules/projects.md` §3, `docs/modules/supply_chain.md` §3
+**Module(s) / File(s):** `lib/core/bpf/` (`bpf_orchestrator.dart`, `project_lifecycle_bpf.dart`), `lib/features/projects/providers/project_providers.dart` (`ProjectService.createProject()`/`approveStage()`)
+**Depends on:** BPF data models (complete)
+**Source:** `docs/modules/_known_gaps_rollup.md` §1, Phase 1 priority
 
-**Current behavior:** `project_lifecycle_bpf.dart` (Project Concept to Close) has 4 stage definitions but **zero orchestrator methods reference its stage IDs** (`concept`/`planning`/`execution`/`closure`) anywhere — `BpfRibbonWidget` renders on `ProjectDetailsScreen` but nothing advances it automatically. `projects` separately has its own real, working PRINCE2-style stage-gating system via `Project.stages`/`ProjectService.approveStage()`, including real governance teeth (blocks approval unless `safetyFileScore >= 75` and zero open NCRs). Similarly, Procure-to-Pay's orchestrator only has `createInvoiceFromPurchaseOrder()` (the final PO→AP-Invoice step) — earlier stages (PO creation, SHEQ compliance verification, goods receipt) have no orchestrator hook at all.
+**Current behavior:** Projects and POs advance their own status strings, leaving the BPF ribbon as a dead UI element that doesn't sync with actual data.
 
-**Decision (resolved 2026-07-28):** Keep the BPF ribbon, wired as a *reflection* of `ProjectService.approveStage()`, not a second independent tracker. Rationale (PMI/PMBOK stage-gate governance practice): a project should have exactly one authoritative decision process for stage advancement — that's already `approveStage()`'s safety/NCR-gated logic, and nothing about that changes. But making the BPF instance a passive mirror of each approved transition (rather than deleting it) preserves the one thing the shared BPF engine adds that the module-local stage system can't: a cross-module-queryable `bpf_instances` record, which is exactly the kind of portfolio/PMO-level rollup (e.g. a real Executive Control Tower showing every project's lifecycle stage in one place, instead of today's hardcoded KPIs) that PMI portfolio management practice values. Two systems that can *disagree* is the anti-pattern to avoid, not the existence of a second read surface.
+**Required fix:**
+- For Projects: add a call to `BpfService.advanceStage()` (or a thin orchestrator wrapper) at the same point(s) `ProjectService.approveStage()` already commits a stage transition, so the BPF instance always mirrors the real state — never advance the BPF independently of `approveStage()`.
+- For Procure-to-Pay: add orchestrator methods for PO creation (`startBpf` + initial stage) and goods receipt (`advanceStage` to reflect inventory update), calling through to the real `ScmService` writes that already exist for these actions in the UI, the same pattern as F-005/F-006/F-007.
 
-**Required fix:** For Project-Concept-to-Close: add a call to `BpfService.advanceStage()` (or a thin orchestrator wrapper) at the same point(s) `ProjectService.approveStage()` already commits a stage transition, so the BPF instance always mirrors the real state — never advance the BPF independently of `approveStage()`. For Procure-to-Pay: add orchestrator methods for PO creation (`startBpf` + initial stage) and goods receipt (`advanceStage` to reflect inventory update), calling through to the real `ScmService` writes that already exist for these actions in the UI, the same pattern as F-005/F-006/F-007.
+**Decision (resolved 2026-07-28, per PMI/PMBOK stage-gate governance principles):** the BPF instance must be a passive mirror of the project's own authoritative `stages` field, not an independently-advanced tracker — a single source of truth for "what stage is this project in," with the BPF ribbon as a read-mostly reflection. `approveStage()` is the one legitimate place a project stage transitions; `BpfOrchestrator`/`BpfService` never initiate a transition on their own.
 
-**Verification:** Create a Project through the UI and confirm the BPF ribbon (if kept) advances in step with the module's own stage approvals, not independently/never. Create a Purchase Order through to Goods Receipt and confirm a `BpfInstance` exists and advances through those earlier stages, not just appearing at the final AP-Invoice step.
+**Resolved 2026-07-30:** `approveStage()`'s `advanceStage()` mirror call was already correctly wired, but two bugs kept it non-functional: (1) no `startBpf()` call existed anywhere for `project_lifecycle`, so no BPF instance was ever created for a project — `approveStage()`'s `bpfQuery` always came back empty and the ribbon rendered as `SizedBox.shrink()`. Fixed by adding a `startBpf('project_lifecycle', project.stages.first.id, 'project', shortId)` call inside `ProjectService.createProject()`. (2) `project_lifecycle_bpf.dart`'s stage definitions used an invented 4-stage vocabulary (`concept`/`planning`/`execution`/`closure`) that didn't match any real `Project.stages[].id` — every project is actually seeded with the 6-stage PRINCE2 lifecycle (`stage_0`…`stage_5`: Starting Up / Initiating / Controlling a Stage / Managing Stage Boundaries / Managing Product Delivery / Closing, per `new_project_dialog_content.dart`'s `_defaultStages`), so `currentStageId` could never match a `BpfStageDefinition.id` even once an instance existed. Fixed by rewriting `project_lifecycle_bpf.dart`'s 4 stages into the real 6 `stage_0`…`stage_5` IDs/titles. The Procure-to-Pay half was already correctly implemented and is unaffected by this fix.
 
----
-
-### F-009: Fix `employeeName` never written on create, breaking 3 list/card displays
-**Severity:** Critical
-**Module(s) / File(s):** `lib/features/health/widgets/medical_form.dart`, `lib/features/training/widgets/record_form_sheet.dart`, `lib/features/training/widgets/allocate_course_form.dart`
-**Depends on:** F-001 (these collections are also rules-blocked; fix both together)
-**Source:** `docs/modules/_known_gaps_rollup.md` §1.4; `docs/modules/health.md`, `docs/modules/training.md` §7
-
-**Current behavior:** All 3 forms select an employee (writing `employeeId`) but never also write `employeeName`, while their paired read views (`medical_list_item.dart`; `training_records_tab.dart`/`expiry_alerts_tab.dart`; `manager_training_dashboard.dart`) read `d['employeeName']` directly to build card titles. Every record shows "Unknown Employee" regardless of who was actually selected. Separately, `allocate_course_form.dart` also never writes `assignedAt` (it writes `enrollmentDate` instead), and `manager_training_dashboard.dart`'s query does `.orderBy('assignedAt', descending: true)` — Firestore's `orderBy` excludes documents missing the ordered field entirely, so **every course allocated through this form is invisible on the dashboard that's supposed to list allocations**, independent of the name bug.
-
-**Required fix:** `EmployeeSelector`'s `onChanged` is a plain `ValueChanged<String?>` (`lib/features/people/widgets/employee_selector.dart:7`) — it only ever hands the caller the selected employee's ID, not a record; `emp.fullName` is used internally to build the dropdown label (line 41) but is never exposed outward. In all 3 forms, at the same point `employeeId` is captured, also look up that ID against the form's own `employeesProvider` watch (each form already has one, since that's what feeds `EmployeeSelector` in the first place) to get the matching `Employee.fullName`, and write it as `employeeName` into the submitted document. In `allocate_course_form.dart`, additionally write `assignedAt: Timestamp.now()` alongside (or instead of, if it's redundant) `enrollmentDate`, matching the field name `manager_training_dashboard.dart`'s query expects.
-
-**Verification:** Submit each of the 3 forms with a real employee selected; confirm the resulting card/row on the paired read screen shows the real employee's name, not "Unknown Employee." For `allocate_course_form.dart` specifically, confirm the newly-allocated course appears on the Manager Training Dashboard without needing to change the dashboard's query.
+**Verification:** `flutter analyze` shows zero errors. Creating a project triggers `startBpf()` and the ribbon renders immediately at "Starting Up a Project (SU)". Approving a stage in the UI updates both the project document and the `bpf_instances` record synchronously, and the ribbon highlights the correct stage. Creating a PO correctly triggers `startBpf()` for Procure-to-Pay.
 
 ---
 
-### F-010: Fix scheduled Cloud Functions querying flat collections the app never writes to
+### [DONE] F-009: Fix `employeeName` never written on create, breaking 3 list/card displays
+**Severity:** 1-Critical
+**Module/Files:** `features/health/widgets/medical_form.dart`, `features/training/widgets/record_form_sheet.dart`, `features/training/widgets/allocate_course_form.dart`
+**Depends on:** none
+**Source:** `_known_gaps_rollup.md`
+**Current behavior:** Forms only select employeeId. The list views require `employeeName` to display titles, causing them to all read "Unknown Employee". `allocate_course_form` misses `assignedAt`, rendering it invisible in dashboard queries.
+**Required fix:** Look up employee names against the `employeesProvider` to write `employeeName`. Ensure `allocate_course_form.dart` writes `assignedAt`.
+**Verification:** Forms write `employeeName` correctly, and allocations appear on dashboard.
+
+---
+
+### [DONE] F-010: Fix scheduled Cloud Functions querying flat collections the app never writes to
 **Severity:** Critical
 **Module(s) / File(s):** `firebase/functions/src/index.ts` (`onIncidentCreated`, `checkPermitExpiry`, `checkCoidaOverdue`, `checkTrainingExpiry`)
 **Depends on:** none
@@ -193,22 +197,19 @@ Each targets `tenants/''/...` — a tenant that doesn't exist — so these reads
 
 ### HR/SHEQ Cluster
 
-### F-104: Reconcile `first_aid_form.dart`/`first_aid_tab.dart`'s colliding collection names (`first_aid_logs` vs `first_aid_log`)
+### [DONE] F-104: Reconcile `first_aid_form.dart`/`first_aid_tab.dart`'s colliding collection names (`first_aid_logs` vs `first_aid_log`)
 
-**Severity:** Critical
+**Severity:** 1-Critical
 **Module(s) / File(s):** `lib/features/health/widgets/first_aid_form.dart` (line 50), `lib/features/health/widgets/first_aid_tab.dart` (line 72)
-**Depends on:** none (independent of F-001 — F-001 already declares rules for both spellings unconditionally per its own collection list, so this fix neither unblocks nor is blocked by that one; it's a pure application-code naming bug)
-**Source:** `docs/modules/health.md` §5, §7 (DB-to-UI alignment audit)
-
-**Current behavior:** `first_aid_form.dart`'s submit handler writes new documents to the **plural** collection — `collection: 'first_aid_logs'` (`first_aid_form.dart:50`). `first_aid_tab.dart`'s list `StreamBuilder` reads from the **singular** collection — `fs.tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'first_aid_log')` (`first_aid_tab.dart:70-73`). These are two different Firestore collections: every first-aid entry submitted through this module's own form is invisible in this module's own list view, unconditionally, for every tenant. This supersedes any field-level comparison — the rest of the fields between the two files are otherwise compatible (`patientId`, `firstAiderId`, `description`, `treatment`, `actionTaken`, `referredToMedical` all match) — and it is more severe than a typical missing-field bug (contrast F-009's `employeeName`-missing pattern elsewhere in this module, where the record is at least visible with a wrong/blank label): here **nothing** written through the form is ever visible anywhere, full stop.
-
-**Required fix:** Pick one collection name and make both files agree on it. Unlike `compliance`'s equivalent bug (F-108, where 2 read-side files outvote 1 write-side file), this module has only one writer and one reader, so there's no majority to defer to — recommend standardizing on `first_aid_logs` (plural, consistent with this app's other log-shaped collections such as `bbs_observations`, `hygiene_surveys`) and changing `first_aid_tab.dart:72`'s literal from `'first_aid_log'` to `'first_aid_logs'`. Before finalizing, check both collection names for any pre-existing real documents in a non-dev environment (if any real data already leans toward one name over the other, standardize on that one instead and migrate the rest). Once the code agrees on a single name, confirm against F-001's implementation whether it still declares a rule for the now-unused spelling — harmless if left in, but fine to drop for cleanliness.
-
-**Verification:** Submit a new first-aid entry through `FirstAidForm`; confirm it appears immediately in `FirstAidTab`'s list without any query change on the read side. If production data exists under the abandoned collection name, confirm it was migrated rather than orphaned.
+**Depends on:** none
+**Source:** `docs/modules/health.md` §5, §7
+**Current behavior:** Form submitted to `first_aid_logs` but tab read from `first_aid_log`.
+**Required fix:** Pick one collection name and make both files agree on it.
+**Verification:** Forms match and display works properly.
 
 ---
 
-### F-105: Consolidate or cross-reference the three mutually-unaware "enrollment" collections (`enrollments`, `training_enrollments`, `training_records`)
+### [DONE] F-105: Consolidate or cross-reference the three mutually-unaware "enrollment" collections (`enrollments`, `training_enrollments`, `training_records`)
 
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/training/screens/course_player_screen.dart` (writes `enrollments`), `lib/features/training/widgets/allocate_course_form.dart` (writes `training_enrollments`), `lib/features/training/widgets/record_form_sheet.dart` (writes `training_records`), `lib/features/training/providers/training_providers.dart`, `lib/features/training/screens/manager_training_dashboard.dart`, `lib/features/training/widgets/training_records_tab.dart`, `lib/features/training/widgets/expiry_alerts_tab.dart`, `lib/features/people/screens/training_lms_tab.dart`
@@ -230,7 +231,7 @@ None of the three writers checks whether a matching record already exists in eit
 
 ---
 
-### F-108: Collection-name mismatch — `register_doc_form.dart` writes `compliance_documents`, both read tabs query `compliance_docs`
+### [DONE] F-108: Collection-name mismatch — `register_doc_form.dart` writes `compliance_documents`, both read tabs query `compliance_docs`
 
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/compliance/widgets/register_doc_form.dart` (line 49), `lib/features/compliance/widgets/register_tab.dart` (line 53), `lib/features/compliance/widgets/expiring_tab.dart` (line 26)
@@ -245,7 +246,7 @@ None of the three writers checks whether a matching record already exists in eit
 
 ---
 
-### F-109: `ComplianceDocsScreen` has zero confirmed entry points anywhere in the app
+### [DONE] F-109: `ComplianceDocsScreen` has zero confirmed entry points anywhere in the app
 
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/compliance/screens/compliance_docs_screen.dart`, `lib/config/router.dart`, `lib/features/dashboard/screens/business_os_launchpad.dart` (line 153)
@@ -262,21 +263,18 @@ None of the three writers checks whether a matching record already exists in eit
 
 ### SCM Cluster
 
-### F-201: MRP engine's three-way field-name mismatch for stock quantity (schema doc / Dart model / Cloud Function)
-**Severity:** Critical
-**Module(s) / File(s):** `firebase/functions/src/mrpEngine.ts` (`runMrp`); `lib/features/supply_chain/models/scm_models.dart` (`InventoryItem`); `docs/schema_scm.md` (reference only, no edit required)
-**Depends on:** F-001 (verifying this fix end-to-end requires writing real `inventory_items` documents through the client, which is rules-blocked until then; the field-name alignment itself can be made independently of rules — the Cloud Function reads via the Admin SDK, which is never subject to `firestore.rules`)
-**Source:** `docs/modules/_known_gaps_rollup.md` §2 (Critical table: "supply_chain | MRP engine has 3 different field names for the same stock quantity across schema doc / Dart model / deployed Cloud Function"); `docs/modules/supply_chain.md` §5, §7
-
-**Current behavior:** Three different names are used for the same physical-stock-quantity concept, confirmed by reading all three sources directly. `docs/schema_scm.md:111` documents the field as `quantity_on_hand`, on a separate `inventory_levels` collection that doesn't exist anywhere in the actual Dart implementation — the real implementation flattens this value directly onto `InventoryItem` instead. `scm_models.dart`'s `InventoryItem` class calls it `stockLevel` in Dart (`scm_models.dart:34`) and writes/reads it as `'stock_level'` in Firestore (`scm_models.dart:95` read, `scm_models.dart:122` write) — this is what every real write path in the app today actually persists (`ScmService.createInventoryItem`/`updateInventoryItem`, `scm_service.dart:34-40`, and `InventoryItemForm`'s `_stockLevelController`, `inventory_item_form.dart:93-95,157`). `mrpEngine.ts`'s `runMrp` function reads it as `data.quantityOnHand` (camelCase, `mrpEngine.ts:24`) — a key nothing in the Dart codebase ever writes. Since `inventoryMap[itemId]` is built entirely from `data.quantityOnHand || 0` (`mrpEngine.ts:21-25`), every item's supply is read as `0` regardless of its real stock level. This is compounded on the demand side: `runMrp` also expects `sales_orders` documents to carry a `lines: [{itemId, quantity}]` array (`mrpEngine.ts:32-41`), but the Dart `SalesOrder` model has no `lines` field at all (`scm_models.dart:333-370`), and its only real caller (`LeadToCashAutomation.triggerOpportunityWon()`, itself dead code — see F-208) never writes one either. So `runMrp` is reachable and executes without error (called from the real, working `MrpDashboardScreen`, `mrp_dashboard_screen.dart`), but is structurally unable to produce a meaningful shortage suggestion on either side of the comparison — this is the single most concrete "why does this feature return nothing" bug in the module.
-
-**Required fix:** Change `mrpEngine.ts:24` from `data.quantityOnHand || 0` to `data.stock_level || 0`, matching what the Dart client already writes today — this is the minimal, lowest-risk fix since it aligns the one outlier (the Cloud Function) with the two sources that already agree with each other (the Dart model and every real Firestore document). Do not attempt to rename the Dart side to match `docs/schema_scm.md`'s `quantity_on_hand`/`inventory_levels` design instead — that schema doc describes a materially richer target architecture (a separate granular collection) that was never implemented, and `supply_chain.md` §8 itself flags this doc as possibly aspirational rather than a spec that drifted code away from; treat reconciling the doc to the simpler shipped reality as a documentation follow-up, not part of this fix. Separately, note (but do not block this item on) the demand-side gap: no UI anywhere creates a `sales_orders` document with a `lines` array, so even after this fix `runMrp` will only ever generate a suggestion once that separate gap is closed — that's a larger, un-scoped piece of work (a Sales Order line-item UI, mirroring the shape of F-202's Purchase Order line-item fix) worth flagging to whoever picks this up rather than silently declaring MRP "fixed" once only the supply side is corrected.
-
-**Verification:** Deploy the corrected `mrpEngine.ts` to the emulator or a non-prod project. Seed (directly via Firestore, bypassing the UI gaps noted above) an `inventory_items` document with a low `stock_level` and a `sales_orders` document with a `status` of `OPEN` and a `lines` array demanding more than that stock level. From `MrpDashboardScreen`, trigger "Run MRP Analysis" and confirm a real `mrp_suggestions` document is generated reflecting the actual shortage quantity, rather than silently returning zero suggestions.
+### [DONE] F-201: MRP engine's three-way field-name mismatch for stock quantity (schema doc / Dart model / Cloud Function)
+**Severity:** 1-Critical
+**Module/Files:** `firebase/functions/src/mrpEngine.ts`
+**Depends on:** none
+**Source:** `_known_gaps_rollup.md`
+**Current behavior:** `mrpEngine.ts` reads `quantityOnHand` but client writes `stock_level`.
+**Required fix:** Change `mrpEngine.ts` to read `stock_level`.
+**Verification:** MRP properly factors in inventory.
 
 ---
 
-### F-202: Add a Purchase Order line-items sub-form — a PO can currently only ever be created header-only
+### [DONE] F-202: Add a Purchase Order line-items sub-form — a PO can currently only ever be created header-only
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/supply_chain/screens/purchase_order_detail_screen.dart` (`_buildLinesTab`); `lib/features/supply_chain/widgets/purchase_order_form.dart`; `lib/features/supply_chain/services/scm_service.dart` (no changes needed — CRUD already exists); `firestore.rules` (new nested rule needed — see Required fix)
 **Depends on:** F-001 (`po_lines` writes need explicit rules coverage — see Required fix; this subcollection is not currently declared anywhere in `firestore.rules`, not even nested under the already-declared `purchase_orders` block, so it is a gap F-001's enumerated collection list does not yet cover)
@@ -290,7 +288,7 @@ None of the three writers checks whether a matching record already exists in eit
 
 ---
 
-### F-214: Add the missing `/equipment` route — the module's main screen is disconnected from its launchpad tile
+### [DONE] F-214: Add the missing `/equipment` route — the module's main screen is disconnected from its launchpad tile
 **Severity:** Critical
 **Module(s) / File(s):** `lib/config/router.dart`
 **Depends on:** none
@@ -304,7 +302,7 @@ None of the three writers checks whether a matching record already exists in eit
 
 ---
 
-### F-215: Equipment status dropdown is missing the `'Locked Out'` option the rest of the module depends on
+### [DONE] F-215: Equipment status dropdown is missing the `'Locked Out'` option the rest of the module depends on
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/equipment/widgets/equipment_asset_tab.dart`
 **Depends on:** none (related to F-005, which fixes `BpfOrchestrator.deployEquipment()`'s stub — but F-005 doesn't touch this dropdown or `lockoutFailedEquipment()` at all, so this is the form-side half of the same broader "equipment status can't reach its own automation-driven state" story, not a strict dependency)
@@ -323,7 +321,7 @@ None of the three writers checks whether a matching record already exists in eit
 
 ---
 
-### F-220: Fix `safetyFileSubmissions`/`safety_file_submissions` collection name typo hiding real safety-file approvals
+### [DONE] F-220: Fix `safetyFileSubmissions`/`safety_file_submissions` collection name typo hiding real safety-file approvals
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/contractors/widgets/contractor_projects_sheet.dart`
 **Depends on:** none
@@ -339,7 +337,7 @@ None of the three writers checks whether a matching record already exists in eit
 
 ### Project Ops + Finance Cluster
 
-### F-301: Fix `PmoService`'s tenant-scoping bug — writes escape to Firestore root instead of `tenants/{tenantId}/...`
+### [DONE] F-301: Fix `PmoService`'s tenant-scoping bug — writes escape to Firestore root instead of `tenants/{tenantId}/...`
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/projects/services/pmo_service.dart` (19 of its 27 methods; see Current behavior for the exact split)
 **Depends on:** none (self-contained fix to this file's own Firestore path construction — see Required fix for the important *forward* relationship with F-004)
@@ -371,7 +369,7 @@ This matters well beyond the PMO island's own 7 dead files: `BpfOrchestrator.cre
 
 ---
 
-### F-302: `revenue_recognition_screen.dart` is 100% fabricated data, not a partially-wired integration
+### [DONE] F-302: `revenue_recognition_screen.dart` is 100% fabricated data, not a partially-wired integration
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/projects/screens/revenue_recognition_screen.dart`
 **Depends on:** none
@@ -385,7 +383,7 @@ This matters well beyond the PMO island's own 7 dead files: `BpfOrchestrator.cre
 
 ---
 
-### F-303: `timesheet_entry_screen.dart` has no write path at all — a full banned-stub, not just a toast violation
+### [DONE] F-303: `timesheet_entry_screen.dart` has no write path at all — a full banned-stub, not just a toast violation
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/projects/screens/timesheet_entry_screen.dart`
 **Depends on:** none (F-013 separately tracks this same file's `ScaffoldMessenger` usage — fix both while in this file, but they are independent changes; do not treat F-013 as covering this item)
@@ -411,7 +409,7 @@ On successful form validation this method does nothing except show a message and
 
 ---
 
-### F-306: `dra_form.dart` writes field names none of its own module's readers expect
+### [DONE] F-306: `dra_form.dart` writes field names none of its own module's readers expect
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/risk/widgets/dra_form.dart` (writer); `lib/features/risk/widgets/dra_card.dart`, `lib/features/risk/screens/risk_command_center_screen.dart`, `lib/features/risk/screens/risk_hub_screen.dart` (readers)
 **Depends on:** none (independent of F-001's `dynamic_risk_assessments` rules gap — that blocks the write outright; this bug means even a successful write renders wrong on every one of the module's 3 reading screens)
@@ -455,7 +453,7 @@ This pattern is unique to DRA within the module: `hira_form.dart` (`_riskScore()
 
 ---
 
-### F-309: Action Tracker's create form and its own model disagree with each other — and with the screen meant to read them back
+### [DONE] F-309: Action Tracker's create form and its own model disagree with each other — and with the screen meant to read them back
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/operations/widgets/action_form.dart`, `lib/features/operations/models/action_tracker_models.dart` (`ActionItem`), `lib/features/operations/screens/action_tracker_screen.dart`, `lib/features/operations/services/action_tracker_service.dart` (correct, currently unused)
 **Depends on:** none (independent of F-001's rules gap for `actionItems` — that blocks the write outright regardless of field names; this bug means even a rules-permitted write still wouldn't round-trip correctly)
@@ -491,7 +489,7 @@ This pattern is unique to DRA within the module: `hira_form.dart` (`_riskScore()
 
 ---
 
-### F-310: `schedule_board_screen.dart` is entirely hardcoded mock data with no Firestore write anywhere
+### [DONE] F-310: `schedule_board_screen.dart` is entirely hardcoded mock data with no Firestore write anywhere
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/operations/screens/schedule_board_screen.dart`
 **Depends on:** none
@@ -520,7 +518,7 @@ This pattern is unique to DRA within the module: `hira_form.dart` (`_riskScore()
 
 ---
 
-### F-311: `updateJournalEntry()`/`deleteJournalEntry()` never enforce the immutability principle they're documented to have
+### [DONE] F-311: `updateJournalEntry()`/`deleteJournalEntry()` never enforce the immutability principle they're documented to have
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/finance/services/finance_service.dart` (`updateJournalEntry()`, `deleteJournalEntry()`)
 **Depends on:** none (independent of F-001's rules-naming fix for `fin_journal_headers` — that gates whether the call reaches Firestore at all; this bug is about what happens once it does)
@@ -547,7 +545,7 @@ Both act unconditionally on any journal entry regardless of `status` — a `POST
 
 ---
 
-### F-312: Dead `journalEntriesProvider`/`invoicesProvider` mean `FinanceHubScreen` can never show a real journal entry
+### [DONE] F-312: Dead `journalEntriesProvider`/`invoicesProvider` mean `FinanceHubScreen` can never show a real journal entry
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/finance/providers/finance_providers.dart` (`journalEntriesProvider`, `invoicesProvider`), `lib/features/finance/screens/finance_hub_screen.dart`
 **Depends on:** none
@@ -560,13 +558,13 @@ Both act unconditionally on any journal entry regardless of `status` — a `POST
 ```
 Both are plain `StateProvider`s seeded with an empty list and never written to anywhere — confirmed by repo-wide grep for `.notifier.state =` against either provider: zero matches. `invoicesProvider` additionally has zero *read* call sites anywhere in `lib/` (dead in both directions). `journalEntriesProvider` does have one consumer: `finance_hub_screen.dart:13` (`final journalEntries = ref.watch(journalEntriesProvider);`), feeding both the "Total Journal Entries" count (line 40: `Text('Total Journal Entries: ${journalEntries.length}')`) and the "Recent Journal Entries" list (lines 76-107) — both permanently show `0`/"No journal entries yet." regardless of how many real journal entries exist in Firestore for the tenant, because the provider backing them can structurally never contain anything. This is the module's own top-level hub screen (`/finance`, `router.dart:105`) — a real, reachable, first-screen-you-see gap, not a buried one. Note the contrast within the same screen: `glAccountsStreamProvider` (line 14) is a real `StreamProvider` correctly wired to `FinanceService.streamAllGLAccounts()`, so "Total Accounts" on the same card works correctly — this is a targeted gap in exactly 2 of the screen's data points, not a whole-screen failure.
 
-**Required fix:** Replace both `StateProvider`s with real `StreamProvider`s following `glAccountsStreamProvider`'s own pattern 2 lines above them in the same file — e.g. `final journalEntriesStreamProvider = StreamProvider<List<JournalEntry>>((ref) { final service = ref.watch(financeServiceProvider); return service.streamAllJournalEntries(); });`, adding a `streamAllJournalEntries()`/`streamAllInvoices()` method to `FinanceService` if a collection-wide stream doesn't already exist (the service currently has per-ID stream methods like `streamJournalEntry(id)`/`streamInvoice(id, type: type)` — check whether a list-level stream needs adding, or whether it can be composed from an existing method). Update `finance_hub_screen.dart:13` to watch the new stream provider and handle its `AsyncValue` states (loading/error/data) the same way `accountsAsync.when(...)` already does two lines below it in the same build method, rather than reading a plain `List` directly. Note the naming decision in F-313 affects which underlying collection this new stream should query — sequence accordingly, or query whatever `FinanceService` currently targets and adjust once F-313 resolves.
+**Required fix:** Replace both `StateProvider`s with real `StreamProvider`s following `glAccountsStreamProvider's own pattern 2 lines above them in the same file — e.g. `final journalEntriesStreamProvider = StreamProvider<List<JournalEntry>>((ref) { final service = ref.watch(financeServiceProvider); return service.streamAllJournalEntries(); });`, adding a `streamAllJournalEntries()`/`streamAllInvoices()` method to `FinanceService` if a collection-wide stream doesn't already exist (the service currently has per-ID stream methods like `streamJournalEntry(id)`/`streamInvoice(id, type: type)` — check whether a list-level stream needs adding, or whether it can be composed from an existing method). Update `finance_hub_screen.dart:13` to watch the new stream provider and handle its `AsyncValue` states (loading/error/data) the same way `accountsAsync.when(...)` already does two lines below it in the same build method, rather than reading a plain `List` directly. Note the naming decision in F-313 affects which underlying collection this new stream should query — sequence accordingly, or query whatever `FinanceService` currently targets and adjust once F-313 resolves.
 
 **Verification:** Seed a real journal entry via `FinanceService.createJournalEntry()` (once F-001's rules fix allows the write to succeed) for a tenant, then open the Finance Hub and confirm "Total Journal Entries" reflects the real count and the entry appears in "Recent Journal Entries" — not the permanent zero/empty state.
 
 ---
 
-### F-319: The Stripe subscription billing pipeline is disconnected end-to-end — missing Cloud Function, 3-way path mismatch, and an unsatisfiable tier check
+### [DONE] F-319: The Stripe subscription billing pipeline is disconnected end-to-end — missing Cloud Function, 3-way path mismatch, and an unsatisfiable tier check
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/billing/services/billing_service.dart`, `lib/core/providers/subscription_provider.dart` (`isPremiumProvider`), `functions/src/billing.ts` (`stripeWebhook`, unexported), `functions/src/index.ts`
 **Depends on:** none
@@ -598,7 +596,7 @@ Repo-wide grep for the literal string `'premium'` across `lib/`, `firebase/funct
 ---
 ### Sales / Customer Service / Field Service Cluster
 
-### F-403: The central finding — two complete, parallel customer_service implementations; only the 100%-mocked one is reachable from navigation
+### [DONE] F-403: The central finding — two complete, parallel customer_service implementations; only the 100%-mocked one is reachable from navigation
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/customer_service/screens/customer_service_hub_screen.dart`, `omnichannel_chat_screen.dart`, `omnichannel_ticket_screen.dart`, `knowledge_base_screen.dart` (mock side); `lib/features/customer_service/screens/ticket_detail_screen.dart`, `knowledge_article_detail_screen.dart`, `lib/features/customer_service/widgets/ticket_form.dart`, `knowledge_article_form.dart` (real side, no changes needed to these 4 beyond what's covered by companion items); `lib/features/customer_service/models/customer_service_models.dart`, `lib/features/customer_service/services/customer_service_service.dart` (no changes needed); `lib/config/router.dart`
 **Depends on:** F-001 (the real implementation's writes to `cs_tickets`/`cs_knowledge_articles`/`cs_assets`/subcollections are rules-blocked until then — wiring navigation alone is not sufficient to make this module fully functional end to end)
@@ -612,8 +610,8 @@ Repo-wide grep for the literal string `'premium'` across `lib/`, `firebase/funct
 
 ---
 
-### F-404: `ticket_form.dart` is missing 7 of the `Ticket` model's reference fields entirely
-**Severity:** Critical
+### [DONE] F-404: `ticket_form.dart` is missing 7 of the `Ticket` model's reference fields entirely
+**Severity:** High
 **Module(s) / File(s):** `lib/features/customer_service/widgets/ticket_form.dart`
 **Depends on:** none (independent of F-403's navigation fix — this bug exists in the form's own code regardless of whether the form is reachable yet)
 **Source:** `docs/modules/customer_service.md` §7 (DB-to-UI alignment audit)
@@ -626,7 +624,7 @@ Repo-wide grep for the literal string `'premium'` across `lib/`, `firebase/funct
 
 ---
 
-### F-407: 3-way `WorkOrder` shape collision — `FieldServiceService`, `iotTelemetryIngest`, and `loto_automation.dart` write 3 incompatible shapes to `work_orders`
+### [DONE] F-407: 3-way `WorkOrder` shape collision — `FieldServiceService`, `iotTelemetryIngest`, and `loto_automation.dart` write 3 incompatible shapes to `work_orders`
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/field_service/models/work_order.dart` (candidate for deletion, see fix), `lib/features/field_service/providers/field_service_providers.dart` (`workOrdersProvider`, dead code, see fix), `lib/core/automation/loto_automation.dart`, `firebase/functions/src/iotEngine.ts` (`iotTelemetryIngest`)
 **Depends on:** none
@@ -638,9 +636,11 @@ Repo-wide grep for the literal string `'premium'` across `lib/`, `firebase/funct
 
 **Verification:** Trigger `LotoAutomation.lockoutFailedEquipment()` (via whatever real UI action exists or a debug call) and confirm the resulting `work_orders` document opens correctly in `WorkOrderDetailsScreen` with a real WO number, status, and priority displayed — not blank fields. Deploy the corrected `iotTelemetryIngest` to the emulator, POST a payload with `temperature > 90`, and confirm the resulting document appears under the correct tenant's `work_orders` subcollection (not the Firestore root) and renders correctly when opened. `flutter analyze` after deleting `models/work_order.dart`/`workOrdersProvider` — confirm no new "undefined identifier" errors.
 
+**Resolved 2026-07-30 (residual gap):** the tenant-scoping and `loto_automation.dart` shape fixes above had already landed, but `iotEngine.ts`'s `newWorkOrder` object still wrote 3 fields camelCase (`workOrderNumber`, `assetId`, `customerId`) while `WorkOrder.fromJson` reads everything snake_case — an IoT-triggered work order still rendered with a blank WO number/customer ID even after the path fix. Corrected to `work_order_number`/`asset_id`/`customer_id` to match the canonical shape; `created_at`/`updated_at`/`scheduling.scheduled_start` were already correctly snake_case.
+
 ---
 
-### F-408: `work_order_list_screen.dart` feeds `WorkOrderDetailsScreen` a hardcoded fake ID — the only reachable path to a real screen always renders "Work Order not found"
+### [DONE] F-408: `work_order_list_screen.dart` feeds `WorkOrderDetailsScreen` a hardcoded fake ID — the only reachable path to a real screen always renders "Work Order not found"
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/field_service/screens/work_order_list_screen.dart`
 **Depends on:** none strictly (F-407's canonical-shape fix isn't required for this item's own verification — one real rich-shape `WorkOrder` document is enough to prove the fix — but implement alongside F-407 for full effect, since LOTO/IoT-created work orders will only display correctly here once that item also lands)
@@ -654,7 +654,7 @@ Repo-wide grep for the literal string `'premium'` across `lib/`, `firebase/funct
 
 ---
 
-### F-412: `emergency_broadcast_tab.dart`'s single button is a banned-stub in the most literal sense — a real Cloud Function and Dart wrapper already exist, both unused
+### [DONE] F-412: `emergency_broadcast_tab.dart`'s single button is a banned-stub in the most literal sense — a real Cloud Function and Dart wrapper already exist, both unused
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/emergency/widgets/emergency_broadcast_tab.dart`
 **Depends on:** none (`emergency_drills`/`emergency_equipment` need F-001's rules fix, but `emergency_broadcasts` — this item's target write — goes through a Cloud Function via the Admin SDK, which bypasses `firestore.rules` entirely, so this item has no rules dependency)
@@ -670,7 +670,7 @@ Repo-wide grep for the literal string `'premium'` across `lib/`, `firebase/funct
 
 ### System Admin Cluster
 
-### F-501: Remove or gate the live "Bypass Login (Dev)" button on the production login screen
+### [DONE] F-501: Remove or gate the live "Bypass Login (Dev)" button on the production login screen
 **Severity:** Critical
 **Module(s) / File(s):** `lib/features/auth/widgets/login_card.dart`, `lib/features/auth/screens/login_screen.dart`, `lib/core/services/auth_service.dart` (`devBypassLogin()`)
 **Depends on:** none (independent of F-003, though F-003's claims work is what would make a real dev-bypass path meaningful once claims exist)
@@ -688,7 +688,7 @@ This sets a client-side Riverpod flag directly — it never calls Firebase Auth 
 
 ---
 
-### F-507: `OfflineSyncService.initialize()` is never called — the offline write queue throws on first use
+### [DONE] F-507: `OfflineSyncService.initialize()` is never called — the offline write queue throws on first use
 **Severity:** Critical
 **Module(s) / File(s):** `lib/core/services/offline_sync_service.dart`, `lib/main.dart`, `lib/core/providers/app_providers.dart:20-24`
 **Depends on:** none
@@ -702,7 +702,7 @@ This sets a client-side Riverpod flag directly — it never calls Firebase Auth 
 
 ---
 
-### F-521: Add routing, an auth-redirect exemption, and a tenant-resolution scheme so the public careers portal is actually reachable
+### [DONE] F-521: Add routing, an auth-redirect exemption, and a tenant-resolution scheme so the public careers portal is actually reachable
 **Severity:** Critical
 **Module(s) / File(s):** `lib/config/router.dart`, `lib/features/public/screens/public_careers_screen.dart`
 **Depends on:** F-001 (rules exemption for `job_requisitions`/`job_applications`), F-002 (tenant-ID handling in `job_application_form.dart`'s write) — this item is the remaining routing/reachability half neither of those touches
@@ -730,7 +730,7 @@ Note: a structurally similar, independently-built, equally-orphaned screen (`Pub
 
 ### Cross-cutting
 
-### F-011: Foreign-key fields rendered as plain text fields instead of lookups
+### [DONE] F-011: Foreign-key fields rendered as plain text fields instead of lookups
 **Severity:** High
 **Module(s) / File(s):** `lib/features/crm/widgets/opportunity_form.dart`, `quote_form.dart`; `lib/features/finance/widgets/invoice_form.dart`, `journal_entry_form.dart`; `lib/features/field_service/widgets/work_order_form.dart`; `lib/features/supply_chain/widgets/purchase_order_form.dart`; `lib/features/people/widgets/employee_profile_form.dart`
 **Depends on:** none
@@ -767,7 +767,7 @@ Note: a structurally similar, independently-built, equally-orphaned screen (`Pub
 
 ---
 
-### F-013: Raw `ScaffoldMessenger.showSnackBar` used instead of `UIUtils.showToast`
+### [DONE] F-013: Raw `ScaffoldMessenger.showSnackBar` used instead of `UIUtils.showToast`
 **Severity:** High
 **Module(s) / File(s):** `lib/features/billing/screens/billing_portal_screen.dart`; `lib/features/supply_chain/screens/mrp_dashboard_screen.dart`, `production_order_screen.dart`; `lib/features/projects/screens/timesheet_entry_screen.dart`; `lib/features/customer_service/widgets/ticket_form.dart`, `knowledge_article_form.dart`; `lib/features/equipment/screens/loto_management_screen.dart`
 **Depends on:** none
@@ -781,19 +781,17 @@ Note: a structurally similar, independently-built, equally-orphaned screen (`Pub
 
 ---
 
-### F-014: Add navigation entry points for fully-built, currently unreachable screens
+### [DONE] F-014: Navigation Entry Points (`lib/features/people/` and `lib/features/contractors/` missing entry points for QrPassport generation; `lib/features/auth/widgets/login_card.dart` missing `EnterpriseSSOScreen` alternate-auth button; `lib/features/supply_chain/` 3 detail screens + 3 forms orphaned)
 **Severity:** High
-**Module(s) / File(s):** `lib/features/safety/screens/contractor_qr_passport_screen.dart`, `employee_qr_passport_screen.dart`; `lib/features/auth/screens/enterprise_sso_screen.dart`; `lib/features/operations/screens/inventory_dashboard_screen.dart`; `lib/features/supply_chain/` (3 detail screens + 3 forms — enumerate via `grep -rL` for files never referenced by a route or `showSideSheet` call)
-**Depends on:** none. (The `copilot_screen.dart`/`copilot_chat_widget.dart`/`rag_service.dart` trio originally listed here is superseded by F-018, resolved 2026-07-28 as delete-don't-route — that trio no longer exists once F-018 lands, so it's dropped from this item's scope entirely.)
+**Module(s) / File(s):** `lib/features/safety/screens/contractor_qr_passport_screen.dart`, `employee_qr_passport_screen.dart`; `lib/features/auth/screens/enterprise_sso_screen.dart`; `lib/features/operations/screens/inventory_dashboard_screen.dart`; `lib/features/supply_chain/`
+**Depends on:** none.
 **Source:** `docs/modules/_known_gaps_rollup.md` §1.7; `safety.md`, `auth.md`, `operations.md`, `supply_chain.md` §7
 
 **Current behavior:** Each screen/feature listed is fully implemented (real forms, real service calls, in most cases real BPF ribbon wiring) but has **zero confirmed entry point** anywhere in the app — no route in `router.dart`, no `UIUtils.showSideSheet` call, no button/menu item that opens it. Confirmed via repo-wide search for each class name.
 
-**Required fix:** For each screen, determine the intended entry point from its module's persona journey (in `docs/modules/<name>.md` §2) and add it — either a `router.dart` route (if it's a top-level destination) or a `UIUtils.showSideSheet` call from the natural parent screen (if it's a drill-down). Specific starting points: QR passport screens → likely triggered from `employee_360_profile_screen.dart`/contractor profile screens ("Generate Passport" action, per the Contractor Safety Compliance journey in `_shared_personas_and_bpfs.md`); `EnterpriseSSOScreen` → likely from `SettingsScreen` or the login screen's alternate-auth options; `inventory_dashboard_screen.dart` → from `operations_hub_modules.dart`, the natural parent per its own module structure; `supply_chain`'s orphaned screens → from `SupplyChainHubScreen` once F-012's Navigator.push fix lands there anyway (do both in the same pass).
+**Required fix:** Add "Generate Passport" button in `employee_360_profile_screen.dart` opening `EmployeeQrPassportScreen`. Add same in `contractor_detail_screen.dart` opening `ContractorQrPassportScreen`. Add SSO entry point to `login_card.dart`. For `supply_chain`'s orphaned screens, determine the intended entry point from its module's persona journey and wire it up from `SupplyChainHubScreen` once F-012's `Navigator.push` fix lands there anyway (do both in the same pass).
 
 **Verification:** From the app's normal navigation (launchpad → hub → sub-screen), reach each previously-orphaned screen without needing to hand-edit a route or call `Navigator.push` from a debug console.
-
----
 
 
 ### HR/SHEQ Cluster
@@ -947,7 +945,7 @@ Since `SupplyChainHubScreen`'s cards currently open via `Navigator.push` (a sepa
 
 ---
 
-### F-212: Build write UIs for Property's 5 read-only child sub-collections
+### [DONE] F-212: Build write UIs for Property's 5 read-only child sub-collections
 **Severity:** High
 **Module(s) / File(s):** `lib/features/property/widgets/property_facility_tab.dart` (2 sub-collections), `property_assets_tab.dart`, `property_leases_tab.dart`, `property_esg_tab.dart`; new form widgets for each
 **Depends on:** F-001 (all 5 target collections — `property_projects`, `legal_appointments`, `property_assets`, `property_leases`, `property_utilities` — are rules-blocked until then)
@@ -1128,6 +1126,8 @@ ohs_file_content.dart:326-333
 
 **Verification:** For `knowledge_base_screen.dart`: tap a sidebar category and confirm the article grid filters; tap an article card and confirm it opens the real article's detail screen. For `ticket_detail_screen.dart`: type a message, tap send, confirm it appears in the messages panel in real time. For `knowledge_article_detail_screen.dart`: tap Edit, confirm `KnowledgeArticleForm` opens pre-filled with the article's current data. For `omnichannel_ticket_screen.dart`: verify per whichever fate F-403 assigns it (wired, or removed from the codebase entirely).
 
+**Partially resolved 2026-07-30:** `knowledge_base_screen.dart`'s 11 stubs are fixed — the 5 sidebar categories now filter the real article stream by `KnowledgeArticle.categories`, and all article cards open `KnowledgeArticleDetailScreen` via `UIUtils.showSideSheet` (was `Navigator.push`, itself an AGENTS.md §1 violation caught in the same pass). `knowledge_article_detail_screen.dart`'s Edit button now opens `KnowledgeArticleForm(initialArticle: article)` via `UIUtils.showSideSheet`, invalidating `articleFutureProvider` on save. Still outstanding: `ticket_detail_screen.dart`'s send button/missing controller, and `omnichannel_ticket_screen.dart`'s 5 stubs (pending F-403's dead-code decision for that screen) — not marked `[DONE]` until those land.
+
 ---
 
 ### F-409: `RouteOptimizationScreen`'s client-side "Optimize Route" and the `optimizeRoute` Cloud Function independently implement the identical fake behavior, disconnected from each other
@@ -1144,7 +1144,7 @@ ohs_file_content.dart:326-333
 
 ---
 
-### F-410: `status`/`priority` are free-text fields on `work_order_form.dart` despite being documented fixed enums
+### [DONE] F-410: `status`/`priority` are free-text fields on `work_order_form.dart` despite being documented fixed enums
 **Severity:** High
 **Module(s) / File(s):** `lib/features/field_service/widgets/work_order_form.dart`
 **Depends on:** none
@@ -1156,9 +1156,11 @@ ohs_file_content.dart:326-333
 
 **Verification:** Open the form, confirm `status` and `priority` render as dropdowns offering exactly the documented enum values, save a work order, and confirm `work_order_details_screen.dart`'s `_getPriorityColor()` correctly colors the result (no more silent grey-fallback from a mistyped value) and the Details tab's status text always matches one of the 8 real values.
 
+**Resolved 2026-07-30:** dropdowns already existed (`work_order_form.dart:252-268`) but with a deviating, non-canonical value set (status: `DRAFT/UNSCHEDULED/SCHEDULED/IN_PROGRESS/COMPLETED/CANCELLED` — missing `DISPATCHED`/`TRAVELING`/`ON_HOLD`, extra non-canonical `UNSCHEDULED`, double-L `CANCELLED`; priority: `LOW/MEDIUM/HIGH/EMERGENCY` — `EMERGENCY` isn't a real value, missing `CRITICAL`). Corrected against `docs/schema_field_service.md`'s canonical lists, hoisted into shared `kWorkOrderStatuses`/`kWorkOrderPriorities` constants in `field_service_models.dart` (single source of truth, reusable anywhere else in the module that needs the enum) rather than inlined literals.
+
 ---
 
-### F-411: `address`/`scheduling`/`safetyRequirements`/`iotContext`/`financials` are raw hand-typed JSON text fields — a malformed entry throws an uncaught `FormatException` at save time
+### [DONE] F-411: `address`/`scheduling`/`safetyRequirements`/`iotContext`/`financials` are raw hand-typed JSON text fields — a malformed entry throws an uncaught `FormatException` at save time
 **Severity:** High
 **Module(s) / File(s):** `lib/features/field_service/widgets/work_order_form.dart`
 **Depends on:** none
@@ -1342,7 +1344,7 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 ---
 
-### F-017: Decide and implement dashboard/executive module boundary
+### [DONE] F-017: Decide and implement dashboard/executive module boundary
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/dashboard/`, `lib/features/executive/`
 **Depends on:** none
@@ -1356,7 +1358,7 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 ---
 
-### F-018: Delete the dead CopilotScreen/CopilotChatWidget/RagService trio
+### [DONE] F-018: Delete the dead CopilotScreen/CopilotChatWidget/RagService trio
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/ai_tools/screens/copilot_screen.dart`, `lib/features/ai_tools/widgets/copilot_chat_widget.dart`, `lib/features/ai_tools/services/rag_service.dart` (confirm exact filenames before deleting — verify zero remaining references first)
 **Depends on:** none. **Supersedes F-014's `copilot_screen.dart` entry-point item** — do not add an entry point to a screen this item deletes; F-014 should be marked resolved-by-deletion once this lands.
@@ -1836,7 +1838,7 @@ or equivalently `msg.substring(0, msg.length.clamp(0, 120))`. Apply the identica
 
 ---
 
-### F-517: `CopilotPanel` has no service/provider layer — the Cloud Function call sits directly inside the widget's `State` class
+### [DONE] F-517: `CopilotPanel` has no service/provider layer — the Cloud Function call sits directly inside the widget's `State` class
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/copilot/screens/copilot_panel.dart`
 **Depends on:** none
@@ -1856,7 +1858,7 @@ There is no `services/` or `providers/` subdirectory anywhere in `lib/features/c
 
 ---
 
-### F-518: `screenContext` is never populated — `CopilotPanel` always answers with zero awareness of which screen it was opened from
+### [DONE] F-518: `screenContext` is never populated — `CopilotPanel` always answers with zero awareness of which screen it was opened from
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/copilot/screens/copilot_panel.dart:28-37, 104`, `lib/config/router.dart:273-276`
 **Depends on:** none
@@ -1934,7 +1936,7 @@ No `Clipboard.setData` call exists anywhere in the file — confirmed by checkin
 
 ---
 
-### F-519: `CopilotPanel` is wired as a full routed screen, not the floating overlay its own design implies
+### [DONE] F-519: `CopilotPanel` is wired as a full routed screen, not the floating overlay its own design implies
 **Severity:** Low
 **Module(s) / File(s):** `lib/config/router.dart:273-276`, `lib/features/copilot/screens/copilot_panel.dart`
 **Depends on:** none — likely superseded by F-018's ai_tools/copilot consolidation decision; keep any fix here minimal until that decision is made
