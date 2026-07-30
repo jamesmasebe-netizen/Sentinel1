@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'bpf_service.dart';
 import '../../features/crm/models/crm_models.dart';
 import '../../features/crm/services/crm_service.dart';
 import '../../features/projects/models/pmo_models.dart';
@@ -8,7 +9,10 @@ import '../../features/finance/services/finance_service.dart';
 import '../../features/supply_chain/services/scm_service.dart';
 import '../../features/supply_chain/models/scm_models.dart';
 import '../../features/equipment/models/equipment_models.dart';
-import 'bpf_service.dart';
+import '../../features/equipment/services/equipment_service.dart';
+import '../automation/procure_to_pay_automation.dart';
+import '../../features/safety/services/safety_service.dart';
+import '../../features/people/services/hr_service.dart';
 
 final bpfOrchestratorProvider = Provider<BpfOrchestrator>((ref) {
   return BpfOrchestrator(
@@ -17,6 +21,10 @@ final bpfOrchestratorProvider = Provider<BpfOrchestrator>((ref) {
     ref.read(pmoServiceProvider),
     ref.read(financeServiceProvider),
     ref.read(scmServiceProvider),
+    ref.read(equipmentServiceProvider),
+    ref.read(procureToPayAutomationProvider),
+    ref.read(safetyServiceProvider),
+    ref.read(hrServiceProvider),
   );
 });
 
@@ -26,6 +34,10 @@ class BpfOrchestrator {
   final PmoService pmoService;
   final FinanceService financeService;
   final ScmService scmService;
+  final EquipmentService equipmentService;
+  final ProcureToPayAutomation p2pAutomation;
+  final SafetyService safetyService;
+  final HRService hrService;
 
   BpfOrchestrator(
     this.bpfService,
@@ -33,6 +45,10 @@ class BpfOrchestrator {
     this.pmoService,
     this.financeService,
     this.scmService,
+    this.equipmentService,
+    this.p2pAutomation,
+    this.safetyService,
+    this.hrService,
   );
 
   /// Converts a Lead to an Opportunity and advances the BPF stage
@@ -188,6 +204,32 @@ class BpfOrchestrator {
     return invoiceId;
   }
 
+  /// Procure to Pay: Creates a Purchase Order and starts the BPF
+  Future<String> createPurchaseOrder(PurchaseOrder po) async {
+    await scmService.createPurchaseOrder(po);
+
+    final bpfId = await bpfService.startBpf(
+      'procure_to_pay',
+      'purchase_order',
+      'purchase_order',
+      po.id,
+    );
+    return bpfId;
+  }
+
+  /// Procure to Pay: Receives Goods for a Purchase Order and advances the BPF stage
+  Future<void> receivePurchaseOrderGoods(PurchaseOrder po) async {
+    await p2pAutomation.triggerPoReceived(po);
+
+    final bpfList = await bpfService.streamBpfInstancesByRecord('purchase_order', po.id).first;
+    if (bpfList.isNotEmpty) {
+      await bpfService.advanceStage(
+        bpfList.first.id,
+        'goods_receipt',
+      );
+    }
+  }
+
   /// Procure to Pay: Creates an AP Invoice from a Purchase Order
   Future<String> createInvoiceFromPurchaseOrder(PurchaseOrder po, String bpfId) async {
     final invoiceId = 'AP-INV-${DateTime.now().millisecondsSinceEpoch}';
@@ -215,24 +257,29 @@ class BpfOrchestrator {
     return invoiceId;
   }
 
-  /// Asset Lifecycle: Deploys an equipment item (changes status to deployed)
-  Future<void> deployEquipment(EquipmentModel equipment, String projectId, String bpfId) async {
-    // We would normally update the equipment document here via EquipmentService
-    // But since it's just handled directly in firestore in UI for now, we'll
-    // just advance the BPF stage.
+  /// Asset Lifecycle: Deploys an equipment item to an employee (operator/
+  /// inspector) and changes its status to deployed. [assignedToId] is an
+  /// employee ID — see F-005 in docs/fixes/FIX_LIST.md.
+  Future<void> deployEquipment(EquipmentModel equipment, String assignedToId, String bpfId) async {
+    await equipmentService.deployEquipment(equipment.id!, assignedToId);
+
     await bpfService.advanceStage(
       bpfId,
       'deployment',
-      newlyLinkedRecords: {'projectId': projectId},
+      newlyLinkedRecords: {'employeeId': assignedToId},
     );
   }
 
   /// Issue to Resolution: Generates a CAPA from an Incident and advances the BPF stage
-  Future<String> createCapaFromIncident(String incidentId, String bpfId) async {
-    // Generates a mock CAPA ID and links it.
-    final capaId = 'CAPA-${DateTime.now().millisecondsSinceEpoch}';
-
-    // In a real implementation we would write to safetyService.createCapa(...)
+  Future<String> createCapaFromIncident(String incidentId, String bpfId, String title, String description) async {
+    final capaId = await safetyService.createCapa({
+      'title': title,
+      'description': description,
+      'incidentId': incidentId,
+      'type': 'Corrective',
+      'priority': 'High',
+      'status': 'Open',
+    });
 
     await bpfService.advanceStage(
       bpfId,
@@ -245,7 +292,7 @@ class BpfOrchestrator {
 
   /// Hire to Retire: Marks an employee as Active after onboarding
   Future<void> completeOnboarding(String employeeId, String bpfId) async {
-    // In a real implementation we would update EmployeeProfile to "Active" via HR service
+    await hrService.updateEmployee(employeeId, {'employmentStatus': 'Active'});
 
     await bpfService.advanceStage(
       bpfId,

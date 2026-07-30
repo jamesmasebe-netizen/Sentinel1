@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/copilot/screens/copilot_panel.dart';
 import '../feedback/feedback_overlay.dart';
 import '../services/session_manager.dart';
 import 'app_header_bar.dart';
@@ -73,17 +74,87 @@ class _AppShellState extends ConsumerState<AppShell> {
                   : widget.child,
           floatingActionButton:
               isWideScreen
-                  ? null
-                  : FloatingActionButton(
-                    elevation: 4,
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      QuickActionsSheet.show(context);
-                    },
-                    child: const Icon(Icons.add_rounded),
-                  ),
+                  ? FloatingActionButton.extended(
+                      heroTag: 'copilot_fab',
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _showCopilotPanel(context, isWideScreen);
+                      },
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      label: const Text('Copilot'),
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        FloatingActionButton(
+                          heroTag: 'copilot_fab_mobile',
+                          mini: true,
+                          elevation: 4,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            _showCopilotPanel(context, isWideScreen);
+                          },
+                          child: const Icon(Icons.auto_awesome_rounded),
+                        ),
+                        const SizedBox(height: 16),
+                        FloatingActionButton(
+                          heroTag: 'add_fab',
+                          elevation: 4,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            QuickActionsSheet.show(context);
+                          },
+                          child: const Icon(Icons.add_rounded),
+                        ),
+                      ],
+                    ),
         ),
       ),
     );
+  }
+
+  void _showCopilotPanel(BuildContext context, bool isWideScreen) {
+    if (isWideScreen) {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Copilot',
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return Align(
+            alignment: Alignment.centerRight,
+            child: Material(
+              elevation: 16,
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: SizedBox(
+                width: 400,
+                height: double.infinity,
+                child: const CopilotPanel(),
+              ),
+            ),
+          );
+        },
+        transitionBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (context) => const CopilotPanel(),
+      );
+    }
   }
 }

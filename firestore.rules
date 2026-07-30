@@ -31,6 +31,10 @@ service cloud.firestore {
       return getUserRole() in ['admin', 'sheq_officer', 'safety_manager'];
     }
     
+    match /public_tenant_directory/{slug} {
+      allow read: if true;
+    }
+    
     // Tenant root — only admins can read/write the tenant document itself
     match /tenants/{tenantId} {
       allow read: if belongsToTenant(tenantId);
@@ -137,13 +141,43 @@ service cloud.firestore {
       }
       
       // Finance collections
-      match /invoices/{invoiceId} {
+      match /fin_ap_invoices/{invoiceId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      match /fin_ar_invoices/{invoiceId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && isManager();
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
       
-      match /journal_entries/{entryId} {
+      match /fin_journal_headers/{entryId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      match /fin_chart_of_accounts/{accountId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      match /fin_tax_codes/{taxCodeId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      match /fin_budget_models/{budgetId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      match /fin_cost_centers/{costCenterId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && isManager();
         allow delete: if belongsToTenant(tenantId) && isAdmin();
@@ -194,6 +228,12 @@ service cloud.firestore {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && isManager();
         allow delete: if belongsToTenant(tenantId) && isAdmin();
+        
+        match /po_lines/{lineId} {
+          allow read: if belongsToTenant(tenantId);
+          allow create, update: if belongsToTenant(tenantId) && isManager();
+          allow delete: if belongsToTenant(tenantId) && isAdmin();
+        }
       }
       
       match /inventory/{itemId} {

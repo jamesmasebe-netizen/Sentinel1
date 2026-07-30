@@ -6,6 +6,7 @@ import '../core/services/session_manager.dart';
 import '../core/widgets/app_shell.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/lock_screen.dart';
+import '../features/auth/screens/enterprise_sso_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
 import '../features/dashboard/screens/business_os_launchpad.dart';
 import '../features/finance/screens/finance_hub_screen.dart';
@@ -21,7 +22,7 @@ import '../features/field_service/screens/field_service_hub_screen.dart';
 import '../features/field_service/screens/route_optimization_screen.dart';
 import '../features/crm/screens/crm_hub_screen.dart';
 import '../features/customer_service/screens/customer_service_hub_screen.dart';
-import '../features/customer_service/screens/omnichannel_chat_screen.dart';
+
 import '../features/people/screens/people_hub_screen.dart';
 import '../features/people/screens/hr_hub_screen.dart';
 import '../features/people/screens/okr_dashboard_screen.dart';
@@ -42,10 +43,11 @@ import '../features/property/screens/property_hub_screen.dart';
 import '../features/property/screens/property_details_screen.dart';
 import '../features/equipment/screens/loto_management_screen.dart';
 import '../features/equipment/screens/equipment_management_screen.dart';
+import '../features/public/screens/public_careers_screen.dart';
 
 
-import '../features/copilot/screens/copilot_panel.dart';
-import '../features/executive/screens/control_tower_screen.dart';
+
+
 
 /// GoRouter configuration with auth guards and shell routes
 final routerProvider = Provider<GoRouter>((ref) {
@@ -75,9 +77,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final loggingIn = state.matchedLocation == '/login';
       final locking = state.matchedLocation == '/lock';
+      final isPublicRoute = state.matchedLocation.startsWith('/careers');
+      final sso = state.matchedLocation == '/sso';
 
-      if (!isAuthenticated && !loggingIn) return '/login';
-      if (isAuthenticated && loggingIn) return '/launchpad';
+      if (!isAuthenticated && !loggingIn && !isPublicRoute && !sso) return '/login';
+      if (isAuthenticated && (loggingIn || sso)) return '/launchpad';
       if (isAuthenticated && isLocked && !locking) return '/lock';
       if (isAuthenticated && !isLocked && locking) return '/launchpad';
 
@@ -85,7 +89,14 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(path: '/sso', builder: (context, state) => const EnterpriseSSOScreen()),
       GoRoute(path: '/lock', builder: (context, state) => const LockScreen()),
+      GoRoute(
+        path: '/careers/:tenantSlug',
+        builder: (context, state) => PublicCareersScreen(
+          tenantSlug: state.pathParameters['tenantSlug']!,
+        ),
+      ),
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
@@ -151,6 +162,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (c, s) => const NoTransitionPage(child: MrpDashboardScreen()),
           ),
           GoRoute(
+            path: '/equipment',
+            pageBuilder: (c, s) => const NoTransitionPage(child: EquipmentManagementScreen()),
+          ),
+          GoRoute(
             path: '/wms-scanner',
             pageBuilder: (c, s) => const NoTransitionPage(child: WmsScannerScreen()),
           ),
@@ -163,10 +178,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder:
                 (c, s) => const NoTransitionPage(child: RiskHubScreen()),
           ),
-          GoRoute(
-            path: '/omnichannel-chat',
-            pageBuilder: (c, s) => const NoTransitionPage(child: OmnichannelChatScreen()),
-          ),
+
           GoRoute(
             path: '/route-optimization',
             pageBuilder: (c, s) => const NoTransitionPage(child: RouteOptimizationScreen()),
@@ -269,14 +281,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   projectId: state.pathParameters['id']!,
                 ),
           ),
-          GoRoute(
-            path: '/control-tower',
-            pageBuilder: (c, s) => const NoTransitionPage(child: ControlTowerScreen()),
-          ),
-          GoRoute(
-            path: '/copilot',
-            pageBuilder: (c, s) => const NoTransitionPage(child: CopilotPanel()),
-          ),
+
         ],
       ),
     ],

@@ -69,11 +69,10 @@ class IssueToResolutionAutomation {
 
     // 2. Generate an emergency WorkOrder if the severity is Critical
     if (ticket.severity.toLowerCase() == 'critical') {
-      final docId =
-          FirebaseFirestore.instance.collection('work_orders').doc().id;
+      final workOrderId = 'WO-${DateTime.now().millisecondsSinceEpoch}';
       final workOrder = WorkOrder(
-        id: docId,
-        workOrderNumber: 'WO-${DateTime.now().millisecondsSinceEpoch}',
+        id: workOrderId,
+        workOrderNumber: workOrderId,
         status: 'UNSCHEDULED',
         priority: 'EMERGENCY',
         customerId: ticket.customerId ?? 'UNKNOWN_CUSTOMER',
