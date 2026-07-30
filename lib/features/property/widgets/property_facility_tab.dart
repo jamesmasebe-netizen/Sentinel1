@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/property_providers.dart';
 import '../models/property_models.dart';
+import 'property_project_form.dart';
+import 'legal_appointment_form.dart';
 
 class PropertyFacilityTab extends ConsumerWidget {
   final Property property;
   const PropertyFacilityTab({super.key, required this.property});
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, VoidCallback onAdd) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
@@ -18,6 +21,11 @@ class PropertyFacilityTab extends ConsumerWidget {
           Text(
             title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.add, color: XMTheme.primary),
+            onPressed: onAdd,
           ),
         ],
       ),
@@ -164,8 +172,14 @@ class PropertyFacilityTab extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       children: [
         _buildSectionHeader(
+          context,
           'Facility Projects & Maintenance',
           Icons.build_circle_outlined,
+          () => UIUtils.showSideSheet(
+            context: context,
+            title: 'New Facility Project',
+            builder: (_) => PropertyProjectForm(propertyId: property.id),
+          ),
         ),
         projectsAsync.when(
           data:
@@ -176,7 +190,16 @@ class PropertyFacilityTab extends ConsumerWidget {
           error: (err, _) => Text('Error: $err'),
         ),
         const SizedBox(height: 32),
-        _buildSectionHeader('Legal Appointments', Icons.verified_user_outlined),
+        _buildSectionHeader(
+          context,
+          'Legal Appointments',
+          Icons.verified_user_outlined,
+          () => UIUtils.showSideSheet(
+            context: context,
+            title: 'New Legal Appointment',
+            builder: (_) => LegalAppointmentForm(propertyId: property.id),
+          ),
+        ),
         appointmentsAsync.when(
           data:
               (appointments) => GridView.builder(

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/finance_models.dart';
 import '../services/finance_service.dart';
+import '../providers/finance_providers.dart';
+import '../../crm/providers/crm_providers.dart';
+import '../../crm/models/crm_models.dart';
+import '../../../core/widgets/entity_selector.dart';
 
 class InvoiceForm extends ConsumerStatefulWidget {
   final Invoice? initialInvoice;
@@ -228,16 +232,23 @@ class _InvoiceFormState extends ConsumerState<InvoiceForm> {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
-                  controller:
-                      _invoiceType == 'AP'
-                          ? _vendorIdController
-                          : _customerIdController,
-                  decoration: InputDecoration(
-                    labelText:
-                        _invoiceType == 'AP' ? 'Vendor ID' : 'Customer ID',
-                    border: const OutlineInputBorder(),
-                  ),
+                child: EntitySelector<Account>(
+                  label: _invoiceType == 'AP' ? 'Vendor Account' : 'Customer Account',
+                  value: _invoiceType == 'AP' 
+                      ? (_vendorIdController.text.isEmpty ? null : _vendorIdController.text)
+                      : (_customerIdController.text.isEmpty ? null : _customerIdController.text),
+                  asyncEntities: ref.watch(accountsStreamProvider),
+                  idMapper: (a) => a.id,
+                  displayMapper: (a) => a.name,
+                  onChanged: (val) {
+                    setState(() {
+                      if (_invoiceType == 'AP') {
+                        _vendorIdController.text = val ?? '';
+                      } else {
+                        _customerIdController.text = val ?? '';
+                      }
+                    });
+                  },
                 ),
               ),
               const SizedBox(width: 16),
@@ -350,12 +361,17 @@ class _InvoiceFormState extends ConsumerState<InvoiceForm> {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: TextFormField(
-                  controller: _journalEntryIdController,
-                  decoration: const InputDecoration(
-                    labelText: 'Journal Entry ID (Ref)',
-                    border: OutlineInputBorder(),
-                  ),
+                child: EntitySelector<JournalEntry>(
+                  label: 'Journal Entry (Ref)',
+                  value: _journalEntryIdController.text.isEmpty ? null : _journalEntryIdController.text,
+                  asyncEntities: ref.watch(journalEntriesStreamProvider),
+                  idMapper: (j) => j.id,
+                  displayMapper: (j) => j.id,
+                  onChanged: (val) {
+                    setState(() {
+                      _journalEntryIdController.text = val ?? '';
+                    });
+                  },
                 ),
               ),
             ],

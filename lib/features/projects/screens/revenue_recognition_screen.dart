@@ -1,84 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// ─── Mock Data Models ─────────────────────────────────────────────────────────
-
-class _JournalEntry {
-  final String id;
-  final String description;
-  final String project;
-  final double debit;
-  final double credit;
-  final DateTime date;
-  final String status;
-  final String milestone;
-
-  const _JournalEntry({
-    required this.id,
-    required this.description,
-    required this.project,
-    required this.debit,
-    required this.credit,
-    required this.date,
-    required this.status,
-    required this.milestone,
-  });
-}
-
-// ─── Mock Journal Entries ─────────────────────────────────────────────────────
-
-final _mockEntries = [
-  _JournalEntry(
-    id: 'JE-2026-041',
-    description: 'Revenue recognised on project milestone completion',
-    project: 'Riverside Precinct Development',
-    debit: 85000.00,
-    credit: 85000.00,
-    date: DateTime(2026, 6, 30),
-    status: 'Posted',
-    milestone: 'M3 – Structural Handover',
-  ),
-  _JournalEntry(
-    id: 'JE-2026-042',
-    description: 'Deferred revenue reclassification – Phase 2 start',
-    project: 'Harbour Tunnel Extension',
-    debit: 120000.00,
-    credit: 120000.00,
-    date: DateTime(2026, 6, 28),
-    status: 'Posted',
-    milestone: 'M1 – Mobilisation',
-  ),
-  _JournalEntry(
-    id: 'JE-2026-043',
-    description: 'Contract modification – scope increase recognition',
-    project: 'Solar Farm Grid Connect',
-    debit: 45000.00,
-    credit: 45000.00,
-    date: DateTime(2026, 6, 25),
-    status: 'Pending Review',
-    milestone: 'M2 – Grid Design Approval',
-  ),
-  _JournalEntry(
-    id: 'JE-2026-044',
-    description: 'Performance obligation satisfied – HVAC installation',
-    project: 'Alder Heights Commercial Tower',
-    debit: 18000.00,
-    credit: 18000.00,
-    date: DateTime(2026, 6, 20),
-    status: 'Posted',
-    milestone: 'M4 – MEP Completion',
-  ),
-  _JournalEntry(
-    id: 'JE-2026-045',
-    description: 'Variable consideration constraint released – Stage 3',
-    project: 'East Precinct Road Upgrade',
-    debit: 12000.00,
-    credit: 12000.00,
-    date: DateTime(2026, 6, 15),
-    status: 'Draft',
-    milestone: 'M5 – Final Inspection',
-  ),
-];
+import '../../finance/models/finance_models.dart';
+import '../../finance/services/finance_service.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -87,7 +11,9 @@ final _ledgerFilterProvider = StateProvider<String>((ref) => 'All');
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class RevenueRecognitionScreen extends ConsumerWidget {
-  const RevenueRecognitionScreen({super.key});
+  final String? projectId;
+
+  const RevenueRecognitionScreen({super.key, this.projectId});
 
   // Deep blue / emerald palette
   static const _bgDeep = Color(0xFF050D1A);
@@ -103,146 +29,162 @@ class RevenueRecognitionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(_ledgerFilterProvider);
-
-    final filtered =
-        filter == 'All'
-            ? _mockEntries
-            : _mockEntries.where((e) => e.status == filter).toList();
+    final journalStream = ref.watch(financeServiceProvider).streamAllJournalEntries();
 
     return Scaffold(
       backgroundColor: _bgDeep,
-      body: CustomScrollView(
-        slivers: [
-          // ── SliverAppBar ──────────────────────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 80,
-            pinned: true,
-            backgroundColor: _navyDark,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsets.fromLTRB(20, 0, 0, 16),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: _blueGlow.withValues(alpha: 0.20),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_rounded,
-                      color: _blueGlow,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Revenue Recognition',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.download_rounded, color: Colors.white70),
-                tooltip: 'Export Ledger',
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.filter_list_rounded,
-                  color: Colors.white70,
-                ),
-                tooltip: 'Filter',
-                onPressed: () {},
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
+      body: StreamBuilder<List<JournalEntry>>(
+        stream: journalStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+          }
+          
+          var entries = snapshot.data ?? [];
+          if (projectId != null) {
+            entries = entries.where((e) => e.sourceModule == 'PROJECTS' && e.sourceReferenceId == projectId).toList();
+          } else {
+            entries = entries.where((e) => e.sourceModule == 'PROJECTS' || e.type == 'REVENUE_RECOGNITION').toList();
+          }
 
-          // ── Summary Cards ─────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-              child: _SummarySection(),
-            ),
-          ),
+          final filtered = filter == 'All'
+              ? entries
+              : entries.where((e) => e.status.toUpperCase() == filter.toUpperCase()).toList();
 
-          // ── Period Indicator ──────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_today_rounded,
-                    size: 14,
-                    color: _blueGlow,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Period: Q2 2026  ·  Apr – Jun 2026',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.60),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Standard: IFRS 15',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: _blueGlow.withValues(alpha: 0.80),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          final recognised = entries
+              .where((e) => e.type == 'REVENUE_RECOGNITION' && (e.status == 'POSTED' || e.status == 'POSTED'))
+              .fold(0.0, (sum, e) => sum + e.totalCredit);
+          
+          final pending = entries
+              .where((e) => e.type == 'REVENUE_RECOGNITION' && e.status != 'POSTED' && e.status != 'REVERSED')
+              .fold(0.0, (sum, e) => sum + e.totalCredit);
 
-          // ── Ledger Table Header ───────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            sliver: SliverToBoxAdapter(
-              child: _LedgerHeader(filter: filter, ref: ref),
-            ),
-          ),
-
-          // ── Ledger Rows ───────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-            sliver:
-                filtered.isEmpty
-                    ? SliverToBoxAdapter(
-                      child: _EmptyState(filter: filter),
-                    )
-                    : SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) => _LedgerRow(
-                          entry: filtered[index],
-                          isEven: index.isEven,
+          return CustomScrollView(
+            slivers: [
+              // ── SliverAppBar ──────────────────────────────────────────────────
+              SliverAppBar(
+                expandedHeight: 80,
+                pinned: true,
+                backgroundColor: _navyDark,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  titlePadding: const EdgeInsets.fromLTRB(20, 0, 0, 16),
+                  title: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: _blueGlow.withValues(alpha: 0.20),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        childCount: filtered.length,
+                        child: const Icon(
+                          Icons.account_balance_rounded,
+                          color: _blueGlow,
+                          size: 16,
+                        ),
                       ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Revenue Recognition',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.download_rounded, color: Colors.white70),
+                    tooltip: 'Export Ledger',
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.filter_list_rounded,
+                      color: Colors.white70,
                     ),
-          ),
+                    tooltip: 'Filter',
+                    onPressed: () {},
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
 
-          // ── Totals Row ────────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 48),
-            sliver: SliverToBoxAdapter(
-              child: _TotalsRow(entries: filtered),
-            ),
-          ),
-        ],
+              // ── Summary Cards ─────────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: _SummarySection(recognised: recognised, deferred: pending),
+                ),
+              ),
+
+              // ── Period Indicator ──────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 14,
+                        color: _blueGlow,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Period: Current',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.60),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'Standard: IFRS 15',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _blueGlow.withValues(alpha: 0.80),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ── Ledger Table Header ───────────────────────────────────────────
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                sliver: SliverToBoxAdapter(
+                  child: _LedgerHeader(filter: filter, ref: ref),
+                ),
+              ),
+
+              // ── Ledger Rows ───────────────────────────────────────────────────
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                sliver: SliverToBoxAdapter(
+                  child: filtered.isEmpty
+                      ? _EmptyState(filter: filter)
+                      : Column(
+                          children: [
+                            ...List.generate(filtered.length, (index) => _LedgerRow(entry: filtered[index], isEven: index.isEven)),
+                            const SizedBox(height: 16),
+                            _TotalsRow(entries: filtered),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -251,6 +193,19 @@ class RevenueRecognitionScreen extends ConsumerWidget {
 // ─── Summary Section ──────────────────────────────────────────────────────────
 
 class _SummarySection extends StatelessWidget {
+  final double recognised;
+  final double deferred;
+
+  const _SummarySection({required this.recognised, required this.deferred});
+
+  String _fmt(double v) {
+    if (v >= 1000) {
+      final k = v / 1000;
+      return '\$${k.toStringAsFixed(k.truncateToDouble() == k ? 0 : 1)}K';
+    }
+    return '\$${v.toStringAsFixed(0)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -259,9 +214,9 @@ class _SummarySection extends StatelessWidget {
           children: [
             Expanded(
               child: _SummaryCard(
-                title: 'Deferred Revenue',
-                amount: r'$420,000',
-                subtitle: '6 contracts pending',
+                title: 'Pending Recognition',
+                amount: _fmt(deferred),
+                subtitle: 'unposted milestones',
                 icon: Icons.hourglass_top_rounded,
                 accentColor: RevenueRecognitionScreen._amber,
                 gradientColors: const [
@@ -275,8 +230,8 @@ class _SummarySection extends StatelessWidget {
             Expanded(
               child: _SummaryCard(
                 title: 'Recognised Revenue',
-                amount: r'$280,000',
-                subtitle: '5 milestones satisfied',
+                amount: _fmt(recognised),
+                subtitle: 'posted milestones',
                 icon: Icons.check_circle_rounded,
                 accentColor: RevenueRecognitionScreen._emerald,
                 gradientColors: const [
@@ -290,10 +245,33 @@ class _SummarySection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _RevenueProgressBar(
-          recognised: 280000,
-          deferred: 420000,
+          recognised: recognised,
+          deferred: deferred,
         ),
       ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String filter;
+  const _EmptyState({required this.filter});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(Icons.receipt_long, size: 48, color: Colors.white24),
+          const SizedBox(height: 16),
+          Text(
+            filter == 'All' ? 'No revenue entries yet' : 'No $filter entries',
+            style: const TextStyle(color: Colors.white54, fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -629,17 +607,18 @@ class _ColHeader extends StatelessWidget {
 // ─── Ledger Row ───────────────────────────────────────────────────────────────
 
 class _LedgerRow extends StatelessWidget {
-  final _JournalEntry entry;
+  final JournalEntry entry;
   final bool isEven;
   const _LedgerRow({required this.entry, required this.isEven});
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'Posted':
+    switch (status.toUpperCase()) {
+      case 'POSTED':
         return RevenueRecognitionScreen._emerald;
-      case 'Pending Review':
+      case 'PENDING REVIEW':
+      case 'PENDING_APPROVAL':
         return RevenueRecognitionScreen._amber;
-      case 'Draft':
+      case 'DRAFT':
         return Colors.white38;
       default:
         return Colors.white54;
@@ -706,7 +685,7 @@ class _LedgerRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  entry.project,
+                  entry.sourceReferenceId ?? 'Unknown Project',
                   style: const TextStyle(fontSize: 10, color: Colors.white38),
                 ),
               ],
@@ -716,7 +695,7 @@ class _LedgerRow extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              entry.milestone,
+              entry.sourceReferenceId ?? '-',
               style: const TextStyle(fontSize: 10, color: Colors.white60),
             ),
           ),
@@ -724,7 +703,7 @@ class _LedgerRow extends StatelessWidget {
           SizedBox(
             width: 70,
             child: Text(
-              '\$${_fmt(entry.debit)}',
+              '\$${_fmt(entry.totalDebit)}',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 11,
@@ -738,7 +717,7 @@ class _LedgerRow extends StatelessWidget {
           SizedBox(
             width: 70,
             child: Text(
-              '\$${_fmt(entry.credit)}',
+              '\$${_fmt(entry.totalCredit)}',
               textAlign: TextAlign.right,
               style: const TextStyle(
                 fontSize: 11,
@@ -752,7 +731,7 @@ class _LedgerRow extends StatelessWidget {
           SizedBox(
             width: 64,
             child: Text(
-              _formatDate(entry.date),
+              _formatDate(entry.transactionDate),
               textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 10, color: Colors.white38),
             ),
@@ -792,13 +771,13 @@ class _LedgerRow extends StatelessWidget {
 // ─── Totals Row ───────────────────────────────────────────────────────────────
 
 class _TotalsRow extends StatelessWidget {
-  final List<_JournalEntry> entries;
+  final List<JournalEntry> entries;
   const _TotalsRow({required this.entries});
 
   @override
   Widget build(BuildContext context) {
-    final totalDebit = entries.fold<double>(0, (s, e) => s + e.debit);
-    final totalCredit = entries.fold<double>(0, (s, e) => s + e.credit);
+    final totalDebit = entries.fold<double>(0, (s, e) => s + e.totalDebit);
+    final totalCredit = entries.fold<double>(0, (s, e) => s + e.totalCredit);
     final balanced = (totalDebit - totalCredit).abs() < 0.01;
 
     return Container(
@@ -898,33 +877,5 @@ class _TotalsRow extends StatelessWidget {
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(2)}M';
     if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
     return v.toStringAsFixed(2);
-  }
-}
-
-// ─── Empty State ──────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  final String filter;
-  const _EmptyState({required this.filter});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Column(
-        children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 48,
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No "$filter" entries found.',
-            style: const TextStyle(color: Colors.white38, fontSize: 13),
-          ),
-        ],
-      ),
-    );
   }
 }

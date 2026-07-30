@@ -107,6 +107,70 @@ class FinanceService {
     await _tenantDoc.collection('fin_journal_headers').doc(id).delete();
   }
 
+  Future<void> reverseJournalEntry(String originalId) async {
+    final doc =
+        await _tenantDoc.collection('fin_journal_headers').doc(originalId).get();
+    if (!doc.exists) {
+      throw StateError('Journal entry $originalId not found.');
+    }
+    
+    final original = JournalEntry.fromJson(doc.data()!, doc.id);
+    if (original.status != 'POSTED') {
+      throw StateError(
+        'Cannot reverse journal entry $originalId because it is not POSTED '
+        '(current status: ${original.status}).'
+      );
+    }
+
+    final lines = await getJournalLines(originalId);
+    
+    final batch = _tenantDoc.firestore.batch();
+    final newEntryRef = _tenantDoc.collection('fin_journal_headers').doc();
+    
+    final reversalEntry = JournalEntry(
+      id: newEntryRef.id,
+      transactionDate: DateTime.now(),
+      sourceModule: original.sourceModule,
+      sourceReferenceId: original.sourceReferenceId,
+      type: 'REVERSAL',
+      description: 'Reversal of ${original.id}: ${original.description}',
+      status: 'DRAFT',
+      currencyCode: original.currencyCode,
+      baseCurrencyCode: original.baseCurrencyCode,
+      exchangeRate: original.exchangeRate,
+      totalDebit: original.totalCredit,
+      totalCredit: original.totalDebit,
+      baseTotalDebit: original.baseTotalCredit,
+      baseTotalCredit: original.baseTotalDebit,
+      reversesJournalId: original.id,
+    );
+    
+    batch.set(newEntryRef, reversalEntry.toJson());
+    
+    for (var line in lines) {
+      final newLineRef = newEntryRef.collection('lines').doc();
+      final newLine = JournalLine(
+        id: newLineRef.id,
+        accountId: line.accountId,
+        costCenterId: line.costCenterId,
+        projectId: line.projectId,
+        debitAmount: line.creditAmount,
+        creditAmount: line.debitAmount,
+        baseDebitAmount: line.baseCreditAmount,
+        baseCreditAmount: line.baseDebitAmount,
+        description: line.description,
+        taxCodeId: line.taxCodeId,
+      );
+      batch.set(newLineRef, newLine.toJson());
+    }
+    
+    // Mark original as REVERSED
+    final originalRef = _tenantDoc.collection('fin_journal_headers').doc(originalId);
+    batch.update(originalRef, {'status': 'REVERSED'});
+    
+    await batch.commit();
+  }
+
   // Invoice CRUD (Handling both AP and AR)
   String _getInvoiceCollection(String type) {
     return type == 'AP' ? 'fin_ap_invoices' : 'fin_ar_invoices';
@@ -288,31 +352,31 @@ class FinanceService {
 
   Future<void> createBudgetPlan(BudgetPlan plan) async {
     await _tenantDoc
-        .collection('budgetPlans')
+        .collection('fin_budget_models')
         .doc(plan.id)
         .set(plan.toJson());
   }
 
   Future<BudgetPlan?> getBudgetPlan(String id) async {
-    final doc = await _tenantDoc.collection('budgetPlans').doc(id).get();
+    final doc = await _tenantDoc.collection('fin_budget_models').doc(id).get();
     if (!doc.exists) return null;
     return BudgetPlan.fromJson(doc.data()!, doc.id);
   }
 
   Future<void> updateBudgetPlan(BudgetPlan plan) async {
     await _tenantDoc
-        .collection('budgetPlans')
+        .collection('fin_budget_models')
         .doc(plan.id)
         .update(plan.toJson());
   }
 
   Future<void> deleteBudgetPlan(String id) async {
-    await _tenantDoc.collection('budgetPlans').doc(id).delete();
+    await _tenantDoc.collection('fin_budget_models').doc(id).delete();
   }
 
   Stream<List<BudgetPlan>> streamBudgetPlans() {
     return _tenantDoc
-        .collection('budgetPlans')
+        .collection('fin_budget_models')
         .snapshots()
         .map(
           (qs) =>
@@ -326,31 +390,31 @@ class FinanceService {
 
   Future<void> createCostCenter(CostCenter center) async {
     await _tenantDoc
-        .collection('costCenters')
+        .collection('fin_cost_centers')
         .doc(center.id)
         .set(center.toJson());
   }
 
   Future<CostCenter?> getCostCenter(String id) async {
-    final doc = await _tenantDoc.collection('costCenters').doc(id).get();
+    final doc = await _tenantDoc.collection('fin_cost_centers').doc(id).get();
     if (!doc.exists) return null;
     return CostCenter.fromJson(doc.data()!, doc.id);
   }
 
   Future<void> updateCostCenter(CostCenter center) async {
     await _tenantDoc
-        .collection('costCenters')
+        .collection('fin_cost_centers')
         .doc(center.id)
         .update(center.toJson());
   }
 
   Future<void> deleteCostCenter(String id) async {
-    await _tenantDoc.collection('costCenters').doc(id).delete();
+    await _tenantDoc.collection('fin_cost_centers').doc(id).delete();
   }
 
   Stream<List<CostCenter>> streamCostCenters() {
     return _tenantDoc
-        .collection('costCenters')
+        .collection('fin_cost_centers')
         .snapshots()
         .map(
           (qs) =>

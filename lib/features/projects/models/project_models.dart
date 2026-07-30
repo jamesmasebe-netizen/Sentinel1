@@ -509,3 +509,48 @@ class ProjectExpense {
     };
   }
 }
+
+/// Specialized subset Model for Time Entries connected to a Project
+class ProjectTimeEntry {
+  final String id;
+  final String projectId;
+  final String tenantId;
+  final String description;
+  final double hours;
+  final DateTime date;
+  final String? loggedBy;
+
+  ProjectTimeEntry({
+    required this.id,
+    required this.projectId,
+    required this.tenantId,
+    required this.description,
+    required this.hours,
+    required this.date,
+    this.loggedBy,
+  });
+
+  factory ProjectTimeEntry.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return ProjectTimeEntry(
+      id: doc.id,
+      projectId: data['projectId'] ?? '',
+      tenantId: data['tenantId'] ?? '',
+      description: data['description'] ?? '',
+      hours: (data['hours'] as num?)?.toDouble() ?? 0.0,
+      date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      loggedBy: data['loggedBy'],
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'projectId': projectId,
+      'tenantId': tenantId,
+      'description': description,
+      'hours': hours,
+      'date': Timestamp.fromDate(date),
+      'loggedBy': loggedBy,
+    };
+  }
+}

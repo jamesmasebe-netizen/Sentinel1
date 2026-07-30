@@ -5,6 +5,8 @@ class CollSource {
 
 class ActionItem {
   final String id, collectionName, type, title, status, dueDate, assignee;
+  final String? description;
+
   const ActionItem({
     required this.id,
     required this.collectionName,
@@ -13,6 +15,7 @@ class ActionItem {
     required this.status,
     required this.dueDate,
     required this.assignee,
+    this.description,
   });
 
   factory ActionItem.fromJson(Map<String, dynamic> json, String id) {
@@ -24,6 +27,7 @@ class ActionItem {
       status: json['status'] ?? 'Pending',
       dueDate: json['dueDate'] ?? '',
       assignee: json['assignee'] ?? 'Unassigned',
+      description: json['description'],
     );
   }
 
@@ -35,6 +39,7 @@ class ActionItem {
       'status': status,
       'dueDate': dueDate,
       'assignee': assignee,
+      'description': description,
     };
   }
 
@@ -46,6 +51,7 @@ class ActionItem {
     String? status,
     String? dueDate,
     String? assignee,
+    String? description,
   }) => ActionItem(
     id: id ?? this.id,
     collectionName: collectionName ?? this.collectionName,

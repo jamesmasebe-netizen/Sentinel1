@@ -5,6 +5,7 @@ class DraggableTaskCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color color;
+  final Map<String, dynamic> taskData;
 
   const DraggableTaskCard({
     super.key,
@@ -12,6 +13,7 @@ class DraggableTaskCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.color = Colors.blueAccent,
+    required this.taskData,
   });
 
   @override
@@ -35,8 +37,8 @@ class DraggableTaskCard extends StatelessWidget {
       ),
     );
 
-    return Draggable<String>(
-      data: taskId,
+    return Draggable<Map<String, dynamic>>(
+      data: taskData,
       feedback: Material(
         color: Colors.transparent,
         child: Opacity(
@@ -49,3 +51,4 @@ class DraggableTaskCard extends StatelessWidget {
     );
   }
 }
+

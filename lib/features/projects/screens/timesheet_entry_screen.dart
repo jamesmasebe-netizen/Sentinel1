@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../../../core/providers/app_providers.dart';
+import '../models/project_models.dart';
+import '../providers/project_providers.dart';
 
 class TimesheetEntryScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -16,6 +20,7 @@ class _TimesheetEntryScreenState extends ConsumerState<TimesheetEntryScreen> {
   final _descriptionController = TextEditingController();
   final _hoursController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -24,13 +29,43 @@ class _TimesheetEntryScreenState extends ConsumerState<TimesheetEntryScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      // Simulate timesheet submission
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Timesheet submitted successfully')),
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final tenantId = ref.read(currentTenantIdProvider);
+      final profile = ref.read(userProfileProvider).valueOrNull;
+
+      if (tenantId == null || profile == null) {
+        throw Exception('Not authenticated or no active tenant.');
+      }
+
+      final entry = ProjectTimeEntry(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        projectId: widget.projectId,
+        tenantId: tenantId,
+        description: _descriptionController.text.trim(),
+        hours: double.parse(_hoursController.text.trim()),
+        date: _selectedDate,
+        loggedBy: profile.uid,
       );
-      Navigator.pop(context);
+
+      await ref.read(projectServiceProvider).addTimeEntry(entry);
+
+      if (mounted) {
+        UIUtils.showToast(context, 'Timesheet submitted successfully', type: ToastType.success);
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        UIUtils.showToast(context, 'Failed to submit: $e', type: ToastType.error);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
@@ -136,9 +171,11 @@ class _TimesheetEntryScreenState extends ConsumerState<TimesheetEntryScreen> {
                         width: double.infinity,
                         height: 50,
                         child: FilledButton.icon(
-                          onPressed: _submit,
-                          icon: const Icon(Icons.save),
-                          label: const Text('Submit Timesheet'),
+                          onPressed: _isSubmitting ? null : _submit,
+                          icon: _isSubmitting 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                            : const Icon(Icons.save),
+                          label: Text(_isSubmitting ? 'Submitting...' : 'Submit Timesheet'),
                         ),
                       ),
                     ],

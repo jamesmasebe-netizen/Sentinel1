@@ -8,6 +8,16 @@ final glAccountsStreamProvider = StreamProvider<List<GeneralLedgerAccount>>((ref
   return service.streamAllGLAccounts();
 });
 
+final costCentersStreamProvider = StreamProvider<List<CostCenter>>((ref) {
+  final service = ref.watch(financeServiceProvider);
+  return service.streamCostCenters();
+});
+
+final taxCodesStreamProvider = StreamProvider<List<TaxCode>>((ref) {
+  final service = ref.watch(financeServiceProvider);
+  return service.streamAllTaxCodes();
+});
+
 // F-312: both used to be StateProviders seeded with [] and never written to,
 // so FinanceHubScreen could never show a real journal entry. FinanceService
 // already has the real collection-wide streams (streamAllJournalEntries()/

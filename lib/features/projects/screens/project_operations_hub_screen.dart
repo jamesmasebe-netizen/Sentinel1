@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/project_providers.dart';
 import '../widgets/custom_gantt_chart.dart';
@@ -117,21 +118,19 @@ class _ProjectOperationsHubScreenState
                         icon: Icons.bar_chart,
                         color: Colors.blueAccent,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => Scaffold(
-                                    appBar: AppBar(
-                                      title: Text(
-                                        'Gantt Chart: ${selectedProject.name}',
-                                      ),
-                                    ),
-                                    body: CustomGanttChart(
-                                      tasks: selectedProject.tasks,
-                                      projectId: selectedProject.id,
-                                    ),
-                                  ),
+                          UIUtils.showSideSheet(
+                            context: context,
+                            title: 'Gantt Chart: ${selectedProject.name}',
+                            builder: (ctx) => Scaffold(
+                              appBar: AppBar(
+                                title: Text(
+                                  'Gantt Chart: ${selectedProject.name}',
+                                ),
+                              ),
+                              body: CustomGanttChart(
+                                tasks: selectedProject.tasks,
+                                projectId: selectedProject.id,
+                              ),
                             ),
                           );
                         },
@@ -142,13 +141,11 @@ class _ProjectOperationsHubScreenState
                         icon: Icons.access_time,
                         color: Colors.orangeAccent,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => TimesheetEntryScreen(
-                                    projectId: selectedProject.id,
-                                  ),
+                          UIUtils.showSideSheet(
+                            context: context,
+                            title: 'Timesheet Entry',
+                            builder: (ctx) => TimesheetEntryScreen(
+                              projectId: selectedProject.id,
                             ),
                           );
                         },
@@ -159,13 +156,11 @@ class _ProjectOperationsHubScreenState
                         icon: Icons.attach_money,
                         color: Colors.green,
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => ExpenseEntryScreen(
-                                    projectId: selectedProject.id,
-                                  ),
+                          UIUtils.showSideSheet(
+                            context: context,
+                            title: 'Expense Entry',
+                            builder: (ctx) => ExpenseEntryScreen(
+                              projectId: selectedProject.id,
                             ),
                           );
                         },

@@ -4,8 +4,12 @@ import 'package:intl/intl.dart';
 import '../providers/pmo_providers.dart';
 import '../models/pmo_models.dart';
 import 'wbs_task_detail_screen.dart';
+import '../../finance/screens/invoice_detail_screen.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/lead_to_cash_bpf.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
+import '../../../core/bpf/bpf_service.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class ProjectDetailScreen extends ConsumerWidget {
   final String projectId;
@@ -56,7 +60,7 @@ class ProjectDetailScreen extends ConsumerWidget {
             ),
             body: TabBarView(
               children: [
-                _buildOverview(context, project),
+                _buildOverview(context, ref, project),
                 _buildWbsTasks(context, ref, projectId),
                 _buildTimeEntries(context, ref, projectId),
                 _buildExpenses(context, ref, projectId),
@@ -72,7 +76,7 @@ class ProjectDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildOverview(BuildContext context, Project project) {
+  Widget _buildOverview(BuildContext context, WidgetRef ref, Project project) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -82,7 +86,7 @@ class ProjectDetailScreen extends ConsumerWidget {
           recordId: project.projectId,
           definition: leadToCashDefinition,
         ),
-        _buildHeaderCard(context, project),
+        _buildHeaderCard(context, ref, project),
         const SizedBox(height: 16),
         _buildInfoCard(
           context,
@@ -133,7 +137,7 @@ class ProjectDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeaderCard(BuildContext context, Project project) {
+  Widget _buildHeaderCard(BuildContext context, WidgetRef ref, Project project) {
     final colorScheme = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
@@ -191,6 +195,49 @@ class ProjectDetailScreen extends ConsumerWidget {
               'Rev Rec Method: ${project.revenueRecognitionMethod}',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: FilledButton.icon(
+                onPressed: () async {
+                    try {
+                      final orchestrator = ref.read(bpfOrchestratorProvider);
+                      final bpfService = ref.read(bpfServiceProvider);
+                      String? bpfId;
+                      final bpfs = await bpfService.streamBpfInstancesByRecord('projectId', project.projectId).first;
+                      if (bpfs.isNotEmpty) {
+                        bpfId = bpfs.first.id;
+                      } else {
+                        bpfId = await bpfService.startBpf('lead_to_cash', 'project', 'projectId', project.projectId);
+                      }
+                      final invoiceId = await orchestrator.createInvoiceFromProject(project, bpfId);
+                      if (context.mounted) {
+                        UIUtils.showToast(context, 'Invoice generated successfully (ID: $invoiceId)');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InvoiceDetailScreen(
+                              invoiceId: invoiceId,
+                              invoiceType: 'AR',
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        UIUtils.showToast(context, 'Error generating invoice: $e');
+                      }
+                    }
+                },
+                icon: const Icon(Icons.receipt),
+                label: const Text('Generate Invoice'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                ),
               ),
             ),
           ],

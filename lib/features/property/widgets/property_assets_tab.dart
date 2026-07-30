@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../models/property_models.dart';
 import '../providers/property_providers.dart';
+import 'property_asset_form.dart';
 
 class PropertyAssetsTab extends ConsumerWidget {
   final Property property;
 
   const PropertyAssetsTab({super.key, required this.property});
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, VoidCallback onAdd) {
     return Row(
       children: [
         Icon(icon, color: XMTheme.primary, size: 20),
@@ -22,6 +24,11 @@ class PropertyAssetsTab extends ConsumerWidget {
             letterSpacing: 1.2,
             color: XMTheme.primary,
           ),
+        ),
+        const Spacer(),
+        IconButton(
+          icon: const Icon(Icons.add, color: XMTheme.primary),
+          onPressed: onAdd,
         ),
       ],
     );
@@ -147,8 +154,14 @@ class PropertyAssetsTab extends ConsumerWidget {
             padding: const EdgeInsets.all(24),
             children: [
               _buildSectionHeader(
+                context,
                 'CRITICAL ASSETS',
                 Icons.inventory_2_outlined,
+                () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'Add Asset',
+                  builder: (_) => PropertyAssetForm(propertyId: property.id),
+                ),
               ),
               const SizedBox(height: 16),
               if (assets.isEmpty)

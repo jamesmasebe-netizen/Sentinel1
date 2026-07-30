@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../config/theme.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/property_providers.dart';
 import '../models/property_models.dart';
+import 'property_utility_form.dart';
 
 class PropertyEsgTab extends ConsumerWidget {
   final Property property;
   const PropertyEsgTab({super.key, required this.property});
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, VoidCallback onAdd) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
@@ -19,6 +21,11 @@ class PropertyEsgTab extends ConsumerWidget {
           Text(
             title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.add, color: XMTheme.primary),
+            onPressed: onAdd,
           ),
         ],
       ),
@@ -87,8 +94,14 @@ class PropertyEsgTab extends ConsumerWidget {
       padding: const EdgeInsets.all(24),
       children: [
         _buildSectionHeader(
+          context,
           'Environmental Impact & Utilities',
           Icons.eco_outlined,
+          () => UIUtils.showSideSheet(
+            context: context,
+            title: 'Add Utility Usage',
+            builder: (_) => PropertyUtilityForm(propertyId: property.id),
+          ),
         ),
         utilitiesAsync.when(
           data:

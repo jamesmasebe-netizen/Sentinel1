@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/finance_models.dart';
 import '../services/finance_service.dart';
 import '../../people/widgets/employee_selector.dart';
-
+import '../providers/finance_providers.dart';
+import '../../projects/providers/project_providers.dart';
+import '../../projects/models/project_models.dart';
+import '../../../core/widgets/entity_selector.dart';
 class JournalEntryForm extends ConsumerStatefulWidget {
   final JournalEntry? initialEntry;
   final List<JournalLine>? initialLines;
@@ -430,11 +433,13 @@ class _JournalEntryFormState extends ConsumerState<JournalEntryForm> {
                       children: [
                         Expanded(
                           flex: 2,
-                          child: TextFormField(
-                            initialValue: line.accountId,
-                            decoration: const InputDecoration(labelText: 'Account ID'),
-                            onChanged: (val) => line.accountId = val,
-                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                          child: EntitySelector<GeneralLedgerAccount>(
+                            label: 'Account',
+                            value: line.accountId.isEmpty ? null : line.accountId,
+                            asyncEntities: ref.watch(glAccountsStreamProvider),
+                            idMapper: (a) => a.id,
+                            displayMapper: (a) => '${a.accountNumber} - ${a.name}',
+                            onChanged: (val) => setState(() => line.accountId = val ?? ''),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -486,26 +491,35 @@ class _JournalEntryFormState extends ConsumerState<JournalEntryForm> {
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
-                            initialValue: line.costCenterId,
-                            decoration: const InputDecoration(labelText: 'Cost Center ID'),
-                            onChanged: (val) => line.costCenterId = val,
+                          child: EntitySelector<CostCenter>(
+                            label: 'Cost Center',
+                            value: (line.costCenterId?.isEmpty ?? true) ? null : line.costCenterId,
+                            asyncEntities: ref.watch(costCentersStreamProvider),
+                            idMapper: (c) => c.id,
+                            displayMapper: (c) => c.name,
+                            onChanged: (val) => setState(() => line.costCenterId = val),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: TextFormField(
-                            initialValue: line.projectId,
-                            decoration: const InputDecoration(labelText: 'Project ID'),
-                            onChanged: (val) => line.projectId = val,
+                          child: EntitySelector<Project>(
+                            label: 'Project',
+                            value: (line.projectId?.isEmpty ?? true) ? null : line.projectId,
+                            asyncEntities: ref.watch(projectsProvider),
+                            idMapper: (p) => p.id,
+                            displayMapper: (p) => p.name,
+                            onChanged: (val) => setState(() => line.projectId = val),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: TextFormField(
-                            initialValue: line.taxCodeId,
-                            decoration: const InputDecoration(labelText: 'Tax Code ID'),
-                            onChanged: (val) => line.taxCodeId = val,
+                          child: EntitySelector<TaxCode>(
+                            label: 'Tax Code',
+                            value: (line.taxCodeId?.isEmpty ?? true) ? null : line.taxCodeId,
+                            asyncEntities: ref.watch(taxCodesStreamProvider),
+                            idMapper: (t) => t.id,
+                            displayMapper: (t) => t.code,
+                            onChanged: (val) => setState(() => line.taxCodeId = val),
                           ),
                         ),
                         Expanded(

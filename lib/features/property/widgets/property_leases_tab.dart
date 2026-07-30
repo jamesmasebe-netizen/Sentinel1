@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/property_providers.dart';
 import '../models/property_models.dart';
+import 'property_lease_form.dart';
 
 class PropertyLeasesTab extends ConsumerWidget {
   final Property property;
   const PropertyLeasesTab({super.key, required this.property});
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, VoidCallback onAdd) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
@@ -18,6 +20,11 @@ class PropertyLeasesTab extends ConsumerWidget {
           Text(
             title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.add, color: XMTheme.primary),
+            onPressed: onAdd,
           ),
         ],
       ),
@@ -137,7 +144,16 @@ class PropertyLeasesTab extends ConsumerWidget {
           (leases) => ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              _buildSectionHeader('TENANT LEASES', Icons.description_outlined),
+              _buildSectionHeader(
+                context,
+                'TENANT LEASES',
+                Icons.description_outlined,
+                () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'Add Lease',
+                  builder: (_) => PropertyLeaseForm(propertyId: property.id),
+                ),
+              ),
               const SizedBox(height: 16),
               if (leases.isEmpty)
                 const Center(

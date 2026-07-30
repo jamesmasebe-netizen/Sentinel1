@@ -7,6 +7,7 @@ import '../../environment/screens/environmental_screen.dart';
 import '../../contractors/screens/contractor_management_screen.dart';
 import '../../projects/screens/project_dashboard_screen.dart';
 import '../screens/integrations_hub_screen.dart';
+import '../screens/inventory_dashboard_screen.dart';
 import 'hub_cards.dart';
 
 class OperationsHubModules extends StatelessWidget {
@@ -98,12 +99,24 @@ class OperationsHubModules extends StatelessWidget {
             title: 'Gateways & Integrations',
             subtitle: 'Manage external API connections and webhooks.',
             icon: Icons.hub_rounded,
-            color: Colors.deepPurple,
+            color: XMTheme.primaryLight,
             onTap:
                 () => _openModule(
                   context,
                   'Integrations',
                   const IntegrationsHubScreen(),
+                ),
+          ),
+          ModuleCard(
+            title: 'Inventory',
+            subtitle: 'Stock levels, valuation, and movements.',
+            icon: Icons.inventory_2_rounded,
+            color: XMTheme.info,
+            onTap:
+                () => _openModule(
+                  context,
+                  'Inventory Dashboard',
+                  const InventoryDashboardScreen(),
                 ),
           ),
         ]),

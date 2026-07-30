@@ -4,6 +4,7 @@ import '../../../core/providers/app_providers.dart';
 import '../models/project_models.dart';
 import '../../../core/models/safety_models.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../../core/bpf/bpf_service.dart';
 
 /// Provider for the Projects collection reference
 final projectsCollectionProvider = Provider<CollectionReference<Project>>((
@@ -96,8 +97,9 @@ final projectRiskLevelProvider = Provider.family<String, Project>((
 class ProjectService {
   final FirebaseFirestore _firestore;
   final String _tenantId;
+  final BpfService _bpfService;
 
-  ProjectService(this._firestore, this._tenantId);
+  ProjectService(this._firestore, this._tenantId, this._bpfService);
 
   Future<void> updateProject(Project project) async {
     await _firestore
@@ -136,7 +138,28 @@ class ProjectService {
         .tenantCollection(_tenantId, 'projects')
         .doc(shortId)
         .set(project.toFirestore());
+
+    // F-008: start the project_lifecycle BPF instance so the ribbon has
+    // something to render and approveStage() has an instance to mirror.
+    if (project.stages.isNotEmpty) {
+      await _bpfService.startBpf(
+        'project_lifecycle',
+        project.stages.first.id,
+        'project',
+        shortId,
+      );
+    }
+
     return shortId;
+  }
+
+
+
+  Future<void> addTimeEntry(ProjectTimeEntry entry) async {
+    await _firestore
+        .tenantCollection(_tenantId, 'timeEntries')
+        .doc(entry.id)
+        .set(entry.toFirestore());
   }
 
   /// Evaluates compliance locks and approves a stage if valid
@@ -191,6 +214,23 @@ class ProjectService {
         .tenantCollection(_tenantId, 'projects')
         .doc(projectId)
         .update({'stages': updatedStages.map((s) => s.toMap()).toList()});
+
+    // F-008: Advance BPF to mirror project stage
+    try {
+      final bpfQuery = await _firestore
+          .tenantCollection(_tenantId, 'bpf_instances')
+          .where('linkedRecordIds.project', isEqualTo: projectId)
+          .limit(1)
+          .get();
+
+      if (bpfQuery.docs.isNotEmpty) {
+        final bpfId = bpfQuery.docs.first.id;
+        // BPF stage IDs map 1:1 to Project stage IDs (e.g. 'stage_0', 'stage_1')
+        await _bpfService.advanceStage(bpfId, stageId);
+      }
+    } catch (e) {
+      // Ignore BPF errors to not block the main project stage approval
+    }
   }
 
   /// Triggers a cross-module Action Item if a critical threshold is breached
@@ -268,6 +308,7 @@ final projectServiceProvider = Provider<ProjectService>((ref) {
   return ProjectService(
     ref.watch(firestoreProvider),
     ref.watch(currentTenantIdProvider) ?? '',
+    ref.watch(bpfServiceProvider),
   );
 });
 

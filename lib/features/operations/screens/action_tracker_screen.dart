@@ -36,6 +36,7 @@ class _ActionTrackerState extends ConsumerState<ActionTrackerScreen> {
     CollSource('bbs_observations', 'Observation'),
     CollSource('dynamic_risk_assessments', 'DRA'),
     CollSource('hazards', 'Hazard'),
+    CollSource('actionItems', 'General'),
   ];
 
   final List<StreamSubscription> _subs = [];
