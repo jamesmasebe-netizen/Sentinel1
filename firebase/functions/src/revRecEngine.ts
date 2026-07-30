@@ -36,21 +36,21 @@ export const revenueRecognition = onDocumentUpdated(
       milestoneValue,
     });
 
-    // Mock dual-entry journal document
     const journalEntry = {
       description: `Revenue recognition for completed milestone: ${milestoneName} (${milestoneId})`,
-      totalDebit: milestoneValue,
-      totalCredit: milestoneValue,
-      type: "revenue_recognition",
-      status: "posted",
-      milestoneId,
-      tenantId,
-      recognizedAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      total_debit: milestoneValue,
+      total_credit: milestoneValue,
+      type: "REVENUE_RECOGNITION",
+      status: "POSTED",
+      source_module: "PROJECTS",
+      source_reference_id: milestoneId,
+      currency_code: "USD",
+      transaction_date: admin.firestore.FieldValue.serverTimestamp(),
+      created_at: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     const db = admin.firestore();
-    const journalRef = db.collection(`tenants/${tenantId}/finance_journals`);
+    const journalRef = db.collection(`tenants/${tenantId}/fin_journal_headers`);
     await journalRef.add(journalEntry);
 
     logger.info("revenueRecognition: Journal entry posted successfully.", {

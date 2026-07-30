@@ -10,6 +10,7 @@ export const iotTelemetryIngest = functions.https.onRequest(async (req, res) => 
 
     const payload = req.body;
     const { deviceId, assetId, customerId, telemetry } = payload;
+    let { tenantId } = payload; // Can be provided by trusted gateway
 
     if (!deviceId || !telemetry) {
       res.status(400).send('Missing required fields: deviceId, telemetry');
@@ -18,9 +19,24 @@ export const iotTelemetryIngest = functions.https.onRequest(async (req, res) => 
 
     const db = admin.firestore();
 
+    // Option A: Trusted Gateway / JWT enriched tenantId
+    // Option B: Central Registry Lookup (Best Practice for raw device telemetry)
+    if (!tenantId) {
+      const deviceDoc = await db.collection('devices').doc(deviceId).get();
+      if (!deviceDoc.exists) {
+        res.status(404).send('Device not found in registry');
+        return;
+      }
+      tenantId = deviceDoc.data()?.tenantId;
+      if (!tenantId) {
+        res.status(500).send('Device registry missing tenant mapping');
+        return;
+      }
+    }
+
     if (assetId) {
       // Use set with merge in case the document doesn't exist, though typically it should
-      await db.collection('customer_assets').doc(assetId).set({
+      await db.collection('tenants').doc(tenantId).collection('customer_assets').doc(assetId).set({
         last_telemetry_date: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
     }
@@ -28,15 +44,20 @@ export const iotTelemetryIngest = functions.https.onRequest(async (req, res) => 
     const temp = telemetry.temperature;
     // Example threshold evaluation (Temperature > 90)
     if (temp !== undefined && temp > 90) {
-      const workOrderRef = db.collection('work_orders').doc();
+      const workOrderRef = db.collection('tenants').doc(tenantId).collection('work_orders').doc();
       const newWorkOrder = {
         id: workOrderRef.id,
-        title: 'Predictive Maintenance - High Temperature',
-        description: `Automated work order triggered by IoT device ${deviceId} due to temperature reading of ${temp}.`,
-        status: 'OPEN',
-        scheduledDate: new Date().toISOString(),
-        assetId: assetId || null,
-        customerId: customerId || null
+        work_order_number: workOrderRef.id,
+        description: `Predictive Maintenance - High Temperature\nAutomated work order triggered by IoT device ${deviceId} due to temperature reading of ${temp}.`,
+        status: 'DRAFT',
+        priority: 'HIGH',
+        scheduling: {
+          scheduled_start: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        asset_id: assetId || null,
+        customer_id: customerId || 'INTERNAL',
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+        updated_at: admin.firestore.FieldValue.serverTimestamp(),
       };
       
       await workOrderRef.set(newWorkOrder);

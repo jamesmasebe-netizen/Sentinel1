@@ -451,8 +451,8 @@ export const postJournalEntry = onCall(
       throw new HttpsError("failed-precondition", `Unbalanced entry: Debit (${totalDebit}) != Credit (${totalCredit})`);
     }
 
-    const journalRef = db.collection("tenants").doc(tenantId).collection("finance_journals").doc();
-    const accountRefs = lines.map(line => db.collection("tenants").doc(tenantId).collection("finance_accounts").doc(line.accountId));
+    const journalRef = db.collection("tenants").doc(tenantId).collection("fin_journal_headers").doc();
+    const accountRefs = lines.map((line: any) => db.collection("tenants").doc(tenantId).collection("fin_chart_of_accounts").doc(line.accountId));
 
     await db.runTransaction(async (t) => {
       // Read all accounts to ensure they exist
@@ -506,7 +506,7 @@ export const postJournalEntry = onCall(
  * Automatically posts a journal entry when an invoice is sent or paid.
  */
 export const onInvoiceStatusChanged = onDocumentUpdated(
-  { document: "tenants/{tenantId}/finance_invoices/{invoiceId}", region: "europe-west1" },
+  { document: "tenants/{tenantId}/fin_ar_invoices/{invoiceId}", region: "europe-west1" },
   async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
@@ -523,7 +523,7 @@ export const onInvoiceStatusChanged = onDocumentUpdated(
       if (amount <= 0) return;
 
       // Find AR account and Revenue account
-      const accountsSnap = await db.collection("tenants").doc(tenantId).collection("finance_accounts").get();
+      const accountsSnap = await db.collection("tenants").doc(tenantId).collection("fin_chart_of_accounts").get();
       let arAccountId = "";
       let revAccountId = "";
       for (const doc of accountsSnap.docs) {
@@ -548,10 +548,10 @@ export const onInvoiceStatusChanged = onDocumentUpdated(
       };
 
       // Call the transaction directly (simulated internal call)
-      const journalRef = db.collection("tenants").doc(tenantId).collection("finance_journals").doc();
+      const journalRef = db.collection("tenants").doc(tenantId).collection("fin_journal_headers").doc();
       await db.runTransaction(async (t) => {
-        const arRef = db.collection("tenants").doc(tenantId).collection("finance_accounts").doc(arAccountId);
-        const revRef = db.collection("tenants").doc(tenantId).collection("finance_accounts").doc(revAccountId);
+        const arRef = db.collection("tenants").doc(tenantId).collection("fin_chart_of_accounts").doc(arAccountId);
+        const revRef = db.collection("tenants").doc(tenantId).collection("fin_chart_of_accounts").doc(revAccountId);
         
         t.update(arRef, { currentBalance: admin.firestore.FieldValue.increment(amount) });
         t.update(revRef, { currentBalance: admin.firestore.FieldValue.increment(amount) });
@@ -583,3 +583,4 @@ export * from './taxEngine';
 export * from './revRecEngine';
 export * from './hrEngine';
 export * from './copilotEngine';
+export * from './billing';
