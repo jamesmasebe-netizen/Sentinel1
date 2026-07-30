@@ -4,6 +4,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../models/course.dart';
 import '../models/enrollment.dart';
+import '../../people/providers/employee_providers.dart';
 import '../../../core/providers/app_providers.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
@@ -50,6 +51,40 @@ class _CoursePlayerScreenState extends ConsumerState<CoursePlayerScreen> {
               'enrollmentDate': DateTime.now().toIso8601String(),
             });
       }
+
+      // Sync with manager allocations (training_enrollments)
+      final tenantId = ref.read(currentTenantIdProvider) ?? "";
+      final allocationsQuery = await firestore
+          .tenantCollection(tenantId, 'training_enrollments')
+          .where('employeeId', isEqualTo: profile.uid)
+          .where('courseId', isEqualTo: widget.course.id)
+          .get();
+      
+      for (var doc in allocationsQuery.docs) {
+        await doc.reference.update({
+          'progressPercentage': 1.0,
+          'status': 'Completed',
+        });
+      }
+
+      // Auto-generate a compliance certificate (training_records)
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final empName = employees.where((e) => e.id == profile.uid).firstOrNull?.fullName ?? 'Unknown Employee';
+
+      await firestore
+          .tenantCollection(tenantId, 'training_records')
+          .add({
+            'employeeId': profile.uid,
+            'employeeName': empName,
+            'idNumber': '', 
+            'courseName': widget.course.title,
+            'dateCompleted': DateTime.now().toIso8601String(),
+            'expiryDate': DateTime.now().add(const Duration(days: 365)).toIso8601String(),
+            'status': 'Active',
+            'authorId': profile.uid,
+            'siteId': profile.tenantId,
+            'createdAt': DateTime.now().toIso8601String(),
+          });
 
       if (mounted) {
         UIUtils.showToast(context, 'Course marked as completed!');

@@ -4,6 +4,7 @@ import '../../../core/providers/app_providers.dart';
 import '../models/course.dart';
 import '../models/enrollment.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/training_service.dart';
 
 final coursesProvider = StreamProvider<List<Course>>((ref) {
   final firestore = ref.watch(firestoreProvider);
@@ -17,23 +18,17 @@ final coursesProvider = StreamProvider<List<Course>>((ref) {
   });
 });
 
-final enrollmentsProvider = StreamProvider<List<Enrollment>>((ref) {
-  final firestore = ref.watch(firestoreProvider);
+final comprehensiveTrainingProvider = FutureProvider<ComprehensiveTrainingRecord?>((ref) async {
   final profile = ref.watch(userProfileProvider).valueOrNull;
-  final tenantId = ref.watch(currentTenantIdProvider) ?? "";
+  if (profile == null) return null;
+  final service = ref.watch(trainingServiceProvider);
+  return service.getComprehensiveEmployeeRecord(profile.uid);
+});
 
-  if (profile == null) return Stream.value([]);
-
-  return firestore
-      .tenantCollection(tenantId, 'enrollments')
-      .where('employeeId', isEqualTo: profile.uid)
-      .snapshots()
-      .map(
-        (snap) =>
-            snap.docs
-                .map((doc) => Enrollment.fromMap(doc.data(), doc.id))
-                .toList(),
-      );
+final enrollmentsProvider = FutureProvider<List<Enrollment>>((ref) async {
+  final comprehensive = await ref.watch(comprehensiveTrainingProvider.future);
+  if (comprehensive == null) return [];
+  return comprehensive.enrollments.map((e) => Enrollment.fromMap(e, e['id'])).toList();
 });
 
 void _seedDummyCourses(FirebaseFirestore firestore, String tenantId) {

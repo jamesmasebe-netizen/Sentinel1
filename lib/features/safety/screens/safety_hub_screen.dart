@@ -32,9 +32,10 @@ class SafetyHubScreen extends ConsumerWidget {
             children: [
               OutlinedButton.icon(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+                  UIUtils.showSideSheet(
+                    context: context,
+                    title: 'Scan Passport',
+                    builder: (ctx) => const QrScannerScreen(),
                   );
                 },
                 icon: const Icon(Icons.qr_code_scanner),

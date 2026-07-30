@@ -10,6 +10,8 @@ import 'incident_status_colors.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/issue_to_resolution_bpf.dart';
+import '../../../core/bpf/bpf_service.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
 
 void showIncidentDetail(
   BuildContext context,
@@ -258,6 +260,59 @@ void showIncidentDetail(
                                   }
                                 }
                               },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.arrow_upward),
+                      label: const Text('Escalate to CAPA'),
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              setDialogState(() => isLoading = true);
+                              try {
+                                final bpfService = ref.read(bpfServiceProvider);
+                                final bpfInstances = await bpfService
+                                    .streamBpfInstancesByRecord('incident', docId)
+                                    .first;
+                                
+                                String? bpfId = bpfInstances.isNotEmpty ? bpfInstances.first.id : null;
+                                if (bpfId == null) {
+                                  bpfId = await bpfService.startBpf(
+                                      'issue_to_resolution', 'incident_logging', 'incident', docId);
+                                }
+
+                                final orchestrator = ref.read(bpfOrchestratorProvider);
+                                await orchestrator.createCapaFromIncident(
+                                  docId,
+                                  bpfId,
+                                  data['title'] ?? 'Incident Escalation',
+                                  data['description'] ?? 'Automatically generated CAPA from incident.',
+                                );
+
+                                if (ctx.mounted) {
+                                  UIUtils.showToast(
+                                    ctx,
+                                    'Escalated to CAPA successfully',
+                                    type: ToastType.success,
+                                  );
+                                }
+                              } catch (e) {
+                                if (ctx.mounted) {
+                                  UIUtils.showToast(
+                                    ctx,
+                                    'Failed to escalate: $e',
+                                    type: ToastType.error,
+                                  );
+                                }
+                              } finally {
+                                if (ctx.mounted) {
+                                  setDialogState(() => isLoading = false);
+                                }
+                              }
+                            },
                     ),
                   ),
                 ],

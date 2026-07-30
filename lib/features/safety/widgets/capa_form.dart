@@ -6,17 +6,20 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../people/widgets/employee_selector.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/safety_service.dart';
 
 class CAPAForm extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
+  final String? initialIncidentId;
 
-  const CAPAForm({super.key, required this.onCancel});
+  const CAPAForm({super.key, required this.onCancel, this.initialIncidentId});
 
   @override
   ConsumerState<CAPAForm> createState() => _CAPAFormState();
 }
 
 class _CAPAFormState extends ConsumerState<CAPAForm> {
+  final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _rcaController = TextEditingController();
@@ -28,6 +31,12 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    _linkedIncidentId = widget.initialIncidentId;
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -36,10 +45,8 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
   }
 
   Future<void> _submitCAPA() async {
-    if (_titleController.text.isEmpty ||
-        _descriptionController.text.isEmpty ||
-        _assignedToId == null ||
-        _dueDate == null) {
+    if (!_formKey.currentState!.validate()) return;
+    if (_assignedToId == null || _dueDate == null) {
       UIUtils.showToast(
         context,
         'Please fill all required fields',
@@ -68,12 +75,8 @@ class _CAPAFormState extends ConsumerState<CAPAForm> {
         if (_linkedIncidentId != null) 'incidentId': _linkedIncidentId,
       };
 
-      final firestoreService = ref.read(firestoreServiceProvider);
-      await firestoreService.createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'capas',
-        data: data,
-      );
+      final safetyService = ref.read(safetyServiceProvider);
+      await safetyService.createCapa(data);
 
       if (mounted) {
         UIUtils.showToast(

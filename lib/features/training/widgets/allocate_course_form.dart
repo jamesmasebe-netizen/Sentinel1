@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/searchable_multi_select.dart';
+import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import '../../people/providers/employee_providers.dart';
 
 class AllocateCourseForm extends ConsumerStatefulWidget {
@@ -37,6 +38,21 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
 
       // Create enrollment for each selected employee
       for (final empId in _enrolledEmployees) {
+        final existingQuery = await ref
+            .read(firestoreProvider)
+            .tenantCollection(ref.read(currentTenantIdProvider) ?? '', 'enrollments')
+            .where('employeeId', isEqualTo: empId)
+            .where('courseId', isEqualTo: _courseIdCtrl.text.trim())
+            .get();
+        
+        bool isAlreadyCompleted = false;
+        if (existingQuery.docs.isNotEmpty) {
+          final data = existingQuery.docs.first.data();
+          if (data['status'] == 'Completed') {
+            isAlreadyCompleted = true;
+          }
+        }
+
         await ref
             .read(firestoreServiceProvider)
             .createDocument(
@@ -52,10 +68,10 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
                 // manager_training_dashboard.dart orders by this field — without it, an
                 // allocation is invisible on that dashboard (see docs/fixes/FIX_LIST.md F-009)
                 'assignedAt': DateTime.now().toIso8601String(),
-                'status': 'Assigned',
+                'status': isAlreadyCompleted ? 'Completed' : 'Assigned',
                 'authorId': profile.uid,
                 'siteId': profile.tenantId,
-                'progressPercentage': 0.0,
+                'progressPercentage': isAlreadyCompleted ? 1.0 : 0.0,
               },
             );
       }

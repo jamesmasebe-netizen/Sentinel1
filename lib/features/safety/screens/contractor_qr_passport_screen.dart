@@ -7,12 +7,12 @@ import '../services/passport_compliance_checker.dart';
 
 class ContractorQrPassportScreen extends ConsumerWidget {
   final Map<String, dynamic> contractorData;
-  final String projectId;
+  final String? projectId;
 
   const ContractorQrPassportScreen({
     super.key,
     required this.contractorData,
-    required this.projectId,
+    this.projectId,
   });
 
   @override
@@ -21,7 +21,7 @@ class ContractorQrPassportScreen extends ConsumerWidget {
     final payload = {
       'type': 'contractor_passport',
       'contractorId': contractorData['id'] ?? 'unknown',
-      'projectId': projectId,
+      if (projectId != null) 'projectId': projectId,
       'timestamp': DateTime.now().toIso8601String(),
     };
     final payloadString = jsonEncode(payload);

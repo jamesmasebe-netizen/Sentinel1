@@ -4,7 +4,8 @@ class Employee {
   final String fullName;
   final String email;
   final String department;
-  final String jobTitle;
+  final String jobTitle; // HR Role
+  final List<String> ohsRoles; // OHS Act appointments (e.g., First Aider, Fire Warden)
   final String? managerId;
   final double leaveBalance;
   final String status; // Active, Suspended
@@ -16,6 +17,7 @@ class Employee {
     required this.email,
     required this.department,
     required this.jobTitle,
+    this.ohsRoles = const [],
     this.managerId,
     required this.leaveBalance,
     required this.status,
@@ -28,6 +30,7 @@ class Employee {
     String? email,
     String? department,
     String? jobTitle,
+    List<String>? ohsRoles,
     String? managerId,
     double? leaveBalance,
     String? status,
@@ -39,6 +42,7 @@ class Employee {
       email: email ?? this.email,
       department: department ?? this.department,
       jobTitle: jobTitle ?? this.jobTitle,
+      ohsRoles: ohsRoles ?? this.ohsRoles,
       managerId: managerId ?? this.managerId,
       leaveBalance: leaveBalance ?? this.leaveBalance,
       status: status ?? this.status,
@@ -53,6 +57,7 @@ class Employee {
       'email': email,
       'department': department,
       'jobTitle': jobTitle,
+      'ohsRoles': ohsRoles,
       'managerId': managerId,
       'leaveBalance': leaveBalance,
       'status': status,
@@ -67,6 +72,7 @@ class Employee {
       email: map['email'] ?? '',
       department: map['department'] ?? '',
       jobTitle: map['jobTitle'] ?? '',
+      ohsRoles: List<String>.from(map['ohsRoles'] ?? []),
       managerId: map['managerId'],
       leaveBalance: (map['leaveBalance'] ?? 0.0).toDouble(),
       status: map['status'] ?? 'Active',

@@ -12,6 +12,7 @@ import '../../screens/leave_management_screen.dart';
 import '../../screens/recruitment_dashboard_screen.dart';
 import '../../screens/payroll_dashboard_screen.dart';
 import '../../screens/okr_dashboard_screen.dart';
+import '../../screens/org_config_screen.dart';
 import 'people_hub_module_card.dart';
 
 class PeopleHubModulesGrid extends StatelessWidget {
@@ -169,6 +170,18 @@ class PeopleHubModulesGrid extends StatelessWidget {
                   context,
                   'OHS Legal Appointments',
                   const OHSAppointmentsScreen(),
+                ),
+          ),
+          PeopleHubModuleCard(
+            title: 'Organization Config',
+            subtitle: 'Manage Departments and Job Roles.',
+            icon: Icons.account_tree_rounded,
+            color: XMTheme.primary,
+            onTap:
+                () => _openModule(
+                  context,
+                  'Organization Config',
+                  const OrgConfigScreen(),
                 ),
           ),
         ]),

@@ -3,6 +3,19 @@ import '../../../core/providers/app_providers.dart';
 import '../models/hr_models.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
+final ohsRolesProvider = StreamProvider.autoDispose<List<OhsRole>>((ref) {
+  final siteId = ref.watch(currentTenantIdProvider);
+  if (siteId == null) return Stream.value([]);
+  
+  return ref
+      .watch(firestoreProvider)
+      .tenantCollection(siteId, 'ohs_roles')
+      .snapshots()
+      .map(
+        (snap) => snap.docs.map((d) => OhsRole.fromFirestore(d)).toList(),
+      );
+});
+
 final leaveRequestsProvider = StreamProvider.autoDispose<List<LeaveRequest>>((
   ref,
 ) {
@@ -109,7 +122,31 @@ final ohsAppointmentsProvider =
           .where('siteId', isEqualTo: siteId)
           .snapshots()
           .map(
-            (snap) =>
-                snap.docs.map((d) => OHSAppointment.fromFirestore(d)).toList(),
-          );
-    });
+        (snap) =>
+            snap.docs.map((d) => OHSAppointment.fromFirestore(d)).toList(),
+      );
+});
+
+final departmentsProvider = StreamProvider.autoDispose<List<Department>>((ref) {
+  final siteId = ref.watch(currentTenantIdProvider);
+  if (siteId == null) return Stream.value([]);
+
+  return ref
+      .watch(firestoreProvider)
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'departments')
+      .where('siteId', isEqualTo: siteId)
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => Department.fromFirestore(d)).toList());
+});
+
+final jobRolesProvider = StreamProvider.autoDispose<List<JobRole>>((ref) {
+  final siteId = ref.watch(currentTenantIdProvider);
+  if (siteId == null) return Stream.value([]);
+
+  return ref
+      .watch(firestoreProvider)
+      .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'job_roles')
+      .where('siteId', isEqualTo: siteId)
+      .snapshots()
+      .map((snap) => snap.docs.map((d) => JobRole.fromFirestore(d)).toList());
+});

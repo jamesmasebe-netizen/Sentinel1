@@ -11,9 +11,12 @@ import 'training_lms_tab.dart';
 import 'employee_hr_tab.dart';
 import 'employee_activity_tab.dart';
 import '../widgets/detail_row.dart';
+import '../../safety/screens/employee_qr_passport_screen.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/hire_to_retire_bpf.dart';
+import '../../../core/bpf/bpf_service.dart';
+import '../../../core/bpf/bpf_orchestrator.dart';
 
 class Employee360ProfileScreen extends ConsumerStatefulWidget {
   final String employeeId;
@@ -191,13 +194,13 @@ class _Employee360ProfileScreenState
                     Row(
                       children: [
                         GStatusTag(
-                          label: emp['status'] ?? 'Active',
+                          label: emp['employmentStatus'] ?? 'Active',
                           color:
-                              emp['status'] == 'Active'
+                              emp['employmentStatus'] == 'Active'
                                   ? XMTheme.success
                                   : XMTheme.error,
                         ),
-                        if (emp['status'] != 'Terminated') ...[
+                        if (emp['employmentStatus'] != 'Terminated') ...[
                           const SizedBox(width: 16),
                           OutlinedButton.icon(
                             onPressed:
@@ -215,6 +218,84 @@ class _Employee360ProfileScreenState
                             ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: XMTheme.error),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              UIUtils.showSideSheet(
+                                context: context,
+                                title: 'Employee Passport',
+                                builder: (_) => EmployeeQrPassportScreen(employeeData: emp),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.qr_code,
+                              size: 16,
+                              color: XMTheme.primary,
+                            ),
+                            label: const Text(
+                              'Generate Passport',
+                              style: TextStyle(color: XMTheme.primary),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: XMTheme.primary),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 0,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (emp['employmentStatus'] != 'Terminated' && emp['employmentStatus'] != 'Active') ...[
+                          const SizedBox(width: 16),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              try {
+                                final bpfService = ref.read(bpfServiceProvider);
+                                final bpfInstances = await bpfService
+                                    .streamBpfInstancesByRecord('employee', widget.employeeId)
+                                    .first;
+                                
+                                String? bpfId = bpfInstances.isNotEmpty ? bpfInstances.first.id : null;
+                                bpfId ??= await bpfService.startBpf(
+                                    'hire_to_retire', 'onboarding', 'employee', widget.employeeId);
+
+                                final orchestrator = ref.read(bpfOrchestratorProvider);
+                                await orchestrator.completeOnboarding(widget.employeeId, bpfId);
+
+                                if (mounted) {
+                                  UIUtils.showToast(
+                                    context,
+                                    'Onboarding completed successfully',
+                                    type: ToastType.success,
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  UIUtils.showToast(
+                                    context,
+                                    'Failed to complete onboarding: $e',
+                                    type: ToastType.error,
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.check_circle_outline,
+                              size: 16,
+                              color: XMTheme.success,
+                            ),
+                            label: const Text(
+                              'Complete Onboarding',
+                              style: TextStyle(color: XMTheme.success),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: XMTheme.success),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 0,

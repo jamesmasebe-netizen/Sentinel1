@@ -15,6 +15,7 @@ import '../widgets/incident_type_severity_fields.dart';
 import '../widgets/incident_location_date_fields.dart';
 import '../widgets/incident_photo_capture_section.dart';
 import '../widgets/incident_cost_tracking_fields.dart';
+import '../services/safety_service.dart';
 
 class IncidentReportForm extends ConsumerStatefulWidget {
   const IncidentReportForm({super.key});
@@ -153,21 +154,17 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                 projectId: profile.tenantId ?? 'Unknown',
               ),
             );
-        await fs.createDocument(
-          tenantId: profile.tenantId ?? '',
-          collection: 'capas',
-          data: {
-            'description':
-                'Automatic CAPA for $_severity incident: ${_titleController.text}',
-            'status': 'Open',
-            'createdById': profile.uid,
-            'siteId': profile.tenantId,
-            'createdAt': DateTime.now().toIso8601String(),
-            'assignedToName': 'Safety Manager',
-            'dueDate':
-                DateTime.now().add(const Duration(days: 7)).toIso8601String(),
-          },
-        );
+            
+        final safetyService = ref.read(safetyServiceProvider);
+        await safetyService.createCapa({
+          'title': 'Automatic CAPA: ${_titleController.text}',
+          'description': 'Automatic CAPA for $_severity incident',
+          'type': 'Corrective',
+          'priority': 'High',
+          'assignedToName': 'Safety Manager',
+          'dueDate': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
+          'incidentId': docRef,
+        });
       }
 
       if (mounted) {

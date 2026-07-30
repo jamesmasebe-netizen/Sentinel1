@@ -13,6 +13,123 @@ dynamic _dateTimeToTimestamp(DateTime? date) {
   return Timestamp.fromDate(date);
 }
 
+class Department {
+  final String id;
+  final String name;
+  final String? description;
+  final String? managerId;
+  final String siteId;
+
+  Department({
+    this.id = '',
+    this.name = '',
+    this.description,
+    this.managerId,
+    this.siteId = '',
+  });
+
+  factory Department.fromJson(Map<String, dynamic> json, String id) {
+    return Department(
+      id: id,
+      name: json['name'] ?? '',
+      description: json['description'],
+      managerId: json['managerId'],
+      siteId: json['siteId'] ?? '',
+    );
+  }
+
+  factory Department.fromFirestore(DocumentSnapshot doc) {
+    return Department.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      if (description != null) 'description': description,
+      if (managerId != null) 'managerId': managerId,
+      'siteId': siteId,
+    };
+  }
+}
+
+class JobRole {
+  final String id;
+  final String title;
+  final String? departmentId;
+  final String? description;
+  final bool isLegalAppointment;
+  final String siteId;
+
+  JobRole({
+    this.id = '',
+    this.title = '',
+    this.departmentId,
+    this.description,
+    this.isLegalAppointment = false,
+    this.siteId = '',
+  });
+
+  factory JobRole.fromJson(Map<String, dynamic> json, String id) {
+    return JobRole(
+      id: id,
+      title: json['title'] ?? '',
+      departmentId: json['departmentId'],
+      description: json['description'],
+      isLegalAppointment: json['isLegalAppointment'] ?? false,
+      siteId: json['siteId'] ?? '',
+    );
+  }
+
+  factory JobRole.fromFirestore(DocumentSnapshot doc) {
+    return JobRole.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      if (departmentId != null) 'departmentId': departmentId,
+      if (description != null) 'description': description,
+      'isLegalAppointment': isLegalAppointment,
+      'siteId': siteId,
+    };
+  }
+}
+
+class OhsRole {
+  final String id;
+  final String title;
+  final String? description;
+  final String siteId;
+
+  OhsRole({
+    this.id = '',
+    this.title = '',
+    this.description,
+    this.siteId = '',
+  });
+
+  factory OhsRole.fromJson(Map<String, dynamic> json, String id) {
+    return OhsRole(
+      id: id,
+      title: json['title'] ?? '',
+      description: json['description'],
+      siteId: json['siteId'] ?? '',
+    );
+  }
+
+  factory OhsRole.fromFirestore(DocumentSnapshot doc) {
+    return OhsRole.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'title': title,
+      if (description != null) 'description': description,
+      'siteId': siteId,
+    };
+  }
+}
+
 class EmployeeProfile {
   final String id;
   final String firstName;
@@ -24,7 +141,8 @@ class EmployeeProfile {
   final DateTime? hireDate;
   final DateTime? terminationDate;
   final String employmentStatus;
-  final String positionId;
+  final String positionId; // HR Role
+  final List<String> ohsRoleIds; // OHS Act appointments
   final String departmentId;
   final String managerEmployeeId;
   final bool missingMandatorySafetyTraining;
@@ -41,6 +159,7 @@ class EmployeeProfile {
     this.terminationDate,
     required this.employmentStatus,
     required this.positionId,
+    this.ohsRoleIds = const [],
     required this.departmentId,
     required this.managerEmployeeId,
     this.missingMandatorySafetyTraining = false,
@@ -59,6 +178,7 @@ class EmployeeProfile {
       terminationDate: _timestampToDateTime(json['terminationDate']),
       employmentStatus: json['employmentStatus'] ?? '',
       positionId: json['positionId'] ?? '',
+      ohsRoleIds: List<String>.from(json['ohsRoleIds'] ?? []),
       departmentId: json['departmentId'] ?? '',
       managerEmployeeId: json['managerEmployeeId'] ?? '',
       missingMandatorySafetyTraining:
@@ -79,6 +199,7 @@ class EmployeeProfile {
         'terminationDate': _dateTimeToTimestamp(terminationDate),
       'employmentStatus': employmentStatus,
       'positionId': positionId,
+      'ohsRoleIds': ohsRoleIds,
       'departmentId': departmentId,
       'managerEmployeeId': managerEmployeeId,
       'missingMandatorySafetyTraining': missingMandatorySafetyTraining,

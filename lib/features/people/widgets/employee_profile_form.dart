@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/hr_models.dart';
 import '../services/hr_service.dart';
+import '../providers/hr_providers.dart';
 import 'employee_selector.dart';
-
+import '../../../core/widgets/entity_selector.dart';
 class EmployeeProfileForm extends ConsumerStatefulWidget {
   final EmployeeProfile? initialData;
   final VoidCallback? onSaved;
@@ -28,6 +29,7 @@ class _EmployeeProfileFormState extends ConsumerState<EmployeeProfileForm> {
   String? _departmentId;
   String? _positionId;
   String? _managerId;
+  List<String> _ohsRoleIds = [];
 
   DateTime? _hireDate;
   DateTime? _terminationDate;
@@ -60,6 +62,7 @@ class _EmployeeProfileFormState extends ConsumerState<EmployeeProfileForm> {
     _hireDate = data?.hireDate ?? DateTime.now();
     _terminationDate = data?.terminationDate;
     _missingMandatorySafetyTraining = data?.missingMandatorySafetyTraining ?? false;
+    _ohsRoleIds = List.from(data?.ohsRoleIds ?? []);
   }
 
   @override
@@ -121,6 +124,7 @@ class _EmployeeProfileFormState extends ConsumerState<EmployeeProfileForm> {
         terminationDate: _terminationDate,
         employmentStatus: _employmentStatusController.text.trim(),
         positionId: _positionId ?? '',
+        ohsRoleIds: _ohsRoleIds,
         departmentId: _departmentId ?? '',
         managerEmployeeId: _managerId ?? '',
         missingMandatorySafetyTraining: _missingMandatorySafetyTraining,
@@ -259,38 +263,56 @@ class _EmployeeProfileFormState extends ConsumerState<EmployeeProfileForm> {
             ),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          EntitySelector<Department>(
+            label: 'Department',
             value: _departmentId,
-            decoration: const InputDecoration(
-              labelText: 'Department',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'HR', child: Text('Human Resources')),
-              DropdownMenuItem(value: 'IT', child: Text('Information Technology')),
-              DropdownMenuItem(value: 'FIN', child: Text('Finance')),
-              DropdownMenuItem(value: 'OPS', child: Text('Operations')),
-              DropdownMenuItem(value: 'SALES', child: Text('Sales & Marketing')),
-              DropdownMenuItem(value: 'SHEQ', child: Text('Safety, Health, Environment & Quality')),
-            ],
+            asyncEntities: ref.watch(departmentsProvider),
+            idMapper: (d) => d.id,
+            displayMapper: (d) => d.name,
             onChanged: (val) => setState(() => _departmentId = val),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          EntitySelector<JobRole>(
+            label: 'HR Role (Position)',
+            asyncEntities: ref.watch(jobRolesProvider),
             value: _positionId,
-            decoration: const InputDecoration(
-              labelText: 'Position / Role',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'Manager', child: Text('Manager')),
-              DropdownMenuItem(value: 'Officer', child: Text('Officer')),
-              DropdownMenuItem(value: 'Technician', child: Text('Technician')),
-              DropdownMenuItem(value: 'Engineer', child: Text('Engineer')),
-              DropdownMenuItem(value: 'Specialist', child: Text('Specialist')),
-              DropdownMenuItem(value: 'Director', child: Text('Director')),
-            ],
-            onChanged: (val) => setState(() => _positionId = val),
+            idMapper: (r) => r.id,
+            displayMapper: (r) => r.title,
+            onChanged: (v) => setState(() => _positionId = v),
+          ),
+          const SizedBox(height: 16),
+          const Text('OHS Roles (Appointments)', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Consumer(
+            builder: (context, ref, child) {
+              final ohsRolesAsync = ref.watch(ohsRolesProvider);
+              return ohsRolesAsync.when(
+                data: (roles) {
+                  if (roles.isEmpty) return const Text('No OHS roles available.');
+                  return Wrap(
+                    spacing: 8.0,
+                    children: roles.map((role) {
+                      final isSelected = _ohsRoleIds.contains(role.id);
+                      return FilterChip(
+                        label: Text(role.title),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _ohsRoleIds.add(role.id);
+                            } else {
+                              _ohsRoleIds.remove(role.id);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => Text('Error loading OHS roles: $e'),
+              );
+            },
           ),
           const SizedBox(height: 16),
           EmployeeSelector(

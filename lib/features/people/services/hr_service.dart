@@ -12,6 +12,69 @@ class HRService {
 
   HRService(this._tenantDoc);
 
+  // --- Department ---
+  Future<void> createDepartment(Department dept) async {
+    final docRef = _tenantDoc.collection('departments').doc();
+    final data = dept.toFirestore();
+    data['siteId'] = _tenantDoc.id; // ensure siteId matches tenant
+    await docRef.set(data);
+  }
+
+  Future<void> updateDepartment(String deptId, Map<String, dynamic> data) async {
+    await _tenantDoc.collection('departments').doc(deptId).update(data);
+  }
+
+  Future<void> deleteDepartment(String deptId) async {
+    await _tenantDoc.collection('departments').doc(deptId).delete();
+  }
+
+  // --- JobRole ---
+  Future<void> createJobRole(JobRole role) async {
+    final docRef = _tenantDoc.collection('job_roles').doc();
+    final data = role.toFirestore();
+    data['siteId'] = _tenantDoc.id; // ensure siteId matches tenant
+    await docRef.set(data);
+  }
+
+  Future<void> updateJobRole(String roleId, Map<String, dynamic> data) async {
+    await _tenantDoc.collection('job_roles').doc(roleId).update(data);
+  }
+
+  Future<void> deleteJobRole(String roleId) async {
+    await _tenantDoc.collection('job_roles').doc(roleId).delete();
+  }
+
+  // --- OhsRole ---
+  Future<void> createOhsRole(OhsRole role) async {
+    final docRef = _tenantDoc.collection('ohs_roles').doc();
+    final data = role.toFirestore();
+    data['siteId'] = _tenantDoc.id; // ensure siteId matches tenant
+    await docRef.set(data);
+  }
+
+  Future<void> updateOhsRole(String roleId, Map<String, dynamic> data) async {
+    await _tenantDoc.collection('ohs_roles').doc(roleId).update(data);
+  }
+
+  Future<void> deleteOhsRole(String roleId) async {
+    await _tenantDoc.collection('ohs_roles').doc(roleId).delete();
+  }
+
+  Future<void> seedOhsRolesIfEmpty() async {
+    final query = await _tenantDoc.collection('ohs_roles').limit(1).get();
+    if (query.docs.isEmpty) {
+      final roles = [
+        OhsRole(title: 'Fire Warden', description: 'Responsible for evacuation during a fire emergency'),
+        OhsRole(title: 'First Aider', description: 'Provides medical assistance and first aid'),
+        OhsRole(title: 'Health & Safety Rep', description: 'Health and Safety Representative'),
+        OhsRole(title: 'Evacuation Marshal', description: 'Coordinates orderly evacuation'),
+      ];
+      for (var role in roles) {
+        await createOhsRole(role);
+      }
+    }
+  }
+
   // --- EmployeeProfile ---
   Future<List<EmployeeProfile>> getEmployees() async {
     final snapshot = await _tenantDoc.collection('employees').get();

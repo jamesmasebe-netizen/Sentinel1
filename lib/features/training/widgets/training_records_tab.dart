@@ -7,6 +7,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'record_form_sheet.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../providers/training_providers.dart';
 
 class TrainingRecordsTab extends ConsumerWidget {
   const TrainingRecordsTab({super.key});
@@ -46,48 +47,36 @@ class TrainingRecordsTab extends ConsumerWidget {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : firestore
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'training_records',
-                        )
-                        .where('siteId', isEqualTo: siteId)
-                        .orderBy('createdAt', descending: true)
-                        .limit(100)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.school_outlined,
-                        size: 64,
-                        color: Theme.of(context).disabledColor,
+          child: Consumer(
+            builder: (ctx, ref, child) {
+              final comprehensiveAsync = ref.watch(comprehensiveTrainingProvider);
+              return comprehensiveAsync.when(
+                data: (comprehensive) {
+                  final docs = comprehensive?.trainingRecords ?? [];
+                  if (docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.school_outlined,
+                            size: 64,
+                            color: Theme.of(context).disabledColor,
+                          ),
+                          GSpacing.vLg,
+                          Text(
+                            'No training records found',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
                       ),
-                      GSpacing.vLg,
-                      Text(
-                        'No training records found',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: docs.length,
+                    itemBuilder: (ctx, i) {
+                      final d = docs[i];
                   final isExpired = d['status'] == 'Expired';
 
                   return GCard(
@@ -165,7 +154,11 @@ class TrainingRecordsTab extends ConsumerWidget {
                       ),
                     ),
                   );
+                    },
+                  );
                 },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, st) => Center(child: Text('Error: $e')),
               );
             },
           ),
