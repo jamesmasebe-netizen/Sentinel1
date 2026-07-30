@@ -6,6 +6,7 @@ class LoginCard extends StatelessWidget {
   final bool isLoading;
   final String? error;
   final VoidCallback onSignInWithGoogle;
+  final VoidCallback onEnterpriseSSO;
   final VoidCallback onDevBypassLogin;
 
   const LoginCard({
@@ -13,6 +14,7 @@ class LoginCard extends StatelessWidget {
     required this.isLoading,
     this.error,
     required this.onSignInWithGoogle,
+    required this.onEnterpriseSSO,
     required this.onDevBypassLogin,
   });
 
@@ -58,6 +60,32 @@ class LoginCard extends StatelessWidget {
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(XMTheme.radiusSm),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: XMTheme.spacingMd),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: isLoading ? null : onEnterpriseSSO,
+              icon: const Icon(Icons.business, size: 20),
+              label: const Text('Sign in with Enterprise SSO'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(XMTheme.radiusSm),
+                  side: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 textStyle: const TextStyle(
                   fontSize: 16,

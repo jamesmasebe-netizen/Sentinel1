@@ -1,14 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum SubscriptionTier { free, pro, enterprise }
+enum SubscriptionTier { free, premium, enterprise }
 
 extension SubscriptionTierX on SubscriptionTier {
   String get name {
     switch (this) {
       case SubscriptionTier.free:
         return 'free';
-      case SubscriptionTier.pro:
-        return 'pro';
+      case SubscriptionTier.premium:
+        return 'premium';
       case SubscriptionTier.enterprise:
         return 'enterprise';
     }
@@ -16,8 +16,8 @@ extension SubscriptionTierX on SubscriptionTier {
 
   static SubscriptionTier fromString(String tier) {
     switch (tier.toLowerCase()) {
-      case 'pro':
-        return SubscriptionTier.pro;
+      case 'premium':
+        return SubscriptionTier.premium;
       case 'enterprise':
         return SubscriptionTier.enterprise;
       case 'free':

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../config/theme.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/login_card.dart';
 
 /// Login screen with Google Sign-In and biometric authentication.
@@ -153,6 +154,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       isLoading: _isLoading,
                       error: _error,
                       onSignInWithGoogle: _signInWithGoogle,
+                      onEnterpriseSSO: () => context.go('/sso'),
                       onDevBypassLogin: _devBypassLogin,
                     ),
 

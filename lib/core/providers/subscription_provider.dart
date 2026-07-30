@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/billing/services/billing_service.dart';
+import '../../features/billing/models/subscription_models.dart';
 import 'app_providers.dart';
 
 final isPremiumProvider = Provider<bool>((ref) {
@@ -10,5 +11,6 @@ final isPremiumProvider = Provider<bool>((ref) {
       ref.watch(subscriptionStreamProvider(tenantId)).valueOrNull;
   if (subscription == null) return false;
 
-  return subscription.tier == 'premium' || subscription.tier == 'enterprise';
+  return subscription.tier == SubscriptionTier.premium || 
+         subscription.tier == SubscriptionTier.enterprise;
 });

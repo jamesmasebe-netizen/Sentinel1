@@ -8,6 +8,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../scripts/seed_dummy_data.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/dashboard_charts_grid.dart';
+import 'control_tower_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -19,6 +20,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _isSeeding = false;
   String? _latestAlert;
   StreamSubscription? _eventSubscription;
+  bool _showExecutiveView = false;
 
   @override
   void initState() {
@@ -75,47 +77,70 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               isSeeding: _isSeeding,
               onSeedData: () => _seedData(context),
             ),
+            
+            GSpacing.vLg,
+            
+            // Toggle
+            Center(
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Operational View'), icon: Icon(Icons.dashboard_rounded)),
+                  ButtonSegment(value: true, label: Text('Executive View'), icon: Icon(Icons.cell_tower_rounded)),
+                ],
+                selected: {_showExecutiveView},
+                onSelectionChanged: (Set<bool> newSelection) {
+                  setState(() => _showExecutiveView = newSelection.first);
+                },
+              ),
+            ),
+            
+            GSpacing.vLg,
 
-            if (_latestAlert != null)
-              Container(
-                margin: const EdgeInsets.only(top: 24),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_rounded,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _latestAlert!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
+            if (_showExecutiveView)
+              SizedBox(
+                height: MediaQuery.of(context).size.height - 200,
+                child: const ControlTowerScreen(),
+              )
+            else ...[
+              if (_latestAlert != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
                         color: Theme.of(context).colorScheme.onErrorContainer,
                       ),
-                      onPressed: () => setState(() => _latestAlert = null),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _latestAlert!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onErrorContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.close,
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                        onPressed: () => setState(() => _latestAlert = null),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-            GSpacing.vXl,
-
-            // 9 Charts Grid
-            DashboardChartsGrid(crossAxisCount: crossAxisCount),
-            GSpacing.vXl,
+              // 9 Charts Grid
+              DashboardChartsGrid(crossAxisCount: crossAxisCount),
+              GSpacing.vXl,
+            ],
           ],
         ),
       ),
