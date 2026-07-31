@@ -753,7 +753,7 @@ Note: a structurally similar, independently-built, equally-orphaned screen (`Pub
 
 ---
 
-### F-012: `Navigator.push`/`MaterialPageRoute` used from Hub screens instead of `UIUtils.showSideSheet`
+### [DONE] F-012: `Navigator.push`/`MaterialPageRoute` used from Hub screens instead of `UIUtils.showSideSheet`
 **Severity:** High
 **Module(s) / File(s):** `lib/features/safety/screens/safety_hub_screen.dart`, `lib/features/supply_chain/screens/supply_chain_hub_screen.dart`, `lib/features/projects/screens/project_operations_hub_screen.dart`, `lib/features/customer_service/screens/customer_service_hub_screen.dart`
 **Depends on:** none
@@ -764,6 +764,8 @@ Note: a structurally similar, independently-built, equally-orphaned screen (`Pub
 **Required fix:** In each file, replace the `Navigator.push(context, MaterialPageRoute(builder: (ctx) => TargetScreen(...)))` call with `UIUtils.showSideSheet(context: context, title: '<Title>', builder: (ctx) => const TargetScreen())`, matching the pattern already used correctly by every other tile on the same hub screens (use a working tile on the same screen as the exact template).
 
 **Verification:** Tap each fixed entry point; confirm it now opens as a side sheet sliding in over the current screen (preserving the hub's context/scroll position underneath) rather than replacing the whole screen via a full navigation push.
+
+**Resolved 2026-07-30:** all 4 files confirmed clean — zero `Navigator.push`/`MaterialPageRoute` remain in any of them; every entry point (including `supply_chain_hub_screen.dart`'s 5 tiles, previously described as using it "broadly") already routes through `UIUtils.showSideSheet`. Landed as a side effect of other work in this and the prior remediation round rather than a standalone fix.
 
 ---
 
@@ -796,7 +798,7 @@ Note: a structurally similar, independently-built, equally-orphaned screen (`Pub
 
 ### HR/SHEQ Cluster
 
-### F-101: Reconcile `incident_report_form.dart`'s write shape with `core/models/incident.dart`'s `Incident` model
+### [DONE] F-101: Reconcile `incident_report_form.dart`'s write shape with `core/models/incident.dart`'s `Incident` model
 
 **Severity:** High
 **Module(s) / File(s):** `lib/features/safety/screens/incident_report_form.dart`, `lib/features/safety/widgets/incident_type_severity_fields.dart`, `lib/core/models/incident.dart`
@@ -818,9 +820,11 @@ None of this has ever crashed anything because, per `safety.md` §5, a repo-wide
 
 **Verification:** After normalizing, submit a new incident through `incident_report_form.dart` and confirm `Incident.fromFirestore(doc)` parses the resulting document without throwing (a temporary debug call or a unit test constructing `Incident.fromFirestore` from the write path's output is sufficient). If step 5 is done, confirm the Incident Register/Detail screens still render existing and newly-created incidents correctly — regression-test `safety_analytics_screen.dart`'s KPI cards, which should be able to compute a real LTIFR once `lostTimeInjury`/`daysLost` are populated for the first time.
 
+**Resolved 2026-07-30 — direction reversed from this item's own recommendation, deliberately:** this item's "Required fix" recommended normalizing the *form* to the model's lowercase snake_case enum. Before doing that, traced every live reader of the `incidents` collection (`incident_card.dart`, `incidents_register_screen.dart` — including its status-filter dropdown and `_updateStatus()`, `incident_detail_sheet.dart`, `safety_analytics_screen.dart`, `safety_metrics_header.dart`, `safety_providers.dart`, and 2 dashboard providers) and found every single one already reads/writes/filters on the *capitalized* strings the form produces ('Open'/'Investigating'/'Closed', 'Minor'/'Major'/'Critical', 'Injury'/'Near Miss'). Normalizing the form to lowercase as originally suggested would have silently broken every filter, KPI count, and status-transition button on the one screen that's actually live and working today — the opposite of the intended fix. Normalized the **model** to the capitalized convention instead (`incident.dart`, `base_incident.dart`), which is zero-risk to the working UI and still closes the actual bug (the model being unusable). Landed together with F-019: introduced `BaseIncident` (location, dateTime, severity, status, reporterId/reporterName, description) as an abstract base, `Incident extends BaseIncident`. `dateOfIncident`/`createdAt` now parse via `BaseIncident.parseFlexibleDate()`, accepting both `Timestamp` and the ISO-8601 strings this form (and most of the codebase) actually writes, rather than a strict `Timestamp` cast that would throw. Added the previously-orphaned fields (`photoUrl`, `isAnonymous`, cost fields, `contractorId`, `injuryDetails`/`environmentalDetails`/`propertyDamageDetails`) to the model instead of dropping them — they're real, already-collected data. Added real `lostTimeInjury`/`daysLost` UI (checkbox + conditional days field) to the Injury dynamic-fields section, feeding the LTIFR KPI for the first time. `area` was dropped from the model as genuinely redundant with `location` (no UI or reader ever referenced it separately). Fixed F-102's `reporterName` hardcode in the same pass (see that item). **Not done:** step 5's migration of the reading screens to parse through `Incident.fromFirestore` — the verification section itself treats this as conditional ("if step 5 is done"), and forcing it now would mean rewriting 7+ files across `safety`/`dashboard`/`projects` that already work correctly against raw `Map` data, for a consistency win with no functional bug behind it. `flutter analyze` clean on all touched files. `environment`'s spill records (F-019's suggested second `BaseIncident` adopter) were not evaluated for migration — left for a future pass.
+
 ---
 
-### F-102: `reporterName` hardcoded to the literal string `'Selected Employee'`
+### [DONE] F-102: `reporterName` hardcoded to the literal string `'Selected Employee'`
 
 **Severity:** High
 **Module(s) / File(s):** `lib/features/safety/screens/incident_report_form.dart` (line 109)
@@ -835,9 +839,11 @@ One correction worth flagging against already-drafted content: `EmployeeSelector
 
 **Verification:** Submit the form twice — once with a reporter explicitly selected via the dropdown, once leaving it blank (self-report) — and confirm the resulting `incidents` documents' `reporterName` field shows the real selected employee's name in the first case and the logged-in user's own display name in the second, never the literal `'Selected Employee'` string.
 
+**Resolved 2026-07-30:** fixed in the same pass as F-101, exactly per this item's own prescribed fix — `employeesProvider` lookup by `_selectedReporterId`, falling back to `profile.displayName` for self-reports.
+
 ---
 
-### F-107: `claims_tab.dart`'s employee field is free text with no `employeeId` captured at all
+### [DONE] F-107: `claims_tab.dart`'s employee field is free text with no `employeeId` captured at all
 
 **Severity:** High
 **Module(s) / File(s):** `lib/features/workers_comp/widgets/claims_tab.dart`
@@ -852,11 +858,13 @@ This is the same "FK rendered as plain `TextFormField`" pattern F-011 fixes else
 
 **Verification:** Submit a new COIDA claim via the updated form, selecting a real employee from the dropdown; confirm the resulting `coida_claims` document has both a populated `employeeId` matching a real `employees` document and an `employeeName` matching that employee's `fullName`. Confirm `rtw_tab.dart` and the existing claims list in `claims_tab.dart` itself still display the claim correctly after the field change.
 
+**Resolved 2026-07-30:** fixed exactly per the prescribed pattern — `EmployeeSelector` bound to `_employeeId`, name resolved via `employeesProvider` lookup at submit time. `rtw_tab.dart` only reads `employeeName` as display text, unaffected. `idNumber` left untouched as free text (correctly, it's a government ID number, not the FK).
+
 ---
 
 ### SCM Cluster
 
-### F-203: `inventory_item_form.dart` is missing all 4 bin-location fields
+### [DONE] F-203: `inventory_item_form.dart` is missing all 4 bin-location fields
 **Severity:** High
 **Module(s) / File(s):** `lib/features/supply_chain/widgets/inventory_item_form.dart`
 **Depends on:** F-001 (`inventory_items` writes are rules-blocked until then; the form edit itself is independent of rules)
@@ -868,9 +876,11 @@ This is the same "FK rendered as plain `TextFormField`" pattern F-011 fixes else
 
 **Verification:** Create or edit an inventory item through this form (directly instantiate it in a debug harness or side sheet if F-014 hasn't yet made it reachable through normal navigation), set a warehouse and bin/aisle/rack values, save, and confirm the resulting Firestore document has all 4 fields populated — re-open the form against that same item and confirm the values round-trip correctly instead of showing blank.
 
+**Resolved 2026-07-30:** added a `warehousesStreamProvider` (`scm_streams_provider.dart`, following the existing pattern in that file) backing an `EntitySelector<Warehouse>` for `warehouseId`, plus plain `TextFormField`s for `aisle`/`rack`/`bin` under a new "Storage Location" section. All 4 wired into `_submit()` and `initState()`. Fixed alongside F-204 in the same file/pass, as that item's own "Depends on" suggested.
+
 ---
 
-### F-204: `itemType`/`valuationMethod` rendered as free text instead of the schema's closed enums
+### [DONE] F-204: `itemType`/`valuationMethod` rendered as free text instead of the schema's closed enums
 **Severity:** High
 **Module(s) / File(s):** `lib/features/supply_chain/widgets/inventory_item_form.dart`
 **Depends on:** F-001 (same collection as F-203 — implement together if both are being fixed in the same pass)
@@ -882,9 +892,11 @@ This is the same "FK rendered as plain `TextFormField`" pattern F-011 fixes else
 
 **Verification:** Open the form, confirm both fields render as dropdowns offering exactly the schema doc's enum values, save an item, and confirm the stored `item_type`/`valuation_method` values match one of the enum options rather than arbitrary typed text.
 
+**Resolved 2026-07-30:** both fields now `DropdownButtonFormField<String>`s mirroring `_lifecycleStatus`'s existing pattern exactly, with the 6/4 enum values from `docs/schema_scm.md:17,21`. `_itemTypeController`/`_valuationMethodController` removed.
+
 ---
 
-### F-205: Supply Chain hub's 3 sub-screens are hardcoded `ListTile`s with no `onTap` handlers
+### [DONE] F-205: Supply Chain hub's 3 sub-screens are hardcoded `ListTile`s with no `onTap` handlers
 **Severity:** High
 **Module(s) / File(s):** `lib/features/supply_chain/screens/inventory_dashboard.dart`, `warehouse_management_screen.dart`, `asset_management_screen.dart`
 **Depends on:** none
@@ -901,9 +913,11 @@ Since `SupplyChainHubScreen`'s cards currently open via `Navigator.push` (a sepa
 
 **Verification:** From each of the 3 screens, confirm every tile's subtitle reflects a real, seeded number (not a literal string) and confirm tapping each tile navigates somewhere real, not nothing.
 
+**Resolved 2026-07-30:** `InventoryDashboard`: "Low Stock Alerts" now streams `inventoryItemsListStreamProvider` (new, `scm_streams_provider.dart`), counts real `stockLevel <= reorderPoint` items, `onTap` opens a real list sheet (each item opening its actual `InventoryItemDetailScreen`); "Material Requirements Planning" now opens the real `MrpDashboardScreen` via `showSideSheet` rather than deep-linking through the router (avoids nesting a router navigation inside an already-open side sheet), per this item's own framing that a separate static surface isn't needed once that screen covers the same ground; "Purchase Orders" streams `purchaseOrdersListStreamProvider`, counts `status == 'Draft'` as the closest real analog to "pending approval" (the model's actual status enum is `Draft/Sent/Received/Cancelled`, no literal "Pending" state exists), `onTap` opens a real list. `WarehouseManagementScreen`: "Bin Locations" now opens the real `BinLocationsScreen` built for F-206; "Stock Movements" streams `transferOrdersListStreamProvider`, real list, real detail screen; "Barcode Scanning" opens the real, already-built `WmsScannerScreen`. `AssetManagementScreen`: "Property Management" opens the real `PropertyHubScreen`; "Equipment Tracking" opens the real `EquipmentManagementScreen` (F-214's route). "Preventative Maintenance"/"Asset Lifecycle" left as non-interactive info cards (no `onTap`, same as their pre-existing state, not a new violation) rather than inventing fake destinations — per this item's own guidance to flag rather than fabricate; no real backing surface exists for either yet (Preventative Maintenance is adjacent to F-217's `MaintenanceLogDialog`, itself still a placeholder).
+
 ---
 
-### F-206: Wire "Vendor Performance" and "Bin Locations" hub cards to the existing, unused `ScmService` CRUD
+### [DONE] F-206: Wire "Vendor Performance" and "Bin Locations" hub cards to the existing, unused `ScmService` CRUD
 **Severity:** High
 **Module(s) / File(s):** `lib/features/supply_chain/screens/supply_chain_hub_screen.dart`; new screen files (e.g. `vendor_performance_screen.dart`, `bin_locations_screen.dart`) under `lib/features/supply_chain/screens/`
 **Depends on:** F-001 (`warehouseBinLocations`/`vendorPerformanceMetrics` writes are rules-blocked until then; reads already work via the tenant catch-all)
@@ -915,9 +929,11 @@ Since `SupplyChainHubScreen`'s cards currently open via `Navigator.push` (a sepa
 
 **Verification:** Tap "Vendor Performance" and "Bin Locations" from the hub; confirm both now show real (possibly empty) lists backed by live streams instead of static text, and confirm a record created through each new form appears in the list immediately and persists in Firestore under the correct collection.
 
+**Resolved 2026-07-30:** built `vendor_performance_screen.dart` and `bin_locations_screen.dart` (new files, one per card, following the hub's existing per-card-file pattern), each a real list view over `vendorPerformanceMetricsStreamProvider`/`binLocationsStreamProvider` (new providers wrapping the existing `ScmService.streamVendorPerformanceMetrics()`/`streamBinLocations()`) with a create/edit form using the service's existing CRUD methods — no backend changes needed, exactly as this item anticipated. Vendor form uses `EntitySelector<Account>` for the vendor FK, resolving `vendorName` at submit time (same pattern as F-102/F-107). Wired into `supply_chain_hub_screen.dart` in place of both `Center(child: Text('... — Coming Soon'))` stubs.
+
 ---
 
-### F-209: `constructionDate` is tracked in form state but never rendered in the Property form UI
+### [DONE] F-209: `constructionDate` is tracked in form state but never rendered in the Property form UI
 **Severity:** High
 **Module(s) / File(s):** `lib/features/property/widgets/property_form_sheet.dart`
 **Depends on:** F-001 (`properties` writes are rules-blocked until then; the form edit itself is independent of rules)
@@ -929,9 +945,11 @@ Since `SupplyChainHubScreen`'s cards currently open via `Navigator.push` (a sepa
 
 **Verification:** Open "Add Property" and "Edit Property," confirm a construction-date picker is now visible and interactive, set/change it, save, and confirm the persisted value reflects the chosen date rather than always being today's date.
 
+**Resolved 2026-07-30:** added a `ListTile`+`showDatePicker` control immediately after the new `status` dropdown (fixed alongside F-210 in the same pass, per that item's own "Depends on" note), following `purchase_order_form.dart`'s exact pattern.
+
 ---
 
-### F-210: `Property.status` is a free-text field despite being treated as a closed set everywhere it's read
+### [DONE] F-210: `Property.status` is a free-text field despite being treated as a closed set everywhere it's read
 **Severity:** High
 **Module(s) / File(s):** `lib/features/property/widgets/property_form_sheet.dart`
 **Depends on:** F-001 (same collection as F-209 — implement together if both are being fixed in the same pass)
@@ -942,6 +960,8 @@ Since `SupplyChainHubScreen`'s cards currently open via `Navigator.push` (a sepa
 **Required fix:** Replace the `TextFormField` at `property_form_sheet.dart:197-200` with a `DropdownButtonFormField<String>` over the values the codebase's own read-side logic already implies are meaningful — at minimum `'Optimal'` and a `'Critical'`-containing value (e.g. `'Critical'`, plus whatever intermediate states the product intends, such as `'Warning'`/`'Under Review'`); confirm the full intended set with whoever owns the product decision if it's not obvious from the read-side code alone, rather than guessing a complete enum. Follow the same `String _status` state-variable + fixed `items` list pattern used correctly elsewhere in this codebase (e.g. `inventory_item_form.dart:436-448`'s `_lifecycleStatus` dropdown).
 
 **Verification:** Open the form, confirm `status` now renders as a dropdown constrained to the agreed value set, and confirm `PropertyHubScreen`'s "Critical Alerts" count and `PropertyCard`'s status color both respond correctly and consistently to every property's status after the change.
+
+**Resolved 2026-07-30:** chose `['Optimal', 'Warning', 'Critical']` as the enum — derived directly from the read-side logic's own 3-way branch (`PropertyCard`: exact `'Optimal'` match / `.contains('Critical')` / else-warning), the minimal set that satisfies every existing reader without inventing unused values.
 
 ---
 
@@ -966,7 +986,7 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 ---
 
-### F-213: Property Hub/Details screens use `showModalBottomSheet` instead of `UIUtils.showSideSheet`
+### [DONE] F-213: Property Hub/Details screens use `showModalBottomSheet` instead of `UIUtils.showSideSheet`
 **Severity:** High
 **Module(s) / File(s):** `lib/features/property/screens/property_hub_screen.dart`, `property_details_screen.dart`
 **Depends on:** none
@@ -978,9 +998,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Tap "Add Property" and the edit icon; confirm both now open as a side sheet (sliding in over the current screen, preserving context underneath) rather than a bottom sheet, consistent with every other correctly-implemented hub screen, and confirm the form still submits and dismisses correctly from inside it.
 
+**Resolved 2026-07-30:** both call sites swapped to `UIUtils.showSideSheet`. `PropertyFormSheet`'s own internal padding/`SingleChildScrollView` structure needed no changes — `showSideSheet` wraps `builder(context)` in `Expanded` with no padding of its own around the content area, so the form's existing 24px padding remains the only (correct, non-doubled) padding around its fields.
+
 ---
 
-### F-216: `AssetDetailScreen`'s edit button is a literal no-op
+### [DONE] F-216: `AssetDetailScreen`'s edit button is a literal no-op
 **Severity:** High
 **Module(s) / File(s):** `lib/features/equipment/screens/asset_detail_screen.dart`; `lib/features/equipment/widgets/equipment_asset_tab.dart` (form fields to reuse)
 **Depends on:** none
@@ -992,9 +1014,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Open an existing equipment item's detail screen, tap Edit, change a field (e.g. `location`), submit, and confirm the detail screen reflects the change immediately without needing to leave and re-enter the screen manually.
 
+**Resolved 2026-07-30:** built `equipment_edit_form.dart` as a new, separate widget rather than literally reusing `EquipmentAssetTab`'s inline create form — that form also triggers `asset_lifecycle` BPF deployment when an assignee is picked, a side effect that only makes sense on creation, not on every edit; entangling the two risked breaking the working create/deploy flow. The new form covers all editable fields, pre-filled from the loaded `EquipmentModel`, writing via `.doc(assetId).update(toMap())`. One edge case handled: if the asset's current status is `'Locked Out'`, the status field renders disabled (read-only) rather than as a dropdown — `'Locked Out'` isn't one of the dropdown's selectable values per F-215's decision, so including it unconditionally would have crashed with a Flutter "no matching dropdown value" assertion the first time someone tried to edit a locked-out asset.
+
 ---
 
-### F-217: `MaintenanceLogDialog` is a fully static placeholder
+### [DONE] F-217: `MaintenanceLogDialog` is a fully static placeholder
 **Severity:** High
 **Module(s) / File(s):** `lib/features/equipment/widgets/maintenance_log_dialog.dart`
 **Depends on:** none
@@ -1006,9 +1030,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Create a real `WorkOrder` linked to a specific equipment item, open that equipment's Maintenance tab, and confirm the real work order appears instead of the static placeholder text.
 
+**Resolved 2026-07-30:** the "Maintenance" tab this dialog fills is module-wide (`EquipmentManagementScreen`'s 3rd tab), not opened per-asset — no `equipmentId` is threaded into it anywhere in the app today — so it now streams `workOrdersStreamProvider` (already existed) and filters to `assetId != null` (the field `LotoAutomation.lockoutFailedEquipment()` already writes), showing every open equipment-linked work order across the tenant rather than requiring a single-asset scope that doesn't actually exist in the current navigation. Tapping a work order opens the real `WorkOrderDetailsScreen(workOrderId: ...)` via `showSideSheet`, replacing the "Open Work Orders" button entirely (redundant once the tab itself shows real, tappable data) — confirmed that screen is fed a real ID here, unlike the separately-flagged fake-ID path elsewhere.
+
 ---
 
-### F-219: Contractor status filter is permanently broken by a case-sensitivity mismatch
+### [DONE] F-219: Contractor status filter is permanently broken by a case-sensitivity mismatch
 **Severity:** High
 **Module(s) / File(s):** `lib/features/contractors/widgets/add_contractor_form.dart`
 **Depends on:** none
@@ -1020,9 +1046,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Add a contractor with status "Active," confirm its status chip renders in the success color with label "Active" (not lowercase "active"). Apply the "Active" filter in `ContractorManagementScreen` and confirm this contractor (and only contractors with that exact status) now appears, where previously the filter always returned zero results regardless of selection.
 
+**Resolved 2026-07-29:** `.toLowerCase()` removed from both writes, per the prescribed single-point fix. A dry-run-by-default backfill script (`firebase/functions/scripts/backfill-contractor-status.ts`, with an `--apply` flag required to actually write) was built for the existing-document case flagged in this item's own "Required fix" — not run against production data, since the user confirmed no real data exists in this environment yet.
+
 ---
 
-### F-221: Wire up `AiComplianceService.triggerPreScreen()` — AI pre-screen can never be triggered from the UI
+### [DONE] F-221: Wire up `AiComplianceService.triggerPreScreen()` — AI pre-screen can never be triggered from the UI
 **Severity:** High
 **Module(s) / File(s):** `lib/features/contractors/widgets/safety_file_submission_view.dart`; `lib/features/contractors/services/ai_compliance_service.dart` (no changes needed — already correct)
 **Depends on:** none
@@ -1034,9 +1062,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Upload a contractor document, tap the new "AI Pre-Screen" trigger, and confirm `AiPreScreenBadge` transitions from empty/loading to a real result once the Cloud Function completes and writes to `compliance_prescreens`, without needing to seed that result manually.
 
+**Resolved 2026-07-31:** added an "AI Pre-Screen" `TextButton.icon` next to each document's `AiPreScreenBadge`, calling `triggerPreScreen(documentId, documentUrl)` with per-document loading state and the standard try/catch + `UIUtils.showToast` error path.
+
 ---
 
-### F-222: Wire `FindingListItem`/`FindingUpdateDialog` into the UI — findings are currently write-only
+### [DONE] F-222: Wire `FindingListItem`/`FindingUpdateDialog` into the UI — findings are currently write-only
 **Severity:** High
 **Module(s) / File(s):** `lib/features/contractors/widgets/safety_file_submission_view.dart`; `lib/features/contractors/widgets/finding_list_item.dart`, `finding_update_dialog.dart` (no changes needed); `lib/features/contractors/widgets/document_review_dialog.dart` (related fix, see below)
 **Depends on:** none
@@ -1048,9 +1078,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Submit a document review with feedback (creating a `Finding`), confirm it now appears in a findings list somewhere in the UI (not only in Firestore), and confirm `FindingUpdateDialog` can change its status and that the change persists and is reflected back in the list.
 
+**Resolved 2026-07-31:** added a Findings section to `SafetyFileSubmissionView`, streaming `findings` by `submissionId`, rendering each via `FindingListItem` and opening `FindingUpdateDialog` on tap, writing status changes (with `statusHistory` append) back to Firestore. `siteId` now populated on the `findings` write; `reviewerName` (also `required` on `Finding` but previously omitted) fixed alongside it. Also fixed, in the same file/method: `_findingStatus` was a free-text-backed dropdown writing `'Open'`/`'Resolved'` — neither matches `FindingStatus`'s real enum values (`open/addressed/verifiedClosed/cancelled`), so every finding's status silently fell back to `open` regardless of selection once read back through `Finding.fromFirestore` — the same case/vocabulary-mismatch pattern as F-219, found while implementing this item. Dropdown now backed directly by the `FindingStatus` enum. **`requirementId` left as an Open Question, not guessed**: no requirement-reference field exists anywhere on `ContractorDocument`/`SafetyFileSubmission` to source it from, per this item's own instruction not to invent one — still defaults to `0` via `Finding.fromFirestore`.
+
 ---
 
-### F-223: Build real Compliance and Inductions tabs (currently static placeholders)
+### [DONE] F-223: Build real Compliance and Inductions tabs (currently static placeholders)
 **Severity:** High
 **Module(s) / File(s):** `lib/features/contractors/screens/contractor_management_screen.dart`; `lib/features/contractors/widgets/contractor_compliance_card.dart`; `firestore.rules` (new collection needed for Inductions — see Required fix)
 **Depends on:** none (the Inductions half requires adding its own new firestore.rules entry as part of this item, since no such collection exists yet for F-001 to have enumerated)
@@ -1062,9 +1094,11 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** Compliance tab: seed a contractor with an expiring or missing document, confirm it surfaces in the new overview. Inductions tab: once schema is defined and rules deployed, create a real induction record through its new form and confirm it appears in the tab's list.
 
+**Resolved 2026-07-31:** Compliance tab rebuilt as `ContractorComplianceCard` (real, despite unchanged filename) — streams `contractors` and `safety_file_submissions` together, computes each contractor's latest submission client-side, and surfaces 3 real counts (Compliant/Needs Attention/No Safety File) plus a list of contractors in each non-compliant bucket; join is against `SafetyFileSubmission.status` since no per-document-type (insurance/tax/etc.) expiry schema exists to aggregate against instead. Inductions: added new `contractor_inductions` schema (`ContractorInduction`/`InductionStatus` in `safety_file_models.dart`) with fields `contractorId`, `attendeeName`, `projectId` (optional), `date`, `status` — the minimum set this item's own "Required fix" specified, not a guess — plus a matching `firestore.rules` entry (`isManager() || isSheqOfficer()` write-gated, following the module's existing pattern). Built `contractor_inductions_tab.dart`: a real list view plus a create form (contractor dropdown, attendee name, optional project via `EntitySelector<Project>`, date picker, status dropdown).
+
 ---
 
-### F-224: Add the missing `/contractors` route on the launchpad tile
+### [DONE] F-224: Add the missing `/contractors` route on the launchpad tile
 **Severity:** High
 **Module(s) / File(s):** `lib/config/router.dart`
 **Depends on:** none
@@ -1076,10 +1110,12 @@ Every write must set `propertyId` to the parent property's ID (the pattern each 
 
 **Verification:** From the launchpad, tap the "Contractors" tile; confirm it now opens `ContractorManagementScreen` directly instead of the "Page Not Found" screen.
 
+**Resolved 2026-07-31:** `GoRoute(path: '/contractors', ...)` added inside the `ShellRoute`, matching F-214's `/equipment` fix shape exactly.
+
 ---
 ### Project Ops + Finance Cluster
 
-### F-305: `projects`' two safety-file read sites use a collection name that may not match what's actually written
+### [DONE] F-305: `projects`' two safety-file read sites use a collection name that may not match what's actually written
 **Severity:** High
 **Module(s) / File(s):** `lib/features/projects/widgets/project_tabs/contractor_card.dart` (line 262), `lib/features/projects/widgets/project_tabs/ohs_file_content.dart` (line 329)
 **Depends on:** the SCM cluster's `contractors` module fix for the identical `safetyFileSubmissions`/`safety_file_submissions` naming split (`contractors` owns the write side of this collection) — resolve that decision first, then apply whichever direction it lands in here; do not change these two files unilaterally, since fixing only the read side to match the *rules-declared* name would actively break these two screens if `contractors`' write is instead kept on (or fixed to use) the camelCase name
@@ -1110,11 +1146,13 @@ ohs_file_content.dart:326-333
 
 **Verification:** After the naming decision lands end-to-end (`contractors`' write + `firestore.rules` + these two reads all agree on one name), submit a real contractor safety file through `contractors`' submission flow, then open that contractor's card and the OHS File tab on a linked Project and confirm the real submission's status/score/findings render — not an empty/not-found state.
 
+**Resolved 2026-07-31:** the `contractors`-side naming decision was already settled earlier this session (F-220: `contractor_projects_sheet.dart` fixed to `safety_file_submissions`), and `firestore.rules`/`document_review_dialog.dart`/`safety_file_submission_view.dart` all independently confirmed snake_case is canonical — so this item's precondition is satisfied. Both `contractor_card.dart` and `ohs_file_content.dart` updated to match.
+
 ---
 
 ### Sales / Customer Service / Field Service Cluster
 
-### F-405: AGENTS.md §3 banned-stub violations across customer_service's reachable and real screens
+### [DONE] F-405: AGENTS.md §3 banned-stub violations across customer_service's reachable and real screens
 **Severity:** High
 **Module(s) / File(s):** `lib/features/customer_service/screens/omnichannel_ticket_screen.dart`, `knowledge_base_screen.dart`, `ticket_detail_screen.dart`, `knowledge_article_detail_screen.dart`
 **Depends on:** none (independent of F-403, though F-403's real-vs-mock decision determines whether some of these lines survive at all — see note below)
@@ -1126,11 +1164,11 @@ ohs_file_content.dart:326-333
 
 **Verification:** For `knowledge_base_screen.dart`: tap a sidebar category and confirm the article grid filters; tap an article card and confirm it opens the real article's detail screen. For `ticket_detail_screen.dart`: type a message, tap send, confirm it appears in the messages panel in real time. For `knowledge_article_detail_screen.dart`: tap Edit, confirm `KnowledgeArticleForm` opens pre-filled with the article's current data. For `omnichannel_ticket_screen.dart`: verify per whichever fate F-403 assigns it (wired, or removed from the codebase entirely).
 
-**Partially resolved 2026-07-30:** `knowledge_base_screen.dart`'s 11 stubs are fixed — the 5 sidebar categories now filter the real article stream by `KnowledgeArticle.categories`, and all article cards open `KnowledgeArticleDetailScreen` via `UIUtils.showSideSheet` (was `Navigator.push`, itself an AGENTS.md §1 violation caught in the same pass). `knowledge_article_detail_screen.dart`'s Edit button now opens `KnowledgeArticleForm(initialArticle: article)` via `UIUtils.showSideSheet`, invalidating `articleFutureProvider` on save. Still outstanding: `ticket_detail_screen.dart`'s send button/missing controller, and `omnichannel_ticket_screen.dart`'s 5 stubs (pending F-403's dead-code decision for that screen) — not marked `[DONE]` until those land.
+**Resolved 2026-07-30:** `knowledge_base_screen.dart`'s 11 stubs are fixed — the 5 sidebar categories now filter the real article stream by `KnowledgeArticle.categories`, and all article cards open `KnowledgeArticleDetailScreen` via `UIUtils.showSideSheet` (was `Navigator.push`, itself an AGENTS.md §1 violation caught in the same pass). `knowledge_article_detail_screen.dart`'s Edit button now opens `KnowledgeArticleForm(initialArticle: article)` via `UIUtils.showSideSheet`, invalidating `articleFutureProvider` on save. `ticket_detail_screen.dart`'s send button turned out to already be fully wired (F-403's real-implementation pass added a real `_controller`/`_sendMessage()` calling `CustomerServiceService.createTicketMessage()`, not a stub) — confirmed by direct read, not assumed. `omnichannel_ticket_screen.dart` was deleted outright as part of F-403's dead-code decision, mooting its 5 stubs. One small residual: `_sendMessage()`'s error handler uses raw `ScaffoldMessenger.showSnackBar` instead of `UIUtils.showToast` (AGENTS.md §1) — minor, not a banned-stub, left for a future toast-consistency sweep rather than reopening this item.
 
 ---
 
-### F-409: `RouteOptimizationScreen`'s client-side "Optimize Route" and the `optimizeRoute` Cloud Function independently implement the identical fake behavior, disconnected from each other
+### [DONE] F-409: `RouteOptimizationScreen`'s client-side "Optimize Route" and the `optimizeRoute` Cloud Function independently implement the identical fake behavior, disconnected from each other
 **Severity:** High
 **Module(s) / File(s):** `lib/features/field_service/screens/route_optimization_screen.dart`, `firebase/functions/src/routingEngine.ts` (`optimizeRoute`)
 **Depends on:** none
@@ -1141,6 +1179,8 @@ ohs_file_content.dart:326-333
 **Required fix:** Pick one real implementation rather than fixing both independently — per the persona journey's stated need (`field_service.md` §2's "Optimize Dispatcher Route" step) and `docs/schema_field_service.md`'s explicit framing of route optimization as a first-class capability, the backend `optimizeRoute` Cloud Function is the right place for a real solver (a proper TSP heuristic — nearest-neighbor or 2-opt is a reasonable, tractable starting point for a field-service-sized route rather than an exact solver) since it can incorporate real distance/travel-time data unavailable client-side. Implement a real heuristic in `routingEngine.ts` in place of the `.reverse()` placeholder, taking `locations` (already part of `OptimizeRouteRequest`, line 6) into account rather than ignoring it. Then rewire `RouteOptimizationScreen`'s `_buildOptimizeButton` (and by extension `_WorkOrdersNotifier`) to call the Cloud Function via `FirebaseFunctions.instance.httpsCallable('optimizeRoute')` with the real `workOrderIds`/`locations` for the current work order list, apply the returned `optimizedOrder` to reorder the on-screen list, and surface the real `estimatedDuration`/`stops` in the day-summary card (`_buildDaySummaryCard`, lines 198-230, which currently shows further hardcoded values — `'42 km'`/`'~8.5 h'`, lines 224-226 — beyond just the reversal bug) instead of the canned strings. Sequence this alongside whatever replaces this screen's hardcoded `_WorkOrder` list with real `WorkOrder` data — F-408 fixes the sibling `work_order_list_screen.dart`'s identical dummy-data pattern; apply the same real-data fix here if this screen is kept as a distinct view rather than merged into that one.
 
 **Verification:** Deploy the corrected `optimizeRoute` function to the emulator. From `RouteOptimizationScreen`, tap "Optimize Route" against a real (non-hardcoded) set of work orders with distinct locations, and confirm the resulting order reflects a real distance/time-based optimization rather than a simple reversal — verify by checking that the total route distance the heuristic reports is shorter than (or equal to, in a worst case) the un-optimized order's distance, not merely different from it.
+
+**Resolved 2026-07-31:** `routingEngine.ts` rewritten with a real nearest-neighbor TSP construction heuristic over Haversine distance between `WorkOrder.location` `GeoPoint`s, returning real `optimizedOrder`/`totalDistanceKm`/`estimatedDuration` (duration derived from distance at an assumed 35 km/h plus 30 min on-site per stop, not a canned string). Fixed a pre-existing `onCall<Req,Res>` generic-typing compile error in the same file as a side effect (baseline `tsc` errors: 4 → 3). `RouteOptimizationScreen` rewritten to stream real `WorkOrder`s via the existing `workOrdersStreamProvider` (filtered to those with a `location` set and not `COMPLETED`/`CANCELED`), call the real Cloud Function with real lat/lng, and show the real returned distance/duration in the day-summary card — replacing both the `.reversed.toList()` placeholder and the hardcoded `'42 km'`/`'~8.5 h'` strings. Manual drag-reorder still works and correctly clears the stale distance/duration figures (they describe the optimizer's own ordering, not an arbitrary one).
 
 ---
 
@@ -1174,7 +1214,7 @@ ohs_file_content.dart:326-333
 
 ---
 
-### F-413: `emergency_contacts_tab.dart` is entirely hardcoded and its "call" buttons don't actually dial
+### [DONE] F-413: `emergency_contacts_tab.dart` is entirely hardcoded and its "call" buttons don't actually dial
 **Severity:** High
 **Module(s) / File(s):** `lib/features/emergency/widgets/emergency_contacts_tab.dart`
 **Depends on:** none
@@ -1186,11 +1226,13 @@ ohs_file_content.dart:326-333
 
 **Verification:** Confirm the contacts list now reflects real, tenant-editable data (add a contact through the new form, confirm it appears without a code change/redeploy). On a device with telephony (or web's `tel:` handoff), tap a contact's phone button and confirm it opens the native dialer pre-filled with the correct number, rather than showing a toast.
 
+**Resolved 2026-07-31:** new `emergency_contacts` collection + `firestore.rules` entry (matching the module's `emergency_drills`/`emergency_equipment` pattern), a real `StreamBuilder` list replacing the hardcoded cards, and `EmergencyContactFormCard` (mirrors `EquipmentFormCard`'s exact structure) for adding tenant-specific contacts. The 4 universal numbers (Fire/Ambulance/Police/Poison) ship as an explicit "Add Default Emergency Numbers" button on the empty state rather than an automatic on-load write — deliberate, to avoid a double-seed race if the screen mounts twice — but land in the same real collection once added, not compiled into the widget. Phone button now calls `launchUrl(Uri(scheme: 'tel', path: number))` per `billing_service.dart`'s existing pattern, with a toast only on the `canLaunchUrl`-false/error path.
+
 ---
 
 ### System Admin Cluster
 
-### F-502: Remove hardcoded Firebase and Gemini API keys from `firebase_config.dart`
+### [DONE] F-502: Remove hardcoded Firebase and Gemini API keys from `firebase_config.dart`
 **Severity:** High
 **Module(s) / File(s):** `lib/config/firebase_config.dart`, `lib/core/services/auth_service.dart:160`
 **Depends on:** none
@@ -1202,9 +1244,11 @@ ohs_file_content.dart:326-333
 
 **Verification:** `grep -rn "FirebaseConfig" lib/` after the edit — confirm the only remaining reference is `auth_service.dart`'s `defaultSiteId` usage, and confirm `flutter analyze` reports no broken references. Confirm the app still builds and signs in successfully (`.env`-sourced Firebase config is unaffected by this change). Separately, and outside this repo, confirm with whoever owns the Firebase/Google Cloud project that both leaked keys have been rotated.
 
+**Resolved 2026-07-31:** all 7 named fields deleted; `appId` intentionally left (not in this item's delete list, and not a secret by Firebase's own design — App IDs are meant to ship in client bundles, unlike API keys). `grep -rn "FirebaseConfig\." lib/` confirms the only remaining reference is `auth_service.dart:172`'s `defaultSiteId` usage. **Key rotation is still outstanding and cannot be done from this repo** — both leaked keys remain live in git history regardless of this file edit; flagging again per this item's own caveat so it isn't silently assumed resolved.
+
 ---
 
-### F-503: No create/edit form exists anywhere for `UserProfile`'s optional fields
+### [DONE] F-503: No create/edit form exists anywhere for `UserProfile`'s optional fields
 **Severity:** High
 **Module(s) / File(s):** `lib/core/widgets/app_header_bar.dart:147-154`, `lib/core/models/user_profile.dart`, `lib/core/services/auth_service.dart` (`_getOrCreateProfile`, `updateProfile`)
 **Depends on:** none
@@ -1216,9 +1260,11 @@ ohs_file_content.dart:326-333
 
 **Verification:** From any authenticated screen, open the header bar's profile menu → "Edit Profile," confirm a real form opens (not a toast), fill in department/job title/phone, submit, and confirm the values persist on `users/{uid}` in Firestore and reappear correctly if the form is reopened.
 
+**Resolved 2026-07-31:** built `EditProfileForm` (`lib/features/auth/widgets/edit_profile_form.dart`) with `displayName`/`department`/`jobTitle`/`phone` fields (`preferences` correctly deferred, per this item's own guidance), opened via `UIUtils.showSideSheet` and wired to the previously-uncalled `AuthService.updateProfile()`. While in this exact dialog for the same banned-stub pattern, also fixed the adjacent "Settings" `ListTile`'s identical `UIUtils.showToast('Settings opened')` stub — a real, already-routed `SettingsScreen` existed and was trivially wireable via the same `showSideSheet` call, not a guess.
+
 ---
 
-### F-505: `LockScreen`'s no-biometric-hardware fallback unlocks the session with no credential check at all
+### [DONE] F-505: `LockScreen`'s no-biometric-hardware fallback unlocks the session with no credential check at all
 **Severity:** High
 **Module(s) / File(s):** `lib/features/auth/screens/lock_screen.dart:40-56`
 **Depends on:** none
@@ -1236,9 +1282,11 @@ This unlocks the session unconditionally, with no PIN, password, or any other cr
 
 **Verification:** On a simulator/device configured with no biometric enrollment and no device PIN/passcode, trigger the lock screen and confirm "Unlock" no longer succeeds without any prompt — it should either present the OS credential prompt (if one exists) or force a full sign-out. On a device with a PIN but no biometrics enrolled, confirm the PIN prompt appears and unlock only succeeds after entering it correctly.
 
+**Resolved 2026-07-31:** gating condition changed from `canCheckBiometrics || isDeviceSupported()` to just `isDeviceSupported()`, with `biometricOnly: false` added to the `authenticate()` call — mirrors `AuthService.authenticateWithBiometrics()`'s existing correct pattern exactly. The silent auto-unlock `else` branch is gone; a manual "Unlock" tap with no device credential at all now calls `AuthService.signOut()` instead.
+
 ---
 
-### F-512: Wire `ControlTowerScreen`'s KPIs and alerts to real data, and add drill-down navigation
+### [DONE] F-512: Wire `ControlTowerScreen`'s KPIs and alerts to real data, and add drill-down navigation
 **Severity:** High
 **Module(s) / File(s):** `lib/features/executive/screens/control_tower_screen.dart`
 **Depends on:** none (independent of F-017's dashboard/executive merge-or-differentiate decision — see "Required fix" for how this relates)
@@ -1254,9 +1302,11 @@ Separately, `_KpiCard` (lines 364-493) and `_AlertTile` (lines 498-579) both hav
 
 **Verification:** With seeded data present for at least 2-3 of the 6 KPI sources, open `/control-tower` and confirm those cards show real, non-static values matching what each source module's own screens report for the same metric. Confirm tapping a `_KpiCard`/`_AlertTile` navigates somewhere real rather than doing nothing. Confirm the SKU-4421 alert's copy no longer claims an action that didn't happen (either by removing the claim or by confirming a real PO document now exists when this alert fires).
 
+**Resolved 2026-07-31:** all 6 KPIs now computed from real streams, reusing existing providers per this item's own guidance rather than inventing parallel ones — `invoicesStreamProvider` (Cash Position, computed as realized AR receipts minus realized AP payments — no bank-balance collection exists in this app, so this is the most defensible real proxy, not a literal bank balance), `workOrdersStreamProvider` (Open Work Orders), `projectsProvider` (Active Projects), `ticketsProvider` (Open Cases), the new `inventoryItemsListStreamProvider` from F-205/206 (Inventory Value = Σ stockLevel × standardCost), `employeesProvider` (Headcount). Both `_KpiCard` and `_AlertTile` now `context.go()` to their source module on tap. The static 3-alert list is replaced with alerts computed only when a real condition holds (negative net cash position; any inventory item at/below reorder point) — an SLA-breach alert was considered but dropped: `Ticket.slaStatus` is never written or read anywhere else in the codebase (confirmed by grep), so it would have been exactly the kind of fabricated-looking-real data this item exists to eliminate. The false "Auto-PO draft created" claim is gone — the reorder alert states the real low-stock count and links to Supply Chain instead of claiming an action that never happened.
+
 ---
 
-### F-513: `GEMINI_API_KEY` resolves to an empty string as committed — no `--dart-define` supplied anywhere in the repo
+### [DONE] F-513: `GEMINI_API_KEY` resolves to an empty string as committed — no `--dart-define` supplied anywhere in the repo
 **Severity:** High
 **Module(s) / File(s):** `lib/features/ai_tools/providers/gemini_provider.dart`
 **Depends on:** none
@@ -1278,9 +1328,11 @@ flutter run              # Mobile
 
 **Verification:** Run the app with the chosen mechanism supplying a real key, exercise any of the 4 `AIChatScreen` tabs, and confirm a real Gemini response is returned instead of an inline error message. Run the app without the key supplied and confirm the failure mode is a clean, catchable error rather than a crash (this should already be true given each tab's `try/catch`, but re-verify after any change to how the key is sourced).
 
+**Resolved 2026-07-31:** took this item's own recommended lower-effort path — switched `geminiProvider` from `String.fromEnvironment` (a compile-time `--dart-define` nothing in this repo ever supplied) to `dotenv.env['GEMINI_API_KEY']`, matching `main.dart`'s existing Firebase-config pattern exactly; no new run-configuration tooling needed. Added `GEMINI_API_KEY` to `.env.example` and documented it in `README.md`'s "Environment Setup" section. **Still outstanding, cannot be done from this repo**: the actual local `.env` file (git-ignored) does not yet have a real `GEMINI_API_KEY` value set — someone with a real key needs to add it locally for the 4 AI Tools tabs to return real responses instead of the (correctly non-crashing) inline error.
+
 ---
 
-### F-514: None of `AIChatScreen`'s 4 tabs persists its AI-generated output anywhere
+### [DONE] F-514: None of `AIChatScreen`'s 4 tabs persists its AI-generated output anywhere
 **Severity:** High
 **Module(s) / File(s):** `lib/features/ai_tools/widgets/sheq_chat_tab.dart`, `hazard_photo_tab.dart`, `rca_assistant_tab.dart`, `safety_flash_tab.dart`
 **Depends on:** none
@@ -1292,9 +1344,11 @@ flutter run              # Mobile
 
 **Verification:** For each of the first three tabs, generate an AI output, tap the new save action, and confirm a real document appears in the target collection with the AI-generated content intact. Navigate away and back, and confirm the saved record is independently visible from wherever that collection is normally viewed (e.g. the Hazards list, CAPA list, Safety Board), not just from the AI tab itself.
 
+**Resolved 2026-07-31:** `HazardPhotoTab` gets a "Save as Hazard" action writing to the real `hazards` collection (same shape `hazard_form_sheet.dart` already writes, confirmed by reading it first), including uploading the captured photo to Firebase Storage and storing its URL. `RcaAssistantTab` gets "Save as CAPA", reusing `SafetyService.createCapa()` — the real method F-006 introduced — rather than writing a second CAPA-creation path, per this item's own instruction. `SafetyFlashTab` gets "Post to Safety Board": no "Safety Board" concept existed anywhere in the codebase (confirmed by grep), so a small new `safety_flashes` collection was added with a matching `firestore.rules` entry (`isManager() || isSheqOfficer()` write-gated). `SheqChatTab` (lower priority per this item) was left alone after checking `AIChatScreen`'s `TabBarView`: standard `TabBarView` keeps all 4 tab widgets — and their `State`, including `_messages` — alive for the lifetime of the screen, so conversation history already survives switching between tabs within the same session; only navigating away from `AIChatScreen` entirely loses it, which this item's own text says is acceptable ("in-memory is acceptable; losing it entirely on every rebuild is not" — a rebuild-on-every-tab-switch was the failure mode being guarded against, and it doesn't occur here).
+
 ---
 
-### F-520: `NotificationService` is fully implemented with zero callers — wire it up and back `NotificationsScreen` with real data
+### [DONE] F-520: `NotificationService` is fully implemented with zero callers — wire it up and back `NotificationsScreen` with real data
 **Severity:** High
 **Module(s) / File(s):** `lib/core/services/notification_service.dart`, `lib/features/notifications/screens/notifications_screen.dart`, `lib/core/services/auth_service.dart`
 **Depends on:** F-001 (declares rules for the `notifications`/`fcm_tokens` collections this item needs)
@@ -1308,6 +1362,8 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Sign in and confirm (via `firebase auth:export` or the Firebase console) that a device token now appears under `tenants/{siteId}/fcm_tokens/{uid}` or via the `registerDeviceToken` callable's own success path. Seed a few documents directly into the `notifications` collection for the signed-in user and confirm `NotificationsScreen` renders them instead of the 3 hardcoded entries. Confirm "Mark all read" actually flips `isRead` on the real documents and the unread-dot indicators update accordingly.
 
+**Resolved 2026-07-31:** `AuthService` gained an `onProfileReady` callback (mirroring its existing `onSignOut` callback pattern, since the plain service class has no Riverpod `ref` access) — wired in `authServiceProvider` to call `NotificationService.provider.init(uid, siteId)` right after `signInWithGoogle()`/`signInWithSAML()` resolve a profile. `notifications`/`fcm_tokens` rules already existed from F-001. `NotificationsScreen` now streams `tenants/{tenantId}/notifications` filtered by `recipientUid` (matching this app's tenant-scoping convention rather than a top-level `users/{uid}/notifications` path), "Mark all read" batch-updates every unread visible document's `isRead`, and per-item tap marks that document read and navigates via `type` → real route (`leave`/`training` → `/hr`, `action` → `/actions`) using `ApprovalItem`'s `type`/data shape as the reference pattern this item pointed to. Per this item's own explicit scope boundary, cross-module notification-writing (leave approval, training assignment, overdue action items actually creating these documents) was **not** built — the collection will be empty until that separate follow-up work lands; this item only had to make the consumption side (service + screen) real, which it now is.
+
 ---
 
 ## Medium
@@ -1316,7 +1372,7 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 ### Cross-cutting
 
-### F-015: Remove remaining hardcoded/mocked data not already covered by a Critical/High item
+### [DONE] F-015: Remove remaining hardcoded/mocked data not already covered by a Critical/High item
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/people/screens/employee_activity_tab.dart`, `employee_hr_tab.dart`; `lib/features/health/screens/medical_tab.dart` (`OHStatChip` values); `lib/features/workers_comp/screens/compliance_tab.dart`; `lib/features/dashboard/screens/business_os_launchpad.dart` (RBAC filtering); `lib/features/property/screens/property_operations_tab.dart` ("Linked Incidents"/"Active Permits" panels)
 **Depends on:** F-001 (several of these need working writes to real collections before they can be un-mocked)
@@ -1328,9 +1384,17 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** For each fixed stat/checklist, seed data that should produce a non-default value and confirm the UI reflects it instead of the old hardcoded number. For the Launchpad, log in as 2 users with different roles and confirm they see different tile sets.
 
+**Resolved 2026-07-31:** all six files un-mocked:
+- `medical_tab.dart`: `OHStatChip` percentages now computed from the same `medical_records` stream already queried in the file (Fit/Fit with Restrictions/Unfit counts over total, both moved under one `StreamBuilder`).
+- `employee_activity_tab.dart`: replaced the single fabricated 4-item timeline with 3 real per-employee `StreamBuilder` sections (Incidents Reported via `incidents.reportedBy`, Permits Requested via `permits.requestedBy`, Risk Assessments via `risk_assessments.assessedBy`); dropped the "Activity Heatmap (Coming Soon)" placeholder entirely since a static "coming soon" panel is itself a banned stub with no data source to back it.
+- `employee_hr_tab.dart`: split into `widgets/employee_hr/{leave_summary_section,payslips_section,disciplinary_section}.dart` (orchestrator alone would have exceeded the 200-line file threshold). Leave cards now show real days-used-this-year computed from approved `leave_requests` (labeled "used" rather than "balance" — no leave-entitlement/policy model exists anywhere to subtract from, so a remaining-balance figure would itself be fabricated). Payslips now stream real `payroll_ledgers` docs; the fake "downloaded successfully" button was replaced with a real breakdown dialog (no PDF-export capability exists in the codebase to back an honest download action). Disciplinary Record now has a real backing collection (new `disciplinary_records`, added to `firestore.rules` with the same manager-only read/write tier as `payroll_ledgers`) with a real create form (`disciplinary_record_form.dart`) — previously "Log Action" only opened a toast that persisted nothing.
+- `compliance_tab.dart`: the 10-item checklist and progress ring are unchanged in *label* content (they're real COIDA obligations, not placeholder text) but each item's `done` boolean is now a real persisted Firestore doc in a new `coida_compliance_checklist` collection (rules added, manager/SHEQ-officer gated) instead of a Dart literal; tapping an item toggles and persists it, and the ring is computed from the live count. A "Create Default Checklist" seed action appears only when the tenant has none (explicit button, not auto-write, matching the pattern used for `emergency_contacts` in F-413).
+- `property_operations_tab.dart`: "Linked Incidents"/"Active Permits" now run real `StreamBuilder` queries against `incidents`/`permits` filtered by `location == property.name` (Active Permits additionally filtered to `status in [Approved, Active]`), replacing the hardcoded "3 items linked" text; "View Details" opens a real side-sheet list of the matched documents instead of a toast.
+- `business_os_launchpad.dart`: refactored tiles into data (`_TileData`/`_SectionData`) and added role-based filtering, but only for the one case with an unambiguous, already-established basis in the codebase: `role == 'contractor'` now sees just Training/Safety/Compliance/Contractors/Emergency, matching exactly what `firestore.rules` already lets a contractor account read/write elsewhere (`safety_file_submissions`, `contractor_documents`, `contractor_inductions`) — every other tile would just render empty/permission-denied for that role today. A full per-tile minimum-role matrix for the remaining four roles (admin/executive/safety_manager/employee) was **not** attempted: there is no existing per-module role-visibility precedent anywhere in the app (Firestore rules only gate *writes* via `isAdmin()`/`isManager()`/`isSheqOfficer()`, never reads by module), so defining one from scratch would be inventing a product decision rather than deriving it from existing code — exactly the scoped-separately caveat this item's own "Required fix" text calls out. Recommend a follow-up item once the actual per-module visibility policy is decided by the user.
+
 ---
 
-### F-016: Remove or migrate dead/legacy model classes
+### [DONE] F-016: Remove or migrate dead/legacy model classes
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/crm/models/crm_models.dart` (`Deal`/`DealStage`); `lib/features/finance/models/chart_of_accounts.dart`, `tax_model.dart` (`TaxRate`/`CurrencyExchange`); `lib/features/billing/models/subscription_models.dart` (plural); `lib/features/supply_chain/models/` (`BillOfMaterials`/`BomLine`/`ProductionOrder`); `lib/features/people/models/employee.dart`, `leave_request.dart` (possible duplication against `hr_models.dart`)
 **Depends on:** none
@@ -1341,6 +1405,16 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 **Required fix:** For each, `grep -rn "<ClassName>"` across `lib/` to reconfirm zero external references still holds (code may have moved since the audit), then delete the file (or the class, if the file has other live content) and its provider if one exists. For `people`'s `employee.dart`/`leave_request.dart`, confirm first whether `EmployeeSelector` (which the README ties to `Employee`/`JobRole`) actually depends on `employee.dart` before deleting — if so, this is a rename/merge into `hr_models.dart`'s `EmployeeProfile`, not a straight deletion.
 
 **Verification:** `flutter analyze` after each deletion — confirm no new "undefined class" errors appear, meaning nothing else silently depended on it.
+
+**Resolved 2026-07-31:** re-grepped every listed class; the audit's premise was wrong for the highest-profile one and right for the rest:
+- **`Deal`/`DealStage` — NOT dead, kept.** Contrary to this item's claim of being "superseded by `Opportunity`", `Deal`/`DealStage` are the live, actively-used CRM pipeline model: referenced across `sales_pipeline_screen.dart`, `pipeline_kanban_screen.dart`, `crm_hub_screen.dart`, `quote_generation_screen.dart`, and `crm_service.dart`'s `dealsStreamProvider`/`createDeal`/`updateDeal`. Deleting these would have broken the entire Sales Pipeline and Kanban screens. Left untouched.
+- **`TaxRate`/`CurrencyExchange`** (`lib/features/finance/models/tax_model.dart`) — confirmed zero references anywhere outside their own file. Deleted.
+- **`BillOfMaterials`/`BomLine`** (`lib/features/supply_chain/models/bom_model.dart`) — confirmed zero references outside the file (`production_order_screen.dart` doesn't import it). Deleted.
+- **`ProductionOrder`** (`lib/features/supply_chain/models/production_order.dart`) — confirmed zero references; `production_order_screen.dart` operates on raw Firestore maps, not this model. Deleted.
+- **`subscription_models.dart`** — contains only `SubscriptionTier`/`SubscriptionTierX`/`TenantSubscription`, all live (this is the canonical model kept in F-319's tier-bug fix). No dead siblings to remove.
+- **`employee.dart`** — confirmed live (`EmployeeSelector`, `employeesProvider`, and this session's own `claims_tab.dart`/`ticket_form.dart`/`incident_report_form.dart` fixes all depend on it). Kept, per this item's own caveat.
+- **`leave_request.dart`** — confirmed genuinely dead, and genuinely a duplicate as this item suspected: `hr_models.dart` has its own live `LeaveRequest` class (used by `hr_providers.dart`/`hr_service.dart`, wired into `leave_management_screen.dart` and others), while the standalone `people/models/leave_request.dart` was a parallel, never-imported implementation (even using a different, non-canonical collection name — `leaveRequests` vs. the real `leave_requests`). Its sole consumer, `people/providers/leave_providers.dart` (itself never imported anywhere), was deleted alongside it.
+- `flutter analyze` after all 5 deletions: still 49 pre-existing issues, 0 errors — no new "undefined class"/"undefined identifier" errors, confirming nothing else depended on the deleted files.
 
 ---
 
@@ -1374,7 +1448,7 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 ---
 
-### F-019: Introduce a `BaseIncident` polymorphic base class
+### [DONE] F-019: Introduce a `BaseIncident` polymorphic base class
 **Severity:** Medium
 **Module(s) / File(s):** `lib/core/models/` (new `base_incident.dart`); `lib/core/models/safety_models.dart` (`Incident`); `lib/features/environment/` (spill records); `lib/features/health/` (first-aid records); `lib/features/workers_comp/` (COIDA claims) — candidates to extend it, not all mandatory in the first pass
 **Depends on:** none
@@ -1386,12 +1460,14 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** `flutter analyze` after introducing the base class and migrating `Incident`; confirm `incident_report_form.dart` still compiles and existing incident-reading screens still render real data correctly (this touches a model with live, if drifted, data — regression-test the Safety Hub's incident list before/after).
 
+**Resolved 2026-07-30:** landed together with F-101 (see that item for the full account, including why the normalization direction was reversed from F-101's original recommendation). `lib/core/models/base_incident.dart` created with `location`/`dateOfIncident`/`severity`/`status`/`reporterId`/`reporterName`/`description` as the genuinely-common fields; `Incident` (`lib/core/models/incident.dart`) now extends it. `environment`'s spill records were not migrated to extend `BaseIncident` — evaluating that adoption is explicitly framed as a judgment call in this item's own "Required fix," and `health`/`workers_comp`/`emergency` were correctly left alone per the same guidance (no genuine shape overlap confirmed).
+
 ---
 
 
 ### HR/SHEQ Cluster
 
-### F-103: `qr_scanner_screen.dart` duplicates `passport_compliance_checker.dart`'s compliance-check logic instead of calling it
+### [DONE] F-103: `qr_scanner_screen.dart` duplicates `passport_compliance_checker.dart`'s compliance-check logic instead of calling it
 
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/safety/screens/qr_scanner_screen.dart`, `lib/features/safety/services/passport_compliance_checker.dart`
@@ -1404,9 +1480,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Scan an employee/contractor QR whose training records include an expired certificate or a missing induction; confirm the gate-scan result sheet's compliance verdict and listed issues match what `PassportComplianceChecker.checkEmployeeCompliance()`/`checkContractorCompliance()` independently compute for the same ID.
 
+**Resolved 2026-07-31:** both handlers now call `PassportComplianceChecker` directly; the profile/company/project-allocation lookups this checker doesn't cover were kept as-is. The result sheets render the checker's real `issues` list plus its medical/induction/training/PTW counts instead of the old ad hoc booleans and locally-recomputed safety-file score (which read a different collection, `contractor_documents`, than the checker's own `contractor_safety_files` — that second mismatch is now moot since the ad hoc calculation is gone entirely).
+
 ---
 
-### F-106: `business_os_launchpad.dart`'s "Training" tile routes to a `/training` path that doesn't exist in `router.dart`
+### [DONE] F-106: `business_os_launchpad.dart`'s "Training" tile routes to a `/training` path that doesn't exist in `router.dart`
 
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/dashboard/screens/business_os_launchpad.dart` (line 129), `lib/config/router.dart`
@@ -1419,9 +1497,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Tap the "Training" tile from the main Business OS Launchpad; confirm it opens `TrainingScreen` instead of the "Page Not Found" screen.
 
+**Resolved 2026-07-31:** took option (a) as recommended — added a `/training` `GoRoute` in `router.dart` pointing at `TrainingScreen`, placed alongside the `/hr` route it mirrors. The Launchpad tile's existing `route: '/training'` now resolves correctly with no change needed on the Launchpad side.
+
 ---
 
-### F-110: `daysUntilExpiry` computed once at document-creation time, never refreshed
+### [DONE] F-110: `daysUntilExpiry` computed once at document-creation time, never refreshed
 
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/compliance/widgets/register_doc_form.dart` (line 58), `lib/features/compliance/widgets/expiring_tab.dart` (lines 26-30), `lib/features/compliance/widgets/doc_list_item.dart`
@@ -1434,9 +1514,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Register a document with an expiry date roughly 85 days out; confirm it appears in the Expiring tab immediately (once F-108's collection fix has landed) with a correct, live day count. Adjust `expiryDate` on an existing test document directly in Firestore and reload the tab; confirm the displayed day count changes accordingly rather than staying frozen at its original value.
 
+**Resolved 2026-07-31:** confirmed F-108 already landed (both files agree on `compliance_docs`). Removed the `daysUntilExpiry` write from `register_doc_form.dart`. One deviation from the fix's suggested snippet: `expiryDate` is stored as an ISO-8601 string (`_expiry.toIso8601String()`), not a Firestore `Timestamp`, so `expiring_tab.dart`'s query compares against `DateTime.now().add(const Duration(days: 90)).toIso8601String()` rather than `Timestamp.fromDate(...)` — ISO-8601 strings sort lexicographically in chronological order, so range queries/`orderBy` on the string field behave identically to a `Timestamp` field would, without requiring a data migration or type mismatch against existing documents. `doc_list_item.dart`'s day-count badge now parses `expiryDate` (handling both `Timestamp` and `String`, in case a future writer switches formats) and computes `.difference(DateTime.now()).inDays` inline at build time instead of reading the removed stored field.
+
 ---
 
-### F-111: `legal_tab.dart`'s 9 framework cards render a dead external-link affordance
+### [DONE] F-111: `legal_tab.dart`'s 9 framework cards render a dead external-link affordance
 
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/compliance/widgets/legal_tab.dart` (lines 11-66, 73, 108-112)
@@ -1448,9 +1530,13 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 **Required fix:** Add a URL to each of the 9 entries in the `reqs` list (extend the existing 4-element records — title, description, icon, color — to a 5th element, or restructure to a record with named fields for clarity) pointing at the real public text of each Act/standard (e.g. the South African Government Gazette page for the OHS Act, the relevant ISO standard's public landing page). Pass `onTap: () => launchUrl(Uri.parse(url))` to the `GCard` at line 73 — no need to add a separate `InkWell`, since `GCard` already handles that internally once `onTap` is non-null. `url_launcher` (`^6.3.2`) is already a dependency (`pubspec.yaml:52`) and already used correctly elsewhere in this codebase — `lib/features/billing/services/billing_service.dart:17-19` (`Uri.parse(url)` / `await launchUrl(uri)`) is a ready-made reference pattern for the exact call shape needed here. If no real external link target is wanted for this release instead, the lower-effort alternative is removing the `open_in_new_rounded` icon entirely so the card stops implying tap-through functionality it doesn't have — but given this is static reference content with genuinely stable real-world URLs, wiring the real links is the more useful fix.
 
 **Verification:** Tap each of the 9 framework cards; confirm it opens the real regulation/standard reference in an external browser via `launchUrl`, or — if the removal alternative was chosen instead — confirm the icon no longer appears and the card is honestly non-interactive.
+
+**Resolved 2026-07-31:** wired the real links as recommended. Extended each `reqs` record with a 5th element (a public URL — South African Government Gazette pages for the Acts, `iso.org` standard landing pages for the 3 ISO entries), and passed `onTap: () => _openLink(context, r.$5)` to the `GCard`, using the exact `canLaunchUrl`/`launchUrl` pattern from `billing_service.dart`. Added a `UIUtils.showToast` error path for the case where `canLaunchUrl` returns false (no platform handler for the URL), so a failed launch is visible rather than silently swallowed.
+
+---
 ### SCM Cluster
 
-### F-207: Remove the dead `inventory` Firestore rule (superseded by `inventory_items`)
+### [DONE] F-207: Remove the dead `inventory` Firestore rule (superseded by `inventory_items`)
 **Severity:** Medium
 **Module(s) / File(s):** `firestore.rules`
 **Depends on:** F-001 (remove this dead entry only after F-001's `inventory_items` rule has landed — ideally in the same pass, so there's never a gap where inventory writes have zero matching rule at all)
@@ -1462,9 +1548,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** `grep -n "match /inventory/" firestore.rules` returns only the `inventory_items` block, not `inventory`. Re-run F-001's own verification sweep for this collection specifically (submit a real inventory item write) to confirm nothing regressed.
 
+**Resolved 2026-07-31:** confirmed `inventory_items` rule already exists (`firestore.rules`, landed via F-001) and confirmed via grep that nothing in `lib/` or `firebase/functions/src/mrpEngine.ts` reads/writes the singular `inventory` collection. Deleted the dead `match /inventory/{itemId} { ... }` block.
+
 ---
 
-### F-208: Delete dead `LeadToCashAutomation` — an unreachable, duplicate "Won Opportunity" handler
+### [DONE] F-208: Delete dead `LeadToCashAutomation` — an unreachable, duplicate "Won Opportunity" handler
 **Severity:** Medium
 **Module(s) / File(s):** `lib/core/automation/lead_to_cash_automation.dart`
 **Depends on:** none
@@ -1476,9 +1564,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** `flutter analyze` after deletion — confirm no new "undefined class"/"undefined identifier" errors appear, meaning nothing else silently depended on it.
 
+**Resolved 2026-07-31:** re-confirmed via grep that `LeadToCashAutomation`/`leadToCashAutomationProvider`/`triggerOpportunityWon` had zero references outside their own file. Deleted `lib/core/automation/lead_to_cash_automation.dart`. `flutter analyze`: still 49 pre-existing issues, 0 errors.
+
 ---
 
-### F-211: `complianceScore`/`totalAssets` are manually-typed instead of derived from live data
+### [DONE] F-211: `complianceScore`/`totalAssets` are manually-typed instead of derived from live data
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/property/widgets/property_form_sheet.dart`; `lib/features/property/screens/property_hub_screen.dart` (`_buildStatsRow`)
 **Depends on:** F-001 (only if `totalAssets`/`complianceScore` remain writable fields on `Property`; moot for `totalAssets` if it is instead fully derived client-side per the Required fix below, since that removes the write path for this field entirely)
@@ -1490,9 +1580,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Seed a property with a known number of `property_assets` documents; confirm `PropertyHubScreen`'s "Total Assets" stat (and any other place `totalAssets` is displayed) reflects the real, current count without anyone manually entering it, including immediately after adding/removing an asset. `complianceScore` verification is deferred until its computation source is defined, per F-017/F-018's convention for items blocked on a product decision.
 
+**Resolved 2026-07-31:** removed `totalAssets` from `Property` entirely (field, `fromFirestore` read, and the form's write) rather than leaving a now-unused stored field around — its only 2 real read sites were `property_card.dart` and `property_hero_header.dart` (both `StatelessWidget` → converted to `ConsumerWidget`), not `property_hub_screen.dart`'s `_buildStatsRow` as this item's text described: on inspection that portfolio-level "Total Assets" tile already computes `properties.length` (a pre-existing, separate mislabeling bug — it's actually counting *properties*, not assets — left alone as out of this item's scope). Both real read sites now derive the count live via `ref.watch(propertyAssetsProvider(property.id)).valueOrNull?.length`. Also removed 3 now-orphaned `'totalAssets': <literal>` writes from `lib/scripts/seed_dummy_data.dart`. For `complianceScore`: no live source exists anywhere in the codebase (confirmed), so per the fix's own guidance this was left as manual entry with the field relabeled `Compliance Score (manual)` plus a helper-text explaining why, rather than silently implying it's computed. Treating the real computation source as an open product question, unresolved.
+
 ---
 
-### F-218: `ContractorList` reads the wrong field name for contact person (`contactPerson` vs. written `contactPersonId`)
+### [DONE] F-218: `ContractorList` reads the wrong field name for contact person (`contactPerson` vs. written `contactPersonId`)
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/contractors/widgets/contractor_list.dart`
 **Depends on:** none
@@ -1504,11 +1596,13 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Add a contractor with a real contact person selected; confirm the resulting card in `ContractorList` shows that person's actual full name in the subtitle instead of a blank segment.
 
+**Resolved 2026-07-31:** already fixed — current `contractor_list.dart:100` reads `d['contactPersonId']` and resolves it via `employees.where((e) => e.id == d['contactPersonId']).firstOrNull?.fullName`, exactly matching the required fix. No further change needed (likely fixed incidentally during this session's earlier F-221/F-222/F-223 contractor-module work, which touched adjacent files in the same directory).
+
 ---
 
 ### Project Ops + Finance Cluster
 
-### F-304: `new_project_dialog_content.dart` hardcodes every new project's `propertyId` to a literal placeholder
+### [DONE] F-304: `new_project_dialog_content.dart` hardcodes every new project's `propertyId` to a literal placeholder
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/projects/widgets/new_project_dialog/new_project_dialog_content.dart` (line 104)
 **Depends on:** none (a real property lookup needs `property`'s collections declared in rules first — see F-001, which already lists all 6 of `property`'s collections)
@@ -1528,9 +1622,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Create a new project through the dialog, selecting a real property; confirm the resulting document's `propertyId` matches the selected property's real ID. Create a second project with a different property selected and confirm the two projects end up with two different `propertyId` values, not both `'default-property'`.
 
+**Resolved 2026-07-31:** confirmed `firestore.rules` already declares `properties` (F-001 landed). Added an `EntitySelector<Property>` sourced from the real `propertiesProvider` stream, labeled "Linked Property (optional)"; `_save()` now writes `_selectedPropertyId ?? ''` instead of the `'default-property'` literal — leaving it unselected produces the same `''` "no linked property" state the model already defaults to on read (`Project.fromFirestore`'s `data['propertyId'] ?? ''`), so no model change was needed for the optional case. While in this file, fixed two adjacent, pre-existing bugs directly in the code being touched: the Allocated Employees multi-select built its labels with escaped `'\${e.firstName} \${e.lastName}...'` (literal `${...}` text, not real interpolation) referencing `firstName`/`lastName`, neither of which exist on `Employee` (which only has `fullName`) — this was silently never breaking only because the escaping prevented the broken property access from ever being evaluated. Fixed to real interpolation using `e.fullName`.
+
 ---
 
-### F-307: `risk_matrix_widget.dart` is captioned as a live risk-distribution heat map but is entirely decorative
+### [DONE] F-307: `risk_matrix_widget.dart` is captioned as a live risk-distribution heat map but is entirely decorative
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/risk/widgets/risk_matrix_widget.dart`; `lib/features/risk/screens/risk_command_center_screen.dart` (caption/usage site)
 **Depends on:** none
@@ -1542,9 +1638,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** Seed several HIRA/Strategic risk records with known likelihood/severity combinations; open the Command Center screen and confirm the matrix's cell counts match the seeded data's actual distribution, and confirm the counts update when a new assessment is added.
 
+**Resolved 2026-07-31:** converted `RiskMatrixWidget` to a `ConsumerWidget` that streams both `risk_assessments` (HIRA) and `strategic_risks` directly (self-contained, matching the pattern used by this session's other un-mocked tabs) rather than requiring the screen to pass data in. Chose the pre-bucketed-count-map approach the fix text offered as an alternative: both collections already write a `likelihood` field from the identical 5-value scale used for the matrix's columns, and both already compute a final `riskRating`/`riskRating` from the identical 4-bucket score-threshold logic (`>=16/>=10/>=5`) used for the matrix's rows — HIRA calls the top bucket `'Extreme'`, `strategic_risks` calls it `'Critical'`; treated as the same row. This avoids re-deriving severity from HIRA's `severity` scale (Negligible..Catastrophic) vs. strategic's `impact` scale (Negligible..Severe), which use different labels for the same 5-point scale — reading the already-computed `riskRating` sidesteps reconciling them. `dynamic_risk_assessments` excluded per the fix's own note, pending F-306. Cell numbers are now real per-cell counts and gradient intensity is `count / maxCount` instead of the old fixed position formula.
+
 ---
 
-### F-308: `risk` module README documents an architecture that doesn't exist
+### [DONE] F-308: `risk` module README documents an architecture that doesn't exist
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/risk/README.md`
 **Depends on:** none
@@ -1558,9 +1656,11 @@ Separately, `NotificationsScreen` (`notifications_screen.dart`) builds a local `
 
 **Verification:** For option 1, confirm the README's Architecture section no longer names any file or class that returns zero grep hits under `lib/features/risk/` or `lib/core/models/`. For option 2 (if undertaken), run `flutter analyze` after migration and regression-test all 4 create/read flows to confirm they behave identically from a user's perspective after moving off raw maps.
 
+**Resolved 2026-07-31:** did option 1. Rewrote the Architecture section to state there's no dedicated state-management/model layer, listed all 5 real collections in place of the fictitious `RiskEntry`, and expanded the Key Screens list to include the 2 screens the old README omitted (`risk_command_center_screen.dart`, `dynamic_risk_assessment_screen.dart`, `bowtie_screen.dart`) — confirmed via directory listing. Left option 2 (building the real provider/model layer) as a noted, unstarted follow-up, confirming `core/models/safety_models.dart`'s `RiskAssessment` class still has zero references anywhere outside its own file.
+
 ---
 
-### F-313: Decide which of finance's 3 non-intersecting collection-naming schemes is canonical
+### [DONE] F-313: Decide which of finance's 3 non-intersecting collection-naming schemes is canonical
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/finance/services/finance_service.dart`, `firestore.rules`, `firebase/functions/src/index.ts` (`postJournalEntry`, `onInvoiceStatusChanged`, `revRecEngine`)
 **Depends on:** none (this decision should ideally land before or alongside F-001's rules fix for finance's `fin_*` collections, so F-001 doesn't lock in a name this item would then have to migrate away from — a sequencing preference, not a hard blocker, since F-001 can proceed independently if this decision takes longer)
@@ -1577,9 +1677,11 @@ Zero code anywhere in the repo (`lib/` or either Functions codebase) writes to a
 
 **Verification:** N/A until the product decision is made — log the decision as resolved in this item when implementation happens, per the same pattern F-017/F-018 use. Once implemented: create a journal entry through whichever path is now canonical, confirm it's readable from `FinanceHubScreen`/`JournalEntryDetailScreen`, and confirm `postJournalEntry`'s Cloud Function (if scheme 3 or a migrated equivalent is kept as the posting path) can find and act on it.
 
+**Decision (resolved 2026-07-31): scheme 2 (`fin_*` prefix, matching `FinanceService`).** Re-verified all 3 locations against current code rather than trusting the (partly stale) audit: `postJournalEntry`, `onInvoiceStatusChanged`, and `revRecEngine` in the Cloud Functions codebase **already** write to `fin_journal_headers`/`fin_chart_of_accounts`/`fin_ar_invoices` — scheme 3 (`finance_journals`/`finance_accounts`/`finance_invoices`) no longer exists anywhere in `firebase/functions/src/` (confirmed by repo-wide grep, zero hits). So 2 of the 3 "non-intersecting" schemes this item described had already converged on scheme 2 by the time this item was picked up, most likely from earlier work in this same remediation effort. What remained broken: `firestore.rules` has two separate `match` blocks for the same `tenants/{tenantId}` scope (an existing, pre-this-item structural duplication — Firestore rules OR's multiple matching `allow` blocks together rather than erroring, so this isn't a compile break, just redundant and easy to let drift, as it had) — the first correctly declared `fin_budget_models`/`fin_cost_centers`, the second still had the stale bare `budgetPlans`/`costCenters` names the old audit described. Renamed the second block's two entries to match. Scheme 1 (`invoices`/`journal_entries`) no longer has any rules declared at all (already cleanly dead). One related problem found but **left unfixed, out of this item's 3-location scope**: `lib/scripts/seed_production_data.dart` still seeds fake data into the dead scheme-1 `invoices`/`journal_entries` collections, and even the *shape* of that seed data doesn't match what `FinanceService` reads (a single flat `invoices` array split by an `invoiceType` field, vs. the real app's 2 separate `fin_ap_invoices`/`fin_ar_invoices` collections; an embedded `lines` array on the journal entry doc, vs. the real app's `lines` subcollection) — flagging this as a genuine, separate bug for a future fix item rather than silently leaving it undiscovered.
+
 ---
 
-### F-314: Banned-stub sweep — Budget Plan / Cost Center FABs and Invoice Detail's "Linked Journal Entry" tile
+### [DONE] F-314: Banned-stub sweep — Budget Plan / Cost Center FABs and Invoice Detail's "Linked Journal Entry" tile
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/finance/screens/budget_plan_list_screen.dart` (line 53), `lib/features/finance/screens/cost_center_list_screen.dart` (line 54), `lib/features/finance/screens/invoice_detail_screen.dart` (lines 182-184)
 **Depends on:** none
@@ -1623,9 +1725,11 @@ invoice_detail_screen.dart:174-186
 
 **Verification:** Tap each FAB; confirm a real create form opens and a new Budget Plan/Cost Center document appears in Firestore and in the list after submission. Open an Invoice with a non-null `journalEntryId` and tap the "Linked Journal Entry" tile; confirm it navigates to that journal entry's real detail screen instead of doing nothing.
 
+**Resolved 2026-07-31:** built 2 new real create forms — `budget_plan_form.dart`/`cost_center_form.dart` — wired to `FinanceService.createBudgetPlan()`/`createCostCenter()` (both pre-existing, real) via `UIUtils.showSideSheet` from each FAB, per AGENTS.md §1. Both generate readable IDs (`BUD-<timestamp>`/`CC-<timestamp>`) matching the exact prefix+timestamp convention already used by `invoice_form.dart`/`journal_entry_form.dart` (`INV-`/`JE-`/`LINE-`) in this same module — not F-315's more elaborate name-based scheme, which is specific to GL accounts. `invoice_detail_screen.dart`'s "Linked Journal Entry" tile now navigates to the real `JournalEntryDetailScreen`, using the exact `Navigator.push`/`MaterialPageRoute` shape already used by `budget_plan_list_screen.dart`/`cost_center_list_screen.dart`'s own row `onTap`s in this same module, as the fix suggested.
+
 ---
 
-### F-315: GL account IDs use a bare timestamp instead of a human-readable prefix
+### [DONE] F-315: GL account IDs use a bare timestamp instead of a human-readable prefix
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/finance/screens/chart_of_accounts_view.dart` (`_addAccount()`, line 55)
 **Depends on:** none
@@ -1644,9 +1748,11 @@ The raw material for a readable ID already exists in the same method — `codeCt
 
 **Verification:** Create a new GL account with code `1000` and name `Cash`; confirm the resulting Firestore document ID is `1000-Cash` (or an equivalent readable scheme), not a 13-digit timestamp. Attempt to create a second account that would produce the same ID and confirm it's rejected with a clear error, not silently overwritten.
 
+**Resolved 2026-07-31:** `_addAccount()` now builds `id` from `'$code-${name.replaceAll(' ', '')}'` exactly per `schema_finance.md`'s example shape, with an explicit `getGeneralLedgerAccount(id)` collision check before writing — surfaces a `UIUtils.showToast` error and aborts if an account with that ID already exists, instead of silently overwriting.
+
 ---
 
-### F-316: Chart of Accounts' Balance column and "Multi-Entity Consolidation" toggle are non-functional placeholders
+### [DONE] F-316: Chart of Accounts' Balance column and "Multi-Entity Consolidation" toggle are non-functional placeholders
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/finance/screens/chart_of_accounts_view.dart` (lines 17, 86-94, 129)
 **Depends on:** F-311 (this cluster's immutability item) if balance is computed by summing posted `JournalLine`s against a posting-status guard — sequencing preference, not a hard requirement
@@ -1674,9 +1780,11 @@ This screen was touched earlier in this same effort specifically to fix a `Gener
 
 **Verification:** Post a real journal entry with debit/credit lines against a specific GL account and mark it `POSTED`; confirm that account's Balance column updates to reflect the real net amount, not `$0.00`, and confirm a still-`DRAFT` entry's lines are correctly excluded from the sum. For the consolidation toggle: either confirm switching it produces a visibly different (correctly filtered/aggregated) account list, or confirm it has been removed.
 
+**Resolved 2026-07-31:** balance is now computed on read exactly as required — no stored `currentBalance` field was reintroduced onto `GeneralLedgerAccount`. Watches the existing real `journalEntriesStreamProvider`, filters to `status == 'POSTED'`, fetches each posted entry's `lines` subcollection via `FinanceService.getJournalLines()` (both pre-existing, real), and sums `debitAmount - creditAmount` per `accountId`; the sign is then flipped for liability/equity/revenue account types to match `postJournalEntry`'s own normal-balance convention in `firebase/functions/src/index.ts`. Confirmed via grep that no multi-entity/subsidiary concept exists anywhere in the codebase (`GeneralLedgerAccount.financialStatementGroup` is a plain optional string, not an entity reference) — removed the "Multi-Entity Consolidation" switch entirely per the fix's own fallback option, rather than leaving a control with nothing real to toggle. Also found, while reading `postJournalEntry`'s implementation to get the sign convention right, that the Cloud Function actually still writes a `currentBalance` field via `FieldValue.increment` directly onto the account document — which contradicts the derived-not-stored design this item (and the commit it references) explicitly calls for; that field is simply never read by the Dart model now, so it's inert rather than actively wrong, but flagging it as a related, out-of-scope cleanup candidate for whoever next touches `postJournalEntry`. Also fixed the pre-existing `MaterialStateProperty` deprecation on the same `DataTable` line while touching it (→ `WidgetStateProperty`).
+
 ---
 
-### F-317: `LedgerPostingService` — a correct, transactional journal-posting wrapper — has zero call sites
+### [DONE] F-317: `LedgerPostingService` — a correct, transactional journal-posting wrapper — has zero call sites
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/finance/services/ledger_posting_service.dart`
 **Depends on:** none
@@ -1688,9 +1796,13 @@ This screen was touched earlier in this same effort specifically to fix a `Gener
 
 **Verification:** Submit a journal entry through `journal_entry_form.dart` after rewiring; confirm the `postJournalEntry` Cloud Function actually invokes (check function logs in the emulator or deployed project) and that the resulting document appears wherever F-313's scheme resolution lands, with debits/credits validated server-side — submit an intentionally unbalanced entry and confirm it's rejected rather than written.
 
+**Resolved 2026-07-31:** adopted the Cloud Function path as recommended, but found and had to fix a real prerequisite bug first: `postJournalEntry` wrote its header/lines using a field shape (`date`/`totalDebit`/`status: "posted"` on the header; raw `{accountId, debit, credit}` on each line) that doesn't match what `JournalEntry.fromJson`/`JournalLine.fromJson` actually read (`transaction_date` as a **non-nullable** `Timestamp` cast, `total_debit`, `account_id`, `debit_amount`, `credit_amount`, etc.) — meaning every entry the function posted would throw when the app tried to read it back, and would contribute nothing to F-316's balance sum. Fixed `postJournalEntry`'s writes to the correct snake_case shape; found and fixed the identical bug in `onInvoiceStatusChanged` (same header/line write pattern, same mismatch), since it's the sibling auto-posting trigger named in this same fix cluster (F-313). Region confirmed already correct: `ledger_posting_service.dart`'s `europe-west1` matches `postJournalEntry`'s deployed region and 3 other existing Dart callable-function call sites in this codebase.
+
+On the Dart side: `LedgerPostingService.postJournalEntry()` now returns the server-generated `journalId` (was `void`). `journal_entry_form.dart`'s create path now calls it as primary, passing only the fields the callable's `JournalEntryData` interface accepts (`tenantId`/`date`/`description`/`lines`); the edit path is unchanged (`FinanceService.updateJournalEntry()`), since the Cloud Function has no update semantics and `FinanceService._assertMutable()` already refuses to modify a `POSTED` entry — a discovered consequence of this: a "create then enrich with the extra metadata fields" follow-up (fiscal year, base currency, approved-by, etc.) is **not possible**, because the Cloud Function always posts immediately and the entry becomes immutable the instant it's created. Rather than leave the form's Status dropdown implying those fields still apply on create (a new banned-stub-shaped bug — a control that looks meaningful but is silently ignored), replaced it for new entries with a static "POSTED — new entries post immediately (server-validated)" label; the dropdown is still shown, functional, and honest when editing an existing pre-posted entry.
+
 ---
 
-### F-318: `taxEngine.calculateTax` is a documented simulation with zero Dart-side callers
+### [DONE] F-318: `taxEngine.calculateTax` is a documented simulation with zero Dart-side callers
 **Severity:** Medium
 **Module(s) / File(s):** `firebase/functions/src/taxEngine.ts` (`calculateTax`)
 **Depends on:** none
@@ -1708,11 +1820,15 @@ A flat, hardcoded 8% regardless of jurisdiction — `jurisdiction` is validated 
 
 **Verification:** Call `calculateTax` with a real `total`/`jurisdiction` pair matching a seeded `TaxCode` record; confirm the returned `taxAmount` reflects that code's real `rate`, not a flat 8%. Confirm `invoice_form.dart` (once wired) populates `Invoice.taxAmount` from this function's output rather than leaving it at a default/zero.
 
+**Resolved 2026-07-31:** rewrote `calculateTax` to query `fin_tax_codes` (the collection scheme F-313 settled on) for an active `TaxCode` matching `jurisdiction_id`, using its real `rate` instead of the flat 8% — falls back to a 0% rate (not a fabricated nonzero default) if no match exists, since guessing would be worse than surfacing the gap on a real invoice. While rewriting, also fixed the actual root cause of 2 of the 3 pre-existing `tsc --noEmit` baseline errors: the old code's `(data, context) =>` signature was the v1 callable shape, but the installed `firebase-functions` types resolve `functions.https.onCall` to the v2 `CallableRequest`-based signature — meaning `data.total`/`data.jurisdiction` were type errors (the real values live under `request.data`), not just a style mismatch. Migrated to the same `onCall`/`HttpsError`/`CallableRequest` imports from `firebase-functions/v2/https` already used throughout `index.ts`, resolving both errors as a side effect (`tsc --noEmit` baseline: 3 pre-existing errors → 1, confined to `aiEngine.ts`).
+
+On the Dart side: `invoice_form.dart` had no jurisdiction/tax-code concept at all — `taxAmount` was a fully manual field. Added a `TaxCode` selector (`EntitySelector<TaxCode>`, sourced from the existing real `taxCodesStreamProvider`) and a "Calculate" icon button next to the Tax Amount field that calls `calculateTax` with the selected code's `jurisdictionId` and the current Gross Amount, populating `taxAmount` (and re-deriving Net Amount) from the real server-computed result. The manual text field is kept editable rather than becoming read-only — real invoicing legitimately needs manual tax overrides sometimes — but it now has a real computation path behind it instead of none.
+
 ---
 
 ### Sales / Customer Service / Field Service Cluster
 
-### F-401: Delete crm's 4 dead `StateProvider` list caches; make `accountStreamProvider` a real live stream
+### [DONE] F-401: Delete crm's 4 dead `StateProvider` list caches; make `accountStreamProvider` a real live stream
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/crm/providers/crm_providers.dart`, `lib/features/crm/services/crm_service.dart`
 **Depends on:** none
@@ -1724,9 +1840,11 @@ A flat, hardcoded 8% regardless of jurisdiction — `jurisdiction` is validated 
 
 **Verification:** `flutter analyze` after deleting the 4 unused providers — confirm no new "undefined identifier" errors appear, meaning nothing else silently depended on them. For `accountStreamProvider`: open a real Account's detail screen, update that same account's data through another path while the screen stays open (directly in the Firestore console, or a second app session), and confirm the open detail screen updates live without navigating away and back — today it will not.
 
+**Resolved 2026-07-31:** reconfirmed zero consumers of all 4 `StateProvider`s via grep, deleted them. Added a real `CrmService.streamAccount()` following `streamOpportunity()`'s exact pattern, and pointed `accountStreamProvider` at it instead of `getAccount(id).asStream()`. `flutter analyze` clean (1 pre-existing unrelated warning).
+
 ---
 
-### F-402: crm has zero `AppEventBus` usage — a Won Opportunity notifies no other module
+### [DONE] F-402: crm has zero `AppEventBus` usage — a Won Opportunity notifies no other module
 **Severity:** Medium
 **Module(s) / File(s):** `lib/core/events/app_event_bus.dart`, `lib/features/crm/widgets/opportunity_form.dart`
 **Depends on:** none (related to F-004, which wires the *direct* Lead-to-Cash orchestrator call chain — see note below on how this item differs)
@@ -1738,9 +1856,11 @@ A flat, hardcoded 8% regardless of jurisdiction — `jurisdiction` is validated 
 
 **Verification:** Change a real Opportunity's stage to "Closed Won" through the form; confirm (via a temporary debug listener on `appEventBusProvider.stream`, or a log statement) that the event fires exactly once with the correct `opportunityId`/`accountId`. Confirm it does not re-fire on a subsequent save of the same already-won Opportunity when the stage doesn't change.
 
+**Resolved 2026-07-31:** added `WonOpportunityEvent` (opportunityId/accountId/amount) matching the existing example events' shape. `OpportunityForm._save()` fires it after a successful write, gated on `stage == 'Closed Won' && widget.opportunity?.stage != 'Closed Won'` (transition-only, matching the fix's requirement). Also fixed a latent bug this surfaced: the create path previously discarded `CrmService.createOpportunity()`'s returned real Firestore ID entirely (the local `opp.id` used for a brand-new Opportunity is always `''`, since IDs are server-generated on create) — now captured into `savedId` so the event (and any future use) has the correct ID even for a new Opportunity saved directly as Closed Won. No listener added, per the fix's explicit instruction to wait for a confirmed need.
+
 ---
 
-### F-406: `customer_service_hub_screen.dart` imports `omnichannel_ticket_screen.dart` twice, never instantiates it
+### [DONE] F-406: `customer_service_hub_screen.dart` imports `omnichannel_ticket_screen.dart` twice, never instantiates it
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/customer_service/screens/customer_service_hub_screen.dart`
 **Depends on:** none
@@ -1752,9 +1872,11 @@ A flat, hardcoded 8% regardless of jurisdiction — `jurisdiction` is validated 
 
 **Verification:** `flutter analyze` — confirm no unused-import warning remains for this file, and confirm the file still compiles with only one copy of the import (or zero, if `OmnichannelTicketScreen` was deleted as part of F-403).
 
+**Resolved 2026-07-31:** already resolved — `omnichannel_ticket_screen.dart` was deleted entirely earlier in this session as part of the F-405 fix, which removed both duplicate import lines along with it. Confirmed via `find` that the file no longer exists anywhere in `lib/`, and `customer_service_hub_screen.dart`'s current imports contain no reference to it.
+
 ---
 
-### F-414: `siteId` is populated with the tenant ID, making both tabs' `.where('siteId', ...)` filter a redundant no-op
+### [DONE] F-414: `siteId` is populated with the tenant ID, making both tabs' `.where('siteId', ...)` filter a redundant no-op
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/emergency/widgets/drill_form_card.dart`, `equipment_form_card.dart`, `emergency_drills_tab.dart`, `emergency_equipment_tab.dart`
 **Depends on:** none
@@ -1766,10 +1888,12 @@ A flat, hardcoded 8% regardless of jurisdiction — `jurisdiction` is validated 
 
 **Verification:** Confirm the Drills/Equipment tabs show exactly the same documents after the filter is removed (since it was already a no-op, behavior should be visually identical — this is a code-cleanliness fix, not a behavior change). `flutter analyze` — confirm no new warnings from the removed `siteId` field if it's also dropped from the form submissions.
 
+**Resolved 2026-07-31:** removed the redundant `.where('siteId', isEqualTo: siteId)` from both `emergency_drills_tab.dart` and `emergency_equipment_tab.dart` (the `siteId` local var stays, since it still gates the stream's null-tenant case), and stopped writing `'siteId': p.tenantId` from both `drill_form_card.dart`/`equipment_form_card.dart` — went with removal over the comment-and-keep alternative, since nothing currently reads the field and AGENTS.md's minimalism principle favors not carrying a synonym-for-tenantId field on the chance it becomes meaningful later. Scoped to `emergency` only, as instructed; the same pattern in `property`/`operations` was left untouched.
+
 ---
 ### System Admin Cluster
 
-### F-508: `SettingsScreen`'s "Security" tiles show copy that doesn't match the real, code-enforced behavior
+### [DONE] F-508: `SettingsScreen`'s "Security" tiles show copy that doesn't match the real, code-enforced behavior
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/settings/screens/settings_screen.dart:52-77`, `lib/core/services/session_manager.dart:16`, `lib/main.dart:101-107`
 **Depends on:** none
@@ -1785,9 +1909,11 @@ Both tiles have `trailing: Icon(Icons.check_circle)` and no `onTap` — they pre
 
 **Verification:** Read `SettingsScreen`'s Security section after the change and confirm the displayed timeout and protection-scope text match `SessionManager._timeoutDuration` and `main.dart`'s `ScreenProtector` call site exactly.
 
+**Resolved 2026-07-31:** took the smaller-risk direction as the fix suggested — fixed the copy to match the code rather than the reverse. "15m" → "30m" (matching `SessionManager._timeoutDuration`); the screen-capture tile now reads "Enabled app-wide on mobile and desktop platforms" (matching `main.dart`'s unconditional `!kIsWeb` gate) instead of naming two specific screens that aren't actually singled out anywhere in the code.
+
 ---
 
-### F-509: `isDarkModeProvider` is not persisted — dark mode resets to light on every app restart
+### [DONE] F-509: `isDarkModeProvider` is not persisted — dark mode resets to light on every app restart
 **Severity:** Medium
 **Module(s) / File(s):** `lib/core/providers/app_providers.dart:179`, `lib/features/settings/screens/settings_screen.dart:26-38`, `lib/main.dart:124`
 **Depends on:** none
@@ -1799,9 +1925,11 @@ Both tiles have `trailing: Icon(Icons.check_circle)` and no `onTap` — they pre
 
 **Verification:** Toggle dark mode on, fully close and relaunch the app (not just hot-reload/hot-restart, which retain in-memory Riverpod state), and confirm it opens in dark mode. Toggle back to light and repeat.
 
+**Resolved 2026-07-31:** implemented via a Hive `preferences` box exactly as recommended (the app already depends on `hive_flutter` for `OfflineSyncService`). `main.dart` opens `Hive.openBox<bool>('preferences')` right after `Hive.initFlutter()` and overrides `isDarkModeProvider`'s initial state from the stored value (defaulting to `false`) using the same `ProviderContainer.overrides` list already used for `firestoreProvider` (F-507's established pre-`runApp` pattern) — no new adapter registration needed since Hive supports `bool` natively. `settings_screen.dart`'s toggle now writes to the same box (`Hive.box<bool>('preferences').put('isDarkMode', value)`) alongside the existing `StateProvider` write.
+
 ---
 
-### F-511: Remove dead `pendingApprovalsProvider` stub
+### [DONE] F-511: Remove dead `pendingApprovalsProvider` stub
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/dashboard/providers/approvals_provider.dart:26-50`
 **Depends on:** none
@@ -1813,9 +1941,11 @@ Both tiles have `trailing: Icon(Icons.check_circle)` and no `onTap` — they pre
 
 **Verification:** `flutter analyze` after deletion — confirm no new "undefined identifier" errors. Open the Approvals Inbox side-sheet (from `dashboard_header.dart`) and confirm it still lists pending leave requests / job requisitions exactly as before, since it never depended on the deleted provider.
 
+**Resolved 2026-07-31:** reconfirmed zero external references via grep, deleted the dead provider (`ApprovalItem` and `pendingApprovalsFutureProvider` kept, untouched). `flutter analyze`: 48 pre-existing issues, 0 errors.
+
 ---
 
-### F-516: Error-message truncation (`.substring(0, 120)`) throws `RangeError` on short error messages, in 2 files
+### [DONE] F-516: Error-message truncation (`.substring(0, 120)`) throws `RangeError` on short error messages, in 2 files
 **Severity:** Medium
 **Module(s) / File(s):** `lib/features/ai_tools/widgets/sheq_chat_tab.dart:70`, `lib/features/ai_tools/widgets/copilot_chat_widget.dart:76`
 **Depends on:** none (independent of F-014's entry-point fix for `copilot_chat_widget.dart` — that item makes this screen reachable, this item is a separate correctness bug found in the same file while reviewing it for F-014; the `sheq_chat_tab.dart` instance is already reachable today via the live `/ai` route, regardless of F-014)
@@ -1835,6 +1965,8 @@ text: 'Error: ${msg.length > 120 ? msg.substring(0, 120) : msg}',
 or equivalently `msg.substring(0, msg.length.clamp(0, 120))`. Apply the identical fix in both files since they're independent copies of the same logic, not shared code.
 
 **Verification:** Force each chat send path to throw an exception with a short `toString()` (e.g., temporarily throw `Exception('short')` in place of the real call, or trigger a real short-message failure such as an invalid-argument error from the Gemini SDK) and confirm the error bubble renders with the short message instead of crashing. Confirm a genuinely long error message (over 120 characters) still truncates correctly.
+
+**Resolved 2026-07-31:** `copilot_chat_widget.dart` no longer exists (deleted as part of F-018's dead-trio cleanup earlier in this session), so only `sheq_chat_tab.dart` needed the fix. Applied exactly the length-checked version the fix suggested.
 
 ---
 
@@ -1874,7 +2006,7 @@ There is no `services/` or `providers/` subdirectory anywhere in `lib/features/c
 
 ## Low
 
-### F-504: `SessionManager`'s inactivity auto-lock is fully disabled in debug builds — confirm intent and make it testable
+### [DONE] F-504: `SessionManager`'s inactivity auto-lock is fully disabled in debug builds — confirm intent and make it testable
 **Severity:** Low
 **Module(s) / File(s):** `lib/core/services/session_manager.dart:20-36`
 **Depends on:** none
@@ -1886,9 +2018,11 @@ There is no `services/` or `providers/` subdirectory anywhere in `lib/features/c
 
 **Verification:** N/A if the exemption is kept as-is (documentation-only change). If a debug-only trigger is added, confirm in a debug build that the new action locks the session and that `LockScreen`'s biometric/no-biometric flows both behave identically to a real release-build lock.
 
+**Decision (resolved 2026-07-31): kept the `kDebugMode` exemption as-is.** No debug-only "Simulate Lock" affordance was added — no concrete need for one surfaced during this session's work on the lock/unlock flow (F-505). Took the documentation-only option: added a one-line "Intentional" comment at each of the three early-returns so a future reader doesn't mistake this for an oversight.
+
 ---
 
-### F-506: Raw `ScaffoldMessenger.showSnackBar` used in `EnterpriseSSOScreen` instead of `UIUtils.showToast`
+### [DONE] F-506: Raw `ScaffoldMessenger.showSnackBar` used in `EnterpriseSSOScreen` instead of `UIUtils.showToast`
 **Severity:** Low
 **Module(s) / File(s):** `lib/features/auth/screens/enterprise_sso_screen.dart:21-23, 42-44`
 **Depends on:** none (independent of F-014's entry-point fix for this same screen — this is a separate bug found while reviewing the file for F-014, not the reachability issue itself)
@@ -1900,9 +2034,11 @@ There is no `services/` or `providers/` subdirectory anywhere in `lib/features/c
 
 **Verification:** Trigger both code paths (submit with an empty Provider ID; submit with a Provider ID that causes `signInWithSAML` to throw) and visually confirm both now render as the app's standard toast rather than a default Material SnackBar.
 
+**Resolved 2026-07-31:** both call sites now use `UIUtils.showToast(..., type: ToastType.error)`, matching the codebase's standard pattern.
+
 ---
 
-### F-510: `OfflineQueueScreen` has no `BusinessOsLaunchpad` tile — reachable only by direct route
+### [DONE] F-510: `OfflineQueueScreen` has no `BusinessOsLaunchpad` tile — reachable only by direct route
 **Severity:** Low
 **Module(s) / File(s):** `lib/features/dashboard/screens/business_os_launchpad.dart:256-298`, `lib/features/settings/screens/offline_queue_screen.dart`
 **Depends on:** none
@@ -1914,9 +2050,11 @@ There is no `services/` or `providers/` subdirectory anywhere in `lib/features/c
 
 **Verification:** From `/launchpad`, confirm a new tile opens `OfflineQueueScreen` without needing to type the route directly.
 
+**Resolved 2026-07-31:** added an "Offline Sync Queue" tile (`/offline-queue`) to the System Administration section, matching this item's suggested icon/color. Since `business_os_launchpad.dart` was already refactored to a data-driven tile list during this session's F-015 work, this was a single `_TileData` entry addition rather than a full-file edit.
+
 ---
 
-### F-515: `SafetyFlashTab`'s "copy" button reports success without copying anything
+### [DONE] F-515: `SafetyFlashTab`'s "copy" button reports success without copying anything
 **Severity:** Low
 **Module(s) / File(s):** `lib/features/ai_tools/widgets/safety_flash_tab.dart:142-147`
 **Depends on:** none
@@ -1934,6 +2072,8 @@ No `Clipboard.setData` call exists anywhere in the file — confirmed by checkin
 
 **Verification:** Generate a Safety Flash bulletin, tap the copy button, then paste into any external text field and confirm the full bulletin text is present.
 
+**Resolved 2026-07-31:** fixed opportunistically while implementing F-514 in the same file/button area — `Clipboard.setData(ClipboardData(text: _result))` now called before the success toast, per this item's exact prescribed fix.
+
 ---
 
 ### [DONE] F-519: `CopilotPanel` is wired as a full routed screen, not the floating overlay its own design implies
@@ -1950,7 +2090,7 @@ No `Clipboard.setData` call exists anywhere in the file — confirmed by checkin
 
 ---
 
-### F-522: `resumeLink` is a free-text URL field with no validation and no file upload
+### [DONE] F-522: `resumeLink` is a free-text URL field with no validation and no file upload
 **Severity:** Low
 **Module(s) / File(s):** `lib/features/public/widgets/job_application_form.dart:110-118`
 **Depends on:** none
@@ -1961,5 +2101,7 @@ No `Clipboard.setData` call exists anywhere in the file — confirmed by checkin
 **Required fix:** If a deliberate link-based design is confirmed (check with whoever owns the product decision before investing further), the minimal improvement is adding basic URL-format validation to the existing field (e.g. a regex or `Uri.tryParse(val)?.hasAbsolutePath` check) so obviously-malformed input is caught before submission, rather than accepting any non-empty string. If a real file upload is instead wanted, replace the field with a file picker (`file_picker` or a platform image/document picker) uploading to `firebase_storage` under a path like `tenants/{tenantId}/job_applications/{applicationId}/resume.pdf`, following the same upload pattern already used in `incident_report_form.dart`, and store the resulting download URL in `resumeLink` instead of a hand-typed one.
 
 **Verification:** If validation-only: submit the form with a clearly invalid (non-URL) string in the résumé field and confirm it's now rejected client-side. If full upload: submit a real file and confirm it appears in the correct Firebase Storage path and the stored `resumeLink` field is a working download URL.
+
+**Resolved 2026-07-31:** took the minimal, non-speculative option per the fix's own framing — no product-owner confirmation was available on the file-upload direction, so building real upload infrastructure would have been guessing a decision that wasn't asked for. Added URL-format validation (`Uri.tryParse` + `isAbsolute` + non-empty host) rejecting obviously-malformed input, and set `keyboardType: TextInputType.url` for a better on-screen keyboard on mobile.
 
 ---
