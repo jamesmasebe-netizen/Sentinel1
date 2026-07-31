@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../config/theme.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/gemini_provider.dart';
+import '../../safety/services/safety_service.dart';
 
 class RcaAssistantTab extends ConsumerStatefulWidget {
   const RcaAssistantTab({super.key});
@@ -16,6 +18,7 @@ class _RcaState extends ConsumerState<RcaAssistantTab> {
       _locCtrl = TextEditingController();
   String _severity = 'Major', _result = '';
   bool _loading = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -56,6 +59,32 @@ Format with clear headers and bullet points.''';
       if (mounted) setState(() => _result = 'RCA error: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveAsCapa() async {
+    if (_result.isEmpty) return;
+    setState(() => _isSaving = true);
+    try {
+      final priority = switch (_severity) {
+        'Critical' || 'Major' => 'High',
+        'Moderate' => 'Medium',
+        _ => 'Low',
+      };
+      await ref.read(safetyServiceProvider).createCapa({
+        'title': 'RCA CAPA: ${_incCtrl.text.trim()}',
+        'description': _result,
+        'type': 'Corrective',
+        'priority': priority,
+        'dueDate': DateTime.now().add(const Duration(days: 14)).toIso8601String(),
+      });
+      if (mounted) {
+        UIUtils.showToast(context, 'Saved as CAPA', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, 'Error saving CAPA: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -183,6 +212,17 @@ Format with clear headers and bullet points.''';
                   Text(
                     _result,
                     style: const TextStyle(fontSize: 13, height: 1.5),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isSaving ? null : _saveAsCapa,
+                      icon: _isSaving
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.save_alt, size: 18),
+                      label: Text(_isSaving ? 'Saving...' : 'Save as CAPA'),
+                    ),
                   ),
                 ],
               ),

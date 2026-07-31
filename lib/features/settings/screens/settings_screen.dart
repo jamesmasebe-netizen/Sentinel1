@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../config/theme.dart';
 
@@ -32,6 +33,7 @@ class SettingsScreen extends ConsumerWidget {
                 value: isDarkMode,
                 onChanged: (value) {
                   ref.read(isDarkModeProvider.notifier).state = value;
+                  Hive.box<bool>('preferences').put('isDarkMode', value);
                 },
               ),
             ),
@@ -53,7 +55,7 @@ class SettingsScreen extends ConsumerWidget {
                   leading: const Icon(Icons.fingerprint),
                   title: const Text('Biometric Authentication'),
                   subtitle: const Text(
-                    'Required to unlock session after 15m of inactivity',
+                    'Required to unlock session after 30m of inactivity',
                   ),
                   trailing: const Icon(
                     Icons.check_circle,
@@ -65,7 +67,7 @@ class SettingsScreen extends ConsumerWidget {
                   leading: const Icon(Icons.screen_lock_portrait),
                   title: const Text('Screen Capture Protection'),
                   subtitle: const Text(
-                    'Enabled on sensitive screens (Executive Dashboard, Action Tracker)',
+                    'Enabled app-wide on mobile and desktop platforms',
                   ),
                   trailing: const Icon(
                     Icons.check_circle,

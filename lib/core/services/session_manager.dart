@@ -18,18 +18,22 @@ class SessionManager {
   SessionManager(this._ref);
 
   void startSession() {
+    // Intentional: uninterrupted local development is the desired default,
+    // so the inactivity auto-lock never fires in a debug build. See F-504.
     if (!kDebugMode) {
       _startTimer();
     }
   }
 
   void userInteracted() {
+    // Intentional — see startSession().
     if (kDebugMode) return;
     if (_ref.read(isAppLockedProvider)) return; // Don't reset if already locked
     _startTimer();
   }
 
   void _startTimer() {
+    // Intentional — see startSession().
     if (kDebugMode) return;
     _inactivityTimer?.cancel();
     _inactivityTimer = Timer(_timeoutDuration, _onTimeout);

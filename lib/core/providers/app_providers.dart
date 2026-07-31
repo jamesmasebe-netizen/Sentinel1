@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/offline_sync_service.dart';
 import '../services/audit_log_service.dart';
+import '../services/notification_service.dart';
 import '../models/user_profile.dart';
 
 // ─── Core Service Providers ───
@@ -41,6 +42,12 @@ final authServiceProvider = Provider<AuthService>((ref) {
   final service = AuthService();
   service.onSignOut = () {
     ref.read(isMockLoggedInProvider.notifier).state = false;
+  };
+  service.onProfileReady = (profile) {
+    ref.read(NotificationService.provider).init(
+          uid: profile.uid,
+          siteId: profile.tenantId ?? '',
+        );
   };
   return service;
 });

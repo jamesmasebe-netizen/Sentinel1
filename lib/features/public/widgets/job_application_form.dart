@@ -114,8 +114,15 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
                 labelText: 'Resume Link (Google Drive, LinkedIn, etc.)',
                 border: OutlineInputBorder(),
               ),
-              validator:
-                  (val) => val == null || val.isEmpty ? 'Required' : null,
+              keyboardType: TextInputType.url,
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) return 'Required';
+                final uri = Uri.tryParse(val.trim());
+                if (uri == null || !uri.isAbsolute || uri.host.isEmpty) {
+                  return 'Enter a valid URL (e.g. https://drive.google.com/...)';
+                }
+                return null;
+              },
               onSaved: (val) => _resumeLink = val!.trim(),
             ),
             const SizedBox(height: 32),

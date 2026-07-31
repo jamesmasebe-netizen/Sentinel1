@@ -44,6 +44,8 @@ import '../features/property/screens/property_details_screen.dart';
 import '../features/equipment/screens/loto_management_screen.dart';
 import '../features/equipment/screens/equipment_management_screen.dart';
 import '../features/public/screens/public_careers_screen.dart';
+import '../features/contractors/screens/contractor_management_screen.dart';
+import '../features/training/screens/training_screen.dart';
 
 
 
@@ -143,6 +145,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (c, s) => const NoTransitionPage(child: HrHubScreen()),
           ),
           GoRoute(
+            path: '/training',
+            pageBuilder: (c, s) => const NoTransitionPage(child: TrainingScreen()),
+          ),
+          GoRoute(
             path: '/dashboard',
             pageBuilder:
                 (c, s) => const NoTransitionPage(child: DashboardScreen()),
@@ -164,6 +170,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/equipment',
             pageBuilder: (c, s) => const NoTransitionPage(child: EquipmentManagementScreen()),
+          ),
+          GoRoute(
+            path: '/contractors',
+            pageBuilder: (c, s) => const NoTransitionPage(child: ContractorManagementScreen()),
           ),
           GoRoute(
             path: '/wms-scanner',

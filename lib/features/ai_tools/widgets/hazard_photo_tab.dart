@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../../config/theme.dart';
+import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/gemini_provider.dart';
 import 'hazard_photo_widgets.dart';
 
@@ -17,6 +20,7 @@ class _HazardPhotoState extends ConsumerState<HazardPhotoTab> {
   File? _image;
   String _result = '';
   bool _loading = false;
+  bool _isSaving = false;
 
   Future<void> _pick(ImageSource src) async {
     final picked = await ImagePicker().pickImage(source: src, imageQuality: 80);
@@ -49,6 +53,50 @@ class _HazardPhotoState extends ConsumerState<HazardPhotoTab> {
       if (mounted) setState(() => _result = 'Analysis error: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveAsHazard() async {
+    if (_result.isEmpty) return;
+    setState(() => _isSaving = true);
+    try {
+      final profile = ref.read(userProfileProvider).valueOrNull;
+      if (profile == null) throw Exception('Not logged in');
+
+      String? photoUrl;
+      if (_image != null) {
+        final storageRef = FirebaseStorage.instance.ref().child(
+          'hazards/${DateTime.now().millisecondsSinceEpoch}_${_image!.path.split('/').last}',
+        );
+        await storageRef.putFile(_image!);
+        photoUrl = await storageRef.getDownloadURL();
+      }
+
+      final firestoreService = ref.read(firestoreServiceProvider);
+      await firestoreService.createDocument(
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
+        collection: 'hazards',
+        data: {
+          'title': 'AI-Detected Hazard (Photo Analysis)',
+          'description': _result,
+          'location': '',
+          'severity': 'Medium',
+          'status': 'Open',
+          'photoUrl': photoUrl,
+          'reportedById': profile.uid,
+          'reportedByName': profile.displayName,
+          'siteId': profile.tenantId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+
+      if (mounted) {
+        UIUtils.showToast(context, 'Saved to Hazard Register', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, 'Error saving hazard: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -119,6 +167,17 @@ class _HazardPhotoState extends ConsumerState<HazardPhotoTab> {
           if (_result.isNotEmpty) ...[
             const SizedBox(height: 16),
             AIHazardReport(result: _result),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isSaving ? null : _saveAsHazard,
+                icon: _isSaving
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.save_alt, size: 18),
+                label: Text(_isSaving ? 'Saving...' : 'Save as Hazard'),
+              ),
+            ),
           ],
           if (_image == null) const EmptyPhotoView(),
         ],

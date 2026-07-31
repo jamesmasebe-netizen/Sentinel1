@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../core/providers/app_providers.dart';
@@ -14,6 +15,7 @@ class SafetyFlashTab extends ConsumerStatefulWidget {
 class _SafetyFlashState extends ConsumerState<SafetyFlashTab> {
   String _result = '';
   bool _loading = false;
+  bool _isPosting = false;
 
   Future<void> _generate() async {
     setState(() => _loading = true);
@@ -39,6 +41,35 @@ Make it engaging, professional, and motivating. Use emojis for visual appeal. Ke
       if (mounted) setState(() => _result = 'Error: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _postToSafetyBoard() async {
+    if (_result.isEmpty) return;
+    setState(() => _isPosting = true);
+    try {
+      final profile = ref.read(userProfileProvider).valueOrNull;
+      if (profile == null) throw Exception('Not logged in');
+      final firestoreService = ref.read(firestoreServiceProvider);
+      await firestoreService.createDocument(
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
+        collection: 'safety_flashes',
+        data: {
+          'title': 'Weekly Safety Flash',
+          'content': _result,
+          'postedById': profile.uid,
+          'postedByName': profile.displayName,
+          'siteId': profile.tenantId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+      if (mounted) {
+        UIUtils.showToast(context, 'Posted to Safety Board', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, 'Error posting: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isPosting = false);
     }
   }
 
@@ -141,8 +172,11 @@ Make it engaging, professional, and motivating. Use emojis for visual appeal. Ke
                       ),
                       IconButton(
                         icon: const Icon(Icons.copy, size: 18),
-                        onPressed: () {
-                          UIUtils.showToast(context, 'Copied to clipboard');
+                        onPressed: () async {
+                          await Clipboard.setData(ClipboardData(text: _result));
+                          if (context.mounted) {
+                            UIUtils.showToast(context, 'Copied to clipboard', type: ToastType.success);
+                          }
                         },
                       ),
                     ],
@@ -151,6 +185,17 @@ Make it engaging, professional, and motivating. Use emojis for visual appeal. Ke
                   Text(
                     _result,
                     style: const TextStyle(fontSize: 13, height: 1.6),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isPosting ? null : _postToSafetyBoard,
+                      icon: _isPosting
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.campaign_outlined, size: 18),
+                      label: Text(_isPosting ? 'Posting...' : 'Post to Safety Board'),
+                    ),
                   ),
                 ],
               ),

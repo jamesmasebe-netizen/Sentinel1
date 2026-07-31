@@ -42,7 +42,7 @@ The project follows a strict **Material Design 3 Expressive** design system. For
 ```bash
 cp .env.example .env
 ```
-2. Fill in your Firebase credentials in `.env`:
+2. Fill in your Firebase and Gemini credentials in `.env`:
 ```bash
 FIREBASE_API_KEY=your_api_key_here
 FIREBASE_APP_ID=your_app_id_here
@@ -50,7 +50,9 @@ FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 FIREBASE_PROJECT_ID=your_project_id
 FIREBASE_STORAGE_BUCKET=your_bucket
 FIREBASE_AUTH_DOMAIN=your_auth_domain
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
+Without `GEMINI_API_KEY`, the AI Tools module's 4 chat tabs (SHEQ Chat, Hazard Photo, RCA Assistant, Safety Flash) will fail their first Gemini call with an inline error rather than a crash.
 
 ### Run Locally
 ```bash

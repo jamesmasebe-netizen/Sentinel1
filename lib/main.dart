@@ -81,6 +81,7 @@ void main() async {
   }
   */
   await Hive.initFlutter();
+  final preferencesBox = await Hive.openBox<bool>('preferences');
 
   // ─── Lock orientation ───
   await SystemChrome.setPreferredOrientations([
@@ -110,7 +111,14 @@ void main() async {
   // FirestoreService and OfflineQueueScreen both depend on threw
   // LateInitializationError on first real use) ───
   final container = ProviderContainer(
-    overrides: [firestoreProvider.overrideWithValue(firestore)],
+    overrides: [
+      firestoreProvider.overrideWithValue(firestore),
+      // F-509: restore the persisted dark-mode preference instead of always
+      // starting in light mode.
+      isDarkModeProvider.overrideWith(
+        (ref) => preferencesBox.get('isDarkMode', defaultValue: false)!,
+      ),
+    ],
   );
   await container.read(offlineSyncServiceProvider).initialize();
 

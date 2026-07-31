@@ -1,301 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/providers/app_providers.dart';
 
-class BusinessOsLaunchpad extends StatelessWidget {
+class _TileData {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final String route;
+  // Contractor accounts only have Firestore access to a narrow set of
+  // collections (safety_file_submissions, contractor_documents,
+  // contractor_inductions) — see firestore.rules. Every other tile leads to
+  // a screen that would just render empty/permission-denied for them.
+  final bool contractorVisible;
+  const _TileData({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.route,
+    this.contractorVisible = false,
+  });
+}
+
+class _SectionData {
+  final String title;
+  final List<_TileData> tiles;
+  const _SectionData(this.title, this.tiles);
+}
+
+const _sections = [
+  _SectionData('Finance', [
+    _TileData(title: 'Finance', icon: Icons.account_balance, color: Colors.blueAccent, route: '/finance'),
+  ]),
+  _SectionData('Supply Chain Management', [
+    _TileData(title: 'Supply Chain', icon: Icons.local_shipping, color: Colors.orangeAccent, route: '/supply-chain'),
+    _TileData(title: 'Master Planning', icon: Icons.auto_awesome, color: Colors.deepOrange, route: '/mrp-dashboard'),
+    _TileData(title: 'WMS Scanner', icon: Icons.qr_code_scanner, color: Colors.deepOrangeAccent, route: '/wms-scanner'),
+    _TileData(title: 'Manufacturing', icon: Icons.precision_manufacturing, color: Colors.amber, route: '/manufacturing'),
+    _TileData(title: 'Equipment', icon: Icons.precision_manufacturing, color: Colors.amber, route: '/equipment'),
+    _TileData(title: 'Property & Facilities', icon: Icons.business, color: Colors.grey, route: '/properties'),
+    _TileData(title: 'Environment', icon: Icons.eco, color: Colors.green, route: '/environment'),
+  ]),
+  _SectionData('Human Resources', [
+    _TileData(title: 'HR & Payroll', icon: Icons.people, color: Colors.pinkAccent, route: '/people'),
+    _TileData(title: 'Training', icon: Icons.model_training, color: Colors.lightBlue, route: '/training', contractorVisible: true),
+    _TileData(title: 'Workers Comp', icon: Icons.personal_injury, color: Colors.orange, route: '/workers-comp'),
+    _TileData(title: 'Occupational Health', icon: Icons.medical_services, color: Colors.pink, route: '/health'),
+    _TileData(title: 'Safety', icon: Icons.health_and_safety, color: Colors.redAccent, route: '/safety', contractorVisible: true),
+    _TileData(title: 'Compliance', icon: Icons.fact_check, color: Colors.deepPurpleAccent, route: '/compliance', contractorVisible: true),
+  ]),
+  _SectionData('Project Operations', [
+    _TileData(title: 'Projects', icon: Icons.architecture, color: Colors.indigo, route: '/projects'),
+    _TileData(title: 'Project Ops', icon: Icons.construction, color: Colors.teal, route: '/projects-ops'),
+    _TileData(title: 'Schedule Board', icon: Icons.calendar_view_week, color: Colors.blueAccent, route: '/schedule-board'),
+    _TileData(title: 'Contractors', icon: Icons.engineering, color: Colors.brown, route: '/contractors', contractorVisible: true),
+    _TileData(title: 'Risk', icon: Icons.warning_amber_rounded, color: Colors.deepOrange, route: '/risk'),
+  ]),
+  _SectionData('Customer Engagement', [
+    _TileData(title: 'CRM', icon: Icons.point_of_sale, color: Colors.lightGreen, route: '/crm'),
+    _TileData(title: 'Customer Service', icon: Icons.support_agent, color: Colors.deepPurple, route: '/customer-service'),
+    _TileData(title: 'Field Service', icon: Icons.handyman, color: Colors.lime, route: '/field-service'),
+    _TileData(title: 'Emergency', icon: Icons.emergency, color: Colors.red, route: '/emergency', contractorVisible: true),
+  ]),
+  _SectionData('System Administration', [
+    _TileData(title: 'Command Center', icon: Icons.monitor, color: Colors.blueGrey, route: '/operations'),
+    _TileData(title: 'AI Chat', icon: Icons.smart_toy, color: Colors.purple, route: '/ai'),
+    _TileData(title: 'Global Settings', icon: Icons.settings, color: Colors.grey, route: '/settings'),
+    _TileData(title: 'Global Control Tower', icon: Icons.satellite_alt, color: Colors.cyanAccent, route: '/control-tower'),
+    _TileData(title: 'Sentinel Copilot', icon: Icons.auto_awesome, color: Colors.deepPurpleAccent, route: '/copilot'),
+    _TileData(title: 'Offline Sync Queue', icon: Icons.sync, color: Colors.blueGrey, route: '/offline-queue'),
+  ]),
+];
+
+class BusinessOsLaunchpad extends ConsumerWidget {
   const BusinessOsLaunchpad({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final role = ref.watch(userProfileProvider).valueOrNull?.role;
+    final isContractor = role == 'contractor';
+
+    final visibleSections = _sections
+        .map((s) => _SectionData(
+              s.title,
+              isContractor ? s.tiles.where((t) => t.contractorVisible).toList() : s.tiles,
+            ))
+        .where((s) => s.tiles.isNotEmpty)
+        .toList();
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       body: CustomScrollView(
         slivers: [
-          SliverAppBar.large(
-            title: const Text('Launchpad'),
-            centerTitle: false,
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 24.0, top: 24.0, right: 24.0),
-              child: Text('Finance', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24.0),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
+          SliverAppBar.large(title: const Text('Launchpad'), centerTitle: false),
+          for (final section in visibleSections) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 24.0, top: 24.0, right: 24.0),
+                child: Text(section.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
-              delegate: SliverChildListDelegate([
-                const _LaunchpadCard(
-                  title: 'Finance',
-                  icon: Icons.account_balance,
-                  color: Colors.blueAccent,
-                  route: '/finance',
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(24.0),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 300,
+                  childAspectRatio: 1.1,
+                  crossAxisSpacing: 24,
+                  mainAxisSpacing: 24,
                 ),
-              ]),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 24.0, right: 24.0),
-              child: Text('Supply Chain Management', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24.0),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
+                delegate: SliverChildListDelegate([
+                  for (final tile in section.tiles)
+                    _LaunchpadCard(title: tile.title, icon: tile.icon, color: tile.color, route: tile.route),
+                ]),
               ),
-              delegate: SliverChildListDelegate([
-                const _LaunchpadCard(
-                  title: 'Supply Chain',
-                  icon: Icons.local_shipping,
-                  color: Colors.orangeAccent,
-                  route: '/supply-chain',
-                ),
-                const _LaunchpadCard(
-                  title: 'Master Planning',
-                  icon: Icons.auto_awesome,
-                  color: Colors.deepOrange,
-                  route: '/mrp-dashboard',
-                ),
-                const _LaunchpadCard(
-                  title: 'WMS Scanner',
-                  icon: Icons.qr_code_scanner,
-                  color: Colors.deepOrangeAccent,
-                  route: '/wms-scanner',
-                ),
-                const _LaunchpadCard(
-                  title: 'Manufacturing',
-                  icon: Icons.precision_manufacturing,
-                  color: Colors.amber,
-                  route: '/manufacturing',
-                ),
-                const _LaunchpadCard(
-                  title: 'Equipment',
-                  icon: Icons.precision_manufacturing,
-                  color: Colors.amber,
-                  route: '/equipment',
-                ),
-                const _LaunchpadCard(
-                  title: 'Property & Facilities',
-                  icon: Icons.business,
-                  color: Colors.grey,
-                  route: '/properties',
-                ),
-                const _LaunchpadCard(
-                  title: 'Environment',
-                  icon: Icons.eco,
-                  color: Colors.green,
-                  route: '/environment',
-                ),
-              ]),
             ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 24.0, right: 24.0),
-              child: Text('Human Resources', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24.0),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
-              ),
-              delegate: SliverChildListDelegate([
-                const _LaunchpadCard(
-                  title: 'HR & Payroll',
-                  icon: Icons.people,
-                  color: Colors.pinkAccent,
-                  route: '/people',
-                ),
-                const _LaunchpadCard(
-                  title: 'Training',
-                  icon: Icons.model_training,
-                  color: Colors.lightBlue,
-                  route: '/training',
-                ),
-                const _LaunchpadCard(
-                  title: 'Workers Comp',
-                  icon: Icons.personal_injury,
-                  color: Colors.orange,
-                  route: '/workers-comp',
-                ),
-                const _LaunchpadCard(
-                  title: 'Occupational Health',
-                  icon: Icons.medical_services,
-                  color: Colors.pink,
-                  route: '/health',
-                ),
-                const _LaunchpadCard(
-                  title: 'Safety',
-                  icon: Icons.health_and_safety,
-                  color: Colors.redAccent,
-                  route: '/safety',
-                ),
-                const _LaunchpadCard(
-                  title: 'Compliance',
-                  icon: Icons.fact_check,
-                  color: Colors.deepPurpleAccent,
-                  route: '/compliance',
-                ),
-              ]),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 24.0, right: 24.0),
-              child: Text('Project Operations', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24.0),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
-              ),
-              delegate: SliverChildListDelegate([
-                const _LaunchpadCard(
-                  title: 'Projects',
-                  icon: Icons.architecture,
-                  color: Colors.indigo,
-                  route: '/projects',
-                ),
-                const _LaunchpadCard(
-                  title: 'Project Ops',
-                  icon: Icons.construction,
-                  color: Colors.teal,
-                  route: '/projects-ops',
-                ),
-                const _LaunchpadCard(
-                  title: 'Schedule Board',
-                  icon: Icons.calendar_view_week,
-                  color: Colors.blueAccent,
-                  route: '/schedule-board',
-                ),
-                const _LaunchpadCard(
-                  title: 'Contractors',
-                  icon: Icons.engineering,
-                  color: Colors.brown,
-                  route: '/contractors',
-                ),
-                const _LaunchpadCard(
-                  title: 'Risk',
-                  icon: Icons.warning_amber_rounded,
-                  color: Colors.deepOrange,
-                  route: '/risk',
-                ),
-              ]),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 24.0, right: 24.0),
-              child: Text('Customer Engagement', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24.0),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
-              ),
-              delegate: SliverChildListDelegate([
-                const _LaunchpadCard(
-                  title: 'CRM',
-                  icon: Icons.point_of_sale,
-                  color: Colors.lightGreen,
-                  route: '/crm',
-                ),
-                const _LaunchpadCard(
-                  title: 'Customer Service',
-                  icon: Icons.support_agent,
-                  color: Colors.deepPurple,
-                  route: '/customer-service',
-                ),
-                const _LaunchpadCard(
-                  title: 'Field Service',
-                  icon: Icons.handyman,
-                  color: Colors.lime,
-                  route: '/field-service',
-                ),
-                const _LaunchpadCard(
-                  title: 'Emergency',
-                  icon: Icons.emergency,
-                  color: Colors.red,
-                  route: '/emergency',
-                ),
-              ]),
-            ),
-          ),
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.only(left: 24.0, right: 24.0),
-              child: Text('System Administration', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24.0),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 1.1,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
-              ),
-              delegate: SliverChildListDelegate([
-                const _LaunchpadCard(
-                  title: 'Command Center',
-                  icon: Icons.monitor,
-                  color: Colors.blueGrey,
-                  route: '/operations',
-                ),
-                const _LaunchpadCard(
-                  title: 'AI Chat',
-                  icon: Icons.smart_toy,
-                  color: Colors.purple,
-                  route: '/ai',
-                ),
-                const _LaunchpadCard(
-                  title: 'Global Settings',
-                  icon: Icons.settings,
-                  color: Colors.grey,
-                  route: '/settings',
-                ),
-                const _LaunchpadCard(
-                  title: 'Global Control Tower',
-                  icon: Icons.satellite_alt,
-                  color: Colors.cyanAccent,
-                  route: '/control-tower',
-                ),
-                const _LaunchpadCard(
-                  title: 'Sentinel Copilot',
-                  icon: Icons.auto_awesome,
-                  color: Colors.deepPurpleAccent,
-                  route: '/copilot',
-                ),
-              ]),
-            ),
-          ),
+          ],
         ],
       ),
     );
@@ -350,9 +170,7 @@ class _LaunchpadCard extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),

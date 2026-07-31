@@ -64,10 +64,11 @@ class _SheqChatState extends ConsumerState<SheqChatTab> {
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString();
         setState(
           () => _messages.add(
             ChatMessage(
-              text: 'Error: ${e.toString().substring(0, 120)}',
+              text: 'Error: ${msg.length > 120 ? msg.substring(0, 120) : msg}',
               isUser: false,
               isError: true,
             ),
