@@ -120,7 +120,9 @@ class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
                     child:
                         p?.photoURL == null
                             ? Text(
-                              (p?.displayName ?? 'U')[0].toUpperCase(),
+                              (p?.displayName.isNotEmpty ?? false)
+                                  ? p!.displayName[0].toUpperCase()
+                                  : 'U',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: XMTheme.primaryDark,
