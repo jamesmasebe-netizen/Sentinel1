@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../../../config/theme.dart';
 
 class EnterpriseSSOScreen extends ConsumerStatefulWidget {
@@ -18,9 +19,7 @@ class _EnterpriseSSOScreenState extends ConsumerState<EnterpriseSSOScreen> {
   Future<void> _handleSAMLSignIn() async {
     final providerId = _providerIdController.text.trim();
     if (providerId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a Provider ID')),
-      );
+      UIUtils.showToast(context, 'Please enter a Provider ID', type: ToastType.error);
       return;
     }
 
@@ -39,9 +38,7 @@ class _EnterpriseSSOScreenState extends ConsumerState<EnterpriseSSOScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('SAML login failed: ${e.toString()}')),
-        );
+        UIUtils.showToast(context, 'SAML login failed: $e', type: ToastType.error);
       }
     } finally {
       if (mounted) {

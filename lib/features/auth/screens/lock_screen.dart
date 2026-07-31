@@ -32,15 +32,18 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     });
 
     try {
-      final bool canAuthenticateWithBiometrics =
-          await _localAuth.canCheckBiometrics;
-      final bool canAuthenticate =
-          canAuthenticateWithBiometrics || await _localAuth.isDeviceSupported();
+      final bool isDeviceSupported = await _localAuth.isDeviceSupported();
 
-      if (canAuthenticate) {
+      if (isDeviceSupported) {
+        // biometricOnly: false lets the OS fall back to PIN/pattern/password
+        // if no biometric is enrolled — never unlock without some device
+        // credential check. See F-505 in docs/fixes/FIX_LIST.md.
         final bool didAuthenticate = await _localAuth.authenticate(
           localizedReason: 'Please authenticate to unlock XM System',
-          options: const AuthenticationOptions(stickyAuth: true),
+          options: const AuthenticationOptions(
+            stickyAuth: true,
+            biometricOnly: false,
+          ),
         );
 
         if (didAuthenticate && mounted) {
@@ -48,11 +51,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           // The router will automatically redirect back to the previous screen or dashboard
           // because we update the isAppLockedProvider to false.
         }
-      } else {
-        // Fallback for devices without biometrics
-        if (mounted && !auto) {
-          ref.read(sessionManagerProvider).unlockSession();
-        }
+      } else if (!auto && mounted) {
+        // No device credential of any kind exists to verify against —
+        // never auto-unlock; force a full sign-out instead.
+        await ref.read(authServiceProvider).signOut();
       }
     } catch (e) {
       // Handle error

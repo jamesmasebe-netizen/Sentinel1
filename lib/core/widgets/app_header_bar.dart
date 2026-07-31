@@ -6,6 +6,8 @@ import '../services/session_manager.dart';
 import '../../config/theme.dart';
 import '../utils/ui_utils.dart';
 import '../../features/notifications/screens/notifications_screen.dart';
+import '../../features/auth/widgets/edit_profile_form.dart';
+import '../../features/settings/screens/settings_screen.dart';
 import 'app_header_widgets.dart';
 
 class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
@@ -149,7 +151,13 @@ class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
                   title: const Text('Edit Profile'),
                   onTap: () {
                     Navigator.pop(context);
-                    UIUtils.showToast(context, 'Edit profile opened');
+                    final profile = ref.read(userProfileProvider).valueOrNull;
+                    if (profile == null) return;
+                    UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Edit Profile',
+                      builder: (_) => EditProfileForm(profile: profile),
+                    );
                   },
                 ),
                 ListTile(
@@ -157,7 +165,11 @@ class AppHeaderBar extends ConsumerWidget implements PreferredSizeWidget {
                   title: const Text('Settings'),
                   onTap: () {
                     Navigator.pop(context);
-                    UIUtils.showToast(context, 'Settings opened');
+                    UIUtils.showSideSheet(
+                      context: context,
+                      title: 'Settings',
+                      builder: (_) => const SettingsScreen(),
+                    );
                   },
                 ),
                 ListTile(

@@ -20,6 +20,11 @@ class AuthService {
   UserProfile? _currentProfile;
   UserProfile? get currentProfile => _currentProfile;
 
+  /// Set by authServiceProvider (which has Riverpod ref access this plain
+  /// class doesn't) to register the FCM device token once a profile is
+  /// available — see F-520 in docs/fixes/FIX_LIST.md.
+  void Function(UserProfile profile)? onProfileReady;
+
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
@@ -57,6 +62,7 @@ class AuthService {
       await user.getIdToken(true);
       _currentProfile = profile;
       _profileController.add(profile);
+      onProfileReady?.call(profile);
       return profile;
     } catch (e) {
       rethrow;
@@ -83,6 +89,7 @@ class AuthService {
       await user.getIdToken(true);
       _currentProfile = profile;
       _profileController.add(profile);
+      onProfileReady?.call(profile);
       return profile;
     } catch (e) {
       rethrow;

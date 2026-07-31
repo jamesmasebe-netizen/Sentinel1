@@ -643,6 +643,58 @@ class PayrollLedger {
   }
 }
 
+class DisciplinaryRecord {
+  final String id;
+  final String employeeId;
+  final String employeeName;
+  final String actionType;
+  final String description;
+  final DateTime dateIssued;
+  final String issuedByName;
+  final String siteId;
+  final DateTime createdAt;
+
+  DisciplinaryRecord({
+    this.id = '',
+    required this.employeeId,
+    required this.employeeName,
+    required this.actionType,
+    required this.description,
+    required this.dateIssued,
+    required this.issuedByName,
+    required this.siteId,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  factory DisciplinaryRecord.fromFirestore(DocumentSnapshot doc) {
+    final json = doc.data() as Map<String, dynamic>;
+    return DisciplinaryRecord(
+      id: doc.id,
+      employeeId: json['employeeId'] ?? '',
+      employeeName: json['employeeName'] ?? '',
+      actionType: json['actionType'] ?? 'Verbal Warning',
+      description: json['description'] ?? '',
+      dateIssued: _timestampToDateTime(json['dateIssued']) ?? DateTime.now(),
+      issuedByName: json['issuedByName'] ?? '',
+      siteId: json['siteId'] ?? '',
+      createdAt: _timestampToDateTime(json['createdAt']) ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'employeeId': employeeId,
+      'employeeName': employeeName,
+      'actionType': actionType,
+      'description': description,
+      'dateIssued': _dateTimeToTimestamp(dateIssued),
+      'issuedByName': issuedByName,
+      'siteId': siteId,
+      'createdAt': _dateTimeToTimestamp(createdAt),
+    };
+  }
+}
+
 class OHSAppointment {
   final String id;
   final String appointeeId;
