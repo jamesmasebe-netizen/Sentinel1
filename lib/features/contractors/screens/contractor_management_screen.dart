@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/utils/ui_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../widgets/add_contractor_form.dart';
 import '../widgets/contractor_list.dart';
 import '../widgets/contractor_compliance_card.dart';
+import '../widgets/contractor_inductions_tab.dart';
 
 /// Contractor Management — contractor register, compliance status, permit linkage.
 class ContractorManagementScreen extends ConsumerStatefulWidget {
@@ -77,7 +77,7 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
         children: [
           _registerTab(),
           const ContractorComplianceCard(),
-          _inductionsTab(),
+          const ContractorInductionsTab(),
         ],
       ),
     );
@@ -143,26 +143,4 @@ class _ContractorState extends ConsumerState<ContractorManagementScreen>
     );
   }
 
-  Widget _inductionsTab() => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.assignment_ind,
-          size: 48,
-          color: XMTheme.primary.withValues(alpha: 0.4),
-        ),
-        GSpacing.vMd,
-        const Text('Contractor Induction Records'),
-        GSpacing.vSm,
-        Text(
-          'Site induction completion tracking per contractor',
-          style: TextStyle(
-            fontSize: 12,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    ),
-  );
 }

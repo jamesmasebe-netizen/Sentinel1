@@ -3,6 +3,8 @@ import '../../../core/utils/ui_utils.dart';
 import 'inventory_dashboard.dart';
 import 'warehouse_management_screen.dart';
 import 'asset_management_screen.dart';
+import 'vendor_performance_screen.dart';
+import 'bin_locations_screen.dart';
 
 class SupplyChainHubScreen extends StatelessWidget {
   const SupplyChainHubScreen({super.key});
@@ -39,17 +41,13 @@ class SupplyChainHubScreen extends StatelessWidget {
             context,
             'Vendor Performance',
             Icons.assessment_outlined,
-            const Scaffold(
-              body: Center(child: Text('Vendor Performance — Coming Soon')),
-            ),
+            const VendorPerformanceScreen(),
           ),
           _buildCard(
             context,
             'Bin Locations',
             Icons.grid_view_outlined,
-            const Scaffold(
-              body: Center(child: Text('Bin Locations — Coming Soon')),
-            ),
+            const BinLocationsScreen(),
           ),
         ],
       ),

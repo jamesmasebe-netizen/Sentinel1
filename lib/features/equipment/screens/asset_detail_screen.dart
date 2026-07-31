@@ -12,6 +12,7 @@ import '../widgets/loto_badge.dart';
 import '../../../core/automation/loto_automation.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/loto_return_dialog.dart';
+import '../widgets/equipment_edit_form.dart';
 class AssetDetailScreen extends ConsumerWidget {
   final String assetId;
 
@@ -50,7 +51,11 @@ class AssetDetailScreen extends ConsumerWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.edit),
-                onPressed: () {},
+                onPressed: () => UIUtils.showSideSheet(
+                  context: context,
+                  title: 'Edit Equipment',
+                  builder: (_) => EquipmentEditForm(initialData: asset),
+                ),
               ),
               PopupMenuButton<String>(
                 onSelected: (val) {

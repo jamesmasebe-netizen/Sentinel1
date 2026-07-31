@@ -11,6 +11,9 @@ import '../../../core/utils/ui_utils.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'document_review_dialog.dart';
 import 'ai_prescreen_badge.dart';
+import '../services/ai_compliance_service.dart';
+import 'finding_list_item.dart';
+import 'finding_update_dialog.dart';
 
 class SafetyFileSubmissionView extends ConsumerStatefulWidget {
   final String contractorId;
@@ -31,6 +34,42 @@ class _SafetyFileSubmissionViewState
     extends ConsumerState<SafetyFileSubmissionView> {
   final _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
   bool _isGeneratingPdf = false;
+  final Set<String> _preScreeningIds = {};
+
+  Future<void> _updateFindingStatus(Finding finding, FindingStatus newStatus, String comment) async {
+    try {
+      final db = ref.read(firestoreProvider);
+      final tenantId = ref.read(currentTenantIdProvider) ?? '';
+      final user = ref.read(userProfileProvider).valueOrNull;
+      await db.tenantCollection(tenantId, 'findings').doc(finding.findingId).update({
+        'status': newStatus.name,
+        'modifiedBy': user?.uid ?? '',
+        'modifiedAt': FieldValue.serverTimestamp(),
+        'statusHistory': FieldValue.arrayUnion([
+          {
+            'status': newStatus.name,
+            'timestamp': DateTime.now().toIso8601String(),
+            'comment': comment,
+            'userId': user?.uid ?? '',
+          }
+        ]),
+      });
+      if (mounted) UIUtils.showToast(context, 'Finding updated', type: ToastType.success);
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, 'Error updating finding: $e', type: ToastType.error);
+    }
+  }
+
+  Future<void> _triggerPreScreen(ContractorDocument doc) async {
+    setState(() => _preScreeningIds.add(doc.id));
+    try {
+      await ref.read(aiComplianceServiceProvider).triggerPreScreen(doc.id, doc.url);
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, 'AI pre-screen failed: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _preScreeningIds.remove(doc.id));
+    }
+  }
 
   Future<void> _generateReport(String submissionId) async {
     setState(() => _isGeneratingPdf = true);
@@ -183,6 +222,7 @@ class _SafetyFileSubmissionViewState
             ),
             const Divider(),
             Expanded(
+              flex: 3,
               child: StreamBuilder<QuerySnapshot>(
                 stream:
                     db
@@ -221,13 +261,75 @@ class _SafetyFileSubmissionViewState
                               if (doc.feedback != null && doc.feedback!.isNotEmpty)
                                 Text('Feedback: ${doc.feedback}'),
                               const SizedBox(height: 4),
-                              AiPreScreenBadge(documentId: doc.id),
+                              Row(
+                                children: [
+                                  Expanded(child: AiPreScreenBadge(documentId: doc.id)),
+                                  TextButton.icon(
+                                    onPressed: _preScreeningIds.contains(doc.id)
+                                        ? null
+                                        : () => _triggerPreScreen(doc),
+                                    icon: _preScreeningIds.contains(doc.id)
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : const Icon(Icons.auto_awesome, size: 16),
+                                    label: const Text('AI Pre-Screen'),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                           trailing: FilledButton.tonal(
                             onPressed: () => DocumentReviewDialog.show(context, doc),
                             child: const Text('Review'),
                           ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text('Findings', style: Theme.of(context).textTheme.titleMedium),
+            ),
+            Expanded(
+              flex: 2,
+              child: StreamBuilder<QuerySnapshot>(
+                stream: db
+                    .tenantCollection(
+                      ref.watch(currentTenantIdProvider) ?? "",
+                      'findings',
+                    )
+                    .where('submissionId', isEqualTo: submissionId)
+                    .snapshots(),
+                builder: (ctx, findingSnap) {
+                  if (!findingSnap.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final findings = findingSnap.data!.docs
+                      .map((d) => Finding.fromFirestore(d))
+                      .toList();
+
+                  if (findings.isEmpty) {
+                    return const Center(child: Text('No findings recorded.'));
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: findings.length,
+                    itemBuilder: (context, i) {
+                      final finding = findings[i];
+                      return FindingListItem(
+                        finding: finding,
+                        onUpdateTap: () => FindingUpdateDialog.show(
+                          context,
+                          finding,
+                          _updateFindingStatus,
                         ),
                       );
                     },

@@ -25,7 +25,7 @@ class DocumentReviewDialog extends ConsumerStatefulWidget {
 class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
   final _feedbackCtrl = TextEditingController();
   String _selectedStatus = 'Pending';
-  String _findingStatus = 'Open';
+  FindingStatus _findingStatus = FindingStatus.open;
 
   @override
   void initState() {
@@ -53,7 +53,7 @@ class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
     if (user != null && _feedbackCtrl.text.isNotEmpty) {
       final newFinding = {
         'description': _feedbackCtrl.text,
-        'status': _findingStatus,
+        'status': _findingStatus.name,
         'reportedBy': user.displayName.isNotEmpty ? user.displayName : user.email,
         'createdAt': DateTime.now().toIso8601String(),
       };
@@ -68,18 +68,24 @@ class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
       await db.tenantCollection(tenantId, 'findings').add({
         'submissionId': widget.document.submissionId,
         'documentId': widget.document.id,
-        'status': _findingStatus,
-        'type': 'observation',
+        // requirementId intentionally omitted: no requirement-reference field
+        // exists anywhere on ContractorDocument/SafetyFileSubmission to source
+        // it from — flagged as an Open Question per F-222 in FIX_LIST.md
+        // rather than inventing a value. Defaults to 0 via Finding.fromFirestore.
+        'siteId': tenantId,
+        'status': _findingStatus.name,
+        'type': FindingType.observation.name,
         'description': _feedbackCtrl.text,
         'contractorAction': '',
         'reportedBy': user.displayName.isNotEmpty ? user.displayName : user.email,
         'reviewerUid': user.uid,
+        'reviewerName': user.displayName.isNotEmpty ? user.displayName : user.email,
         'createdAt': FieldValue.serverTimestamp(),
         'modifiedBy': user.uid,
         'modifiedAt': FieldValue.serverTimestamp(),
         'statusHistory': [
           {
-            'status': _findingStatus,
+            'status': _findingStatus.name,
             'timestamp': DateTime.now().toIso8601String(),
             'comment': 'Initial review finding',
             'userId': user.uid,
@@ -115,13 +121,13 @@ class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
             maxLines: 3,
           ),
           GSpacing.vMd,
-          DropdownButtonFormField<String>(
+          DropdownButtonFormField<FindingStatus>(
             value: _findingStatus,
             decoration: const InputDecoration(labelText: 'Finding Status'),
-            items: ['Open', 'Resolved'].map((s) {
-              return DropdownMenuItem(value: s, child: Text(s));
+            items: FindingStatus.values.map((s) {
+              return DropdownMenuItem(value: s, child: Text(s.name.toUpperCase()));
             }).toList(),
-            onChanged: (v) => setState(() => _findingStatus = v!),
+            onChanged: (v) => setState(() => _findingStatus = v ?? _findingStatus),
           ),
         ],
       ),

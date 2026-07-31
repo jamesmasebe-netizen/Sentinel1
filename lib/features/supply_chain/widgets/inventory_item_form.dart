@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../models/scm_models.dart';
 import '../services/scm_service.dart';
+import '../providers/scm_streams_provider.dart';
+import '../../../core/widgets/entity_selector.dart';
 
 class InventoryItemForm extends ConsumerStatefulWidget {
   final InventoryItem? initialData;
@@ -20,9 +22,7 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
   late TextEditingController _skuController;
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
-  late TextEditingController _itemTypeController;
   late TextEditingController _unitOfMeasureController;
-  late TextEditingController _valuationMethodController;
   late TextEditingController _leadTimeDaysController;
   late TextEditingController _safetyStockController;
   late TextEditingController _reorderPointController;
@@ -35,7 +35,23 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
   late TextEditingController _costAmountController;
   late TextEditingController _costCurrencyController;
   late TextEditingController _stockLevelController;
+  late TextEditingController _aisleController;
+  late TextEditingController _rackController;
+  late TextEditingController _binController;
 
+  static const _itemTypes = [
+    'RAW_MATERIAL',
+    'COMPONENT',
+    'SUB_ASSEMBLY',
+    'FINISHED_GOOD',
+    'CONSUMABLE',
+    'ASSET',
+  ];
+  static const _valuationMethods = ['FIFO', 'LIFO', 'AVERAGE_COST', 'STANDARD_COST'];
+
+  String _itemType = 'FINISHED_GOOD';
+  String _valuationMethod = 'FIFO';
+  String? _warehouseId;
   bool _isConfigurable = false;
   bool _isActive = true;
   String _lifecycleStatus = 'Active';
@@ -50,12 +66,8 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
     _descriptionController = TextEditingController(
       text: item?.description ?? '',
     );
-    _itemTypeController = TextEditingController(text: item?.itemType ?? '');
     _unitOfMeasureController = TextEditingController(
       text: item?.unitOfMeasure ?? 'pcs',
-    );
-    _valuationMethodController = TextEditingController(
-      text: item?.valuationMethod ?? 'FIFO',
     );
     _leadTimeDaysController = TextEditingController(
       text: item?.leadTimeDays.toString() ?? '0',
@@ -93,11 +105,17 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
     _stockLevelController = TextEditingController(
       text: item?.stockLevel.toString() ?? '0.0',
     );
+    _aisleController = TextEditingController(text: item?.aisle ?? '');
+    _rackController = TextEditingController(text: item?.rack ?? '');
+    _binController = TextEditingController(text: item?.bin ?? '');
 
     if (item != null) {
       _isConfigurable = item.isConfigurable;
       _isActive = item.isActive;
       _lifecycleStatus = item.lifecycleStatus;
+      _itemType = item.itemType.isNotEmpty ? item.itemType : 'FINISHED_GOOD';
+      _valuationMethod = item.valuationMethod.isNotEmpty ? item.valuationMethod : 'FIFO';
+      _warehouseId = item.warehouseId;
     }
   }
 
@@ -106,9 +124,7 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
     _skuController.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
-    _itemTypeController.dispose();
     _unitOfMeasureController.dispose();
-    _valuationMethodController.dispose();
     _leadTimeDaysController.dispose();
     _safetyStockController.dispose();
     _reorderPointController.dispose();
@@ -121,6 +137,9 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
     _costAmountController.dispose();
     _costCurrencyController.dispose();
     _stockLevelController.dispose();
+    _aisleController.dispose();
+    _rackController.dispose();
+    _binController.dispose();
     super.dispose();
   }
 
@@ -134,9 +153,13 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
         sku: _skuController.text,
         name: _nameController.text,
         description: _descriptionController.text,
-        itemType: _itemTypeController.text,
+        itemType: _itemType,
         unitOfMeasure: _unitOfMeasureController.text,
-        valuationMethod: _valuationMethodController.text,
+        valuationMethod: _valuationMethod,
+        warehouseId: _warehouseId,
+        aisle: _aisleController.text.trim().isEmpty ? null : _aisleController.text.trim(),
+        rack: _rackController.text.trim().isEmpty ? null : _rackController.text.trim(),
+        bin: _binController.text.trim().isEmpty ? null : _binController.text.trim(),
         leadTimeDays: int.tryParse(_leadTimeDaysController.text) ?? 0,
         safetyStock: double.tryParse(_safetyStockController.text) ?? 0.0,
         reorderPoint: double.tryParse(_reorderPointController.text) ?? 0.0,
@@ -237,12 +260,16 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
           Row(
             children: [
               Expanded(
-                child: TextFormField(
-                  controller: _itemTypeController,
+                child: DropdownButtonFormField<String>(
+                  value: _itemType,
                   decoration: const InputDecoration(
                     labelText: 'Item Type',
                     border: OutlineInputBorder(),
                   ),
+                  items: _itemTypes
+                      .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                      .toList(),
+                  onChanged: (val) => setState(() => _itemType = val ?? _itemType),
                 ),
               ),
               const SizedBox(width: 16),
@@ -274,12 +301,16 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: TextFormField(
-                  controller: _valuationMethodController,
+                child: DropdownButtonFormField<String>(
+                  value: _valuationMethod,
                   decoration: const InputDecoration(
                     labelText: 'Valuation Method',
                     border: OutlineInputBorder(),
                   ),
+                  items: _valuationMethods
+                      .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                      .toList(),
+                  onChanged: (val) => setState(() => _valuationMethod = val ?? _valuationMethod),
                 ),
               ),
             ],
@@ -426,6 +457,51 @@ class _InventoryItemFormState extends ConsumerState<InventoryItemForm> {
                   controller: _costCurrencyController,
                   decoration: const InputDecoration(
                     labelText: 'Currency',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('Storage Location', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          EntitySelector<Warehouse>(
+            asyncEntities: ref.watch(warehousesStreamProvider),
+            value: _warehouseId,
+            onChanged: (val) => setState(() => _warehouseId = val),
+            label: 'Warehouse',
+            idMapper: (w) => w.id,
+            displayMapper: (w) => w.name,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _aisleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Aisle',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: _rackController,
+                  decoration: const InputDecoration(
+                    labelText: 'Rack',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  controller: _binController,
+                  decoration: const InputDecoration(
+                    labelText: 'Bin',
                     border: OutlineInputBorder(),
                   ),
                 ),

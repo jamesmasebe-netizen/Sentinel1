@@ -180,3 +180,54 @@ class ContractorDocument {
     };
   }
 }
+
+enum InductionStatus { scheduled, completed, expired }
+
+/// Site induction completion record for a contractor's worker — see F-223
+/// in docs/fixes/FIX_LIST.md.
+class ContractorInduction {
+  final String id;
+  final String contractorId;
+  final String attendeeName;
+  final String? projectId;
+  final DateTime date;
+  final InductionStatus status;
+  final DateTime createdAt;
+
+  ContractorInduction({
+    required this.id,
+    required this.contractorId,
+    required this.attendeeName,
+    this.projectId,
+    required this.date,
+    this.status = InductionStatus.scheduled,
+    required this.createdAt,
+  });
+
+  factory ContractorInduction.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return ContractorInduction(
+      id: doc.id,
+      contractorId: data['contractorId'] ?? '',
+      attendeeName: data['attendeeName'] ?? '',
+      projectId: data['projectId'],
+      date: (data['date'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      status: InductionStatus.values.firstWhere(
+        (e) => e.name == data['status'],
+        orElse: () => InductionStatus.scheduled,
+      ),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'contractorId': contractorId,
+      'attendeeName': attendeeName,
+      if (projectId != null) 'projectId': projectId,
+      'date': Timestamp.fromDate(date),
+      'status': status.name,
+      'createdAt': Timestamp.fromDate(createdAt),
+    };
+  }
+}

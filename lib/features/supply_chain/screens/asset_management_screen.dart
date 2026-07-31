@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../../property/screens/property_hub_screen.dart';
+import '../../equipment/screens/equipment_management_screen.dart';
 
 class AssetManagementScreen extends StatelessWidget {
   const AssetManagementScreen({super.key});
@@ -9,29 +12,39 @@ class AssetManagementScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Enterprise Asset Management')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
-        children: const [
+        children: [
           Card(
             child: ListTile(
-              leading: Icon(Icons.business),
-              title: Text('Property Management'),
-              subtitle: Text('Manage real estate and facilities'),
+              leading: const Icon(Icons.business),
+              title: const Text('Property Management'),
+              subtitle: const Text('Manage real estate and facilities'),
+              onTap: () => UIUtils.showSideSheet(
+                context: context,
+                title: 'Property Management',
+                builder: (_) => const PropertyHubScreen(),
+              ),
             ),
           ),
           Card(
             child: ListTile(
-              leading: Icon(Icons.precision_manufacturing),
-              title: Text('Equipment Tracking'),
-              subtitle: Text('Track machinery and heavy equipment'),
+              leading: const Icon(Icons.precision_manufacturing),
+              title: const Text('Equipment Tracking'),
+              subtitle: const Text('Track machinery and heavy equipment'),
+              onTap: () => UIUtils.showSideSheet(
+                context: context,
+                title: 'Equipment Tracking',
+                builder: (_) => const EquipmentManagementScreen(),
+              ),
             ),
           ),
-          Card(
+          const Card(
             child: ListTile(
               leading: Icon(Icons.build_circle_outlined),
               title: Text('Preventative Maintenance'),
               subtitle: Text('Schedule and track maintenance tasks'),
             ),
           ),
-          Card(
+          const Card(
             child: ListTile(
               leading: Icon(Icons.history),
               title: Text('Asset Lifecycle'),
