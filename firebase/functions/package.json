@@ -7,7 +7,8 @@
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "npm run build && firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "backfill:contractor-status": "tsc scripts/backfill-contractor-status.ts --outDir lib/scripts --module commonjs --esModuleInterop --target es2017 --skipLibCheck --strict --noImplicitReturns --noUnusedLocals && node lib/scripts/backfill-contractor-status.js"
+    "backfill:contractor-status": "tsc scripts/backfill-contractor-status.ts --outDir lib/scripts --module commonjs --esModuleInterop --target es2017 --skipLibCheck --strict --noImplicitReturns --noUnusedLocals && node lib/scripts/backfill-contractor-status.js",
+    "grant:admin": "tsc scripts/grant_admin_claims.ts --outDir lib/scripts --module commonjs --esModuleInterop --target es2017 --skipLibCheck --strict --noImplicitReturns --noUnusedLocals && node lib/scripts/grant_admin_claims.js"
   },
   "main": "lib/index.js",
   "dependencies": {
