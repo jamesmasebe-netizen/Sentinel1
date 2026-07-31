@@ -8,6 +8,9 @@ class IncidentReportDynamicFields extends StatelessWidget {
   final TextEditingController bodyPartController;
   final String treatmentType;
   final ValueChanged<String> onTreatmentTypeChanged;
+  final bool lostTimeInjury;
+  final ValueChanged<bool> onLostTimeInjuryChanged;
+  final TextEditingController daysLostController;
 
   // Environmental
   final TextEditingController substanceController;
@@ -25,6 +28,9 @@ class IncidentReportDynamicFields extends StatelessWidget {
     required this.bodyPartController,
     required this.treatmentType,
     required this.onTreatmentTypeChanged,
+    required this.lostTimeInjury,
+    required this.onLostTimeInjuryChanged,
+    required this.daysLostController,
     required this.substanceController,
     required this.volumeController,
     required this.envUnit,
@@ -68,6 +74,26 @@ class IncidentReportDynamicFields extends StatelessWidget {
                       .toList(),
               onChanged: (v) => onTreatmentTypeChanged(v!),
             ),
+            const SizedBox(height: 12),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text('Lost Time Injury'),
+              subtitle: const Text('Employee lost work time due to this injury'),
+              value: lostTimeInjury,
+              onChanged: (v) => onLostTimeInjuryChanged(v ?? false),
+            ),
+            if (lostTimeInjury) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: daysLostController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Days Lost',
+                  prefixIcon: Icon(Icons.event_busy),
+                ),
+              ),
+            ],
           ],
         );
       case 'Environmental':

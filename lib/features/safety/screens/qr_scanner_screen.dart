@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/providers/app_providers.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/passport_compliance_checker.dart';
 
 class QrScannerScreen extends ConsumerStatefulWidget {
   const QrScannerScreen({super.key});
@@ -107,36 +108,7 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
             (contractorsSnap.docs.first.data())['companyName'] ?? 'External';
       }
 
-      // 4. Fetch active training records
-      final trainingSnap =
-          await fs
-              .tenantCollection(tenantId, 'training_records')
-              .where('employeeId', isEqualTo: employeeId)
-              .get();
-      final validTrainings =
-          trainingSnap.docs.map((d) => d.data()).where((t) {
-            final expiry = t['expiryDate'];
-            if (expiry == null) return true; // no expiry = still valid
-            final expiryDate = DateTime.tryParse(expiry.toString());
-            return expiryDate != null && expiryDate.isAfter(DateTime.now());
-          }).toList();
-
-      // 5. Fetch active permits (PTWs) where this employee is a worker
-      final permitsSnap =
-          await fs
-              .tenantCollection(tenantId, 'permits')
-              .where('status', whereIn: ['active', 'approved'])
-              .get();
-      final activePermits =
-          permitsSnap.docs.map((d) => {'id': d.id, ...d.data()}).where((p) {
-            final workers = p['workers'] as List<dynamic>? ?? [];
-            return workers.any((w) {
-              if (w is Map) return w['employeeId'] == employeeId;
-              return w.toString() == employeeId;
-            });
-          }).toList();
-
-      // 6. Fetch project allocation
+      // 4. Fetch project allocation
       final projectsSnap =
           await fs
               .tenantCollection(tenantId, 'projects')
@@ -145,8 +117,14 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
       final allocatedProjects =
           projectsSnap.docs.map((d) => (d.data())['name'] ?? d.id).toList();
 
-      // Determine compliance
-      final isCompliant = status == 'Active';
+      // 5. Determine compliance via the single shared checker — see F-103 in
+      // docs/fixes/FIX_LIST.md. status == 'Active' alone is not sufficient;
+      // this also checks medical cert / training / induction / PTW state.
+      final result = await ref
+          .read(passportComplianceCheckerProvider)
+          .checkEmployeeCompliance(employeeId);
+      final issues = List<String>.from(result.issues);
+      if (status != 'Active') issues.add('Employee status: $status');
 
       if (!mounted) return;
       _showEmployeeResult(
@@ -156,10 +134,10 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
         department: department,
         jobTitle: jobTitle,
         supervisorName: supervisorName,
-        trainings: validTrainings,
-        permits: activePermits,
         projects: allocatedProjects,
-        isCompliant: isCompliant,
+        result: result,
+        issues: issues,
+        isCompliant: result.level == ComplianceLevel.compliant && status == 'Active',
       );
     } catch (e) {
       _showError('Failed to fetch employee data: $e');
@@ -215,33 +193,18 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
         }
       }
 
-      // 3. Fetch active permits for this contractor
-      final permitsSnap =
-          await fs
-              .tenantCollection(tenantId, 'permits')
-              .where('status', whereIn: ['active', 'approved'])
-              .get();
-      final activePermits =
-          permitsSnap.docs
-              .map((d) => {'id': d.id, ...d.data()})
-              .where((p) => p['requesterId'] == contractorId)
-              .toList();
-
-      // 4. Fetch safety file score from documents
-      final docsSnap =
-          await fs
-              .tenantCollection(tenantId, 'contractor_documents')
-              .where('submissionId', isEqualTo: contractorId)
-              .get();
-      final totalDocs = docsSnap.docs.length;
-      final approvedDocs =
-          docsSnap.docs.where((d) => (d.data())['status'] == 'Resolved').length;
-      final safetyFileScore =
-          totalDocs > 0 ? ((approvedDocs / totalDocs) * 100).round() : 0;
-
-      final isCompliant =
-          complianceStatus.toLowerCase() == 'compliant' ||
-          complianceStatus.toLowerCase() == 'approved';
+      // 3. Determine compliance via the single shared checker — see F-103 in
+      // docs/fixes/FIX_LIST.md.
+      final result = await ref
+          .read(passportComplianceCheckerProvider)
+          .checkContractorCompliance(contractorId);
+      final issues = List<String>.from(result.issues);
+      final statusLower = complianceStatus.toLowerCase();
+      if (statusLower != 'compliant' && statusLower != 'approved') {
+        issues.add('Compliance status: $complianceStatus');
+      }
+      final isCompliant = result.level == ComplianceLevel.compliant &&
+          (statusLower == 'compliant' || statusLower == 'approved');
 
       if (!mounted) return;
       _showContractorResult(
@@ -250,8 +213,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
         projectName: projectName,
         scopeOfWork: scopeOfWork,
         safetyRating: safetyRating,
-        safetyFileScore: safetyFileScore,
-        permits: activePermits,
+        result: result,
+        issues: issues,
         isCompliant: isCompliant,
         isStale: isStale,
       );
@@ -267,9 +230,9 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     required String department,
     required String jobTitle,
     required String supervisorName,
-    required List<Map<String, dynamic>> trainings,
-    required List<Map<String, dynamic>> permits,
     required List<dynamic> projects,
+    required ComplianceCheckResult result,
+    required List<String> issues,
     required bool isCompliant,
   }) {
     showModalBottomSheet(
@@ -351,49 +314,50 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                         ),
                       GSpacing.vLg,
 
-                      // Training
+                      // Training / Medical / Induction
                       const Divider(),
                       GSpacing.vSm,
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            'OHS Training',
+                            'OHS Compliance',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
                           Text(
-                            '${trainings.length} valid',
-                            style: const TextStyle(color: Colors.green),
+                            '${result.validTrainingCount} valid, ${result.expiredTrainingCount} expired',
+                            style: TextStyle(
+                              color: result.expiredTrainingCount > 0 ? Colors.orange : Colors.green,
+                            ),
                           ),
                         ],
                       ),
                       GSpacing.vSm,
-                      if (trainings.isEmpty)
-                        const Text(
-                          'No valid training records found',
-                          style: TextStyle(color: Colors.orange),
-                        )
-                      else
-                        ...trainings.map(
-                          (t) => ListTile(
-                            leading: const Icon(
-                              Icons.verified,
-                              color: Colors.green,
-                            ),
-                            title: Text(
-                              t['courseName'] ?? t['title'] ?? 'Training',
-                            ),
-                            subtitle: Text(
-                              t['expiryDate'] != null
-                                  ? 'Expires: ${t['expiryDate']}'
-                                  : 'No expiry',
-                            ),
-                            dense: true,
-                          ),
+                      ListTile(
+                        dense: true,
+                        leading: Icon(
+                          result.medicalCertValid ? Icons.verified : Icons.error_outline,
+                          color: result.medicalCertValid ? Colors.green : Colors.red,
                         ),
+                        title: const Text('Medical Certificate'),
+                        subtitle: Text(
+                          result.hasMedicalCert
+                              ? (result.medicalCertValid ? 'Valid' : 'Expired')
+                              : 'Not on file',
+                        ),
+                      ),
+                      ListTile(
+                        dense: true,
+                        leading: Icon(
+                          result.inductionCompleted ? Icons.verified : Icons.error_outline,
+                          color: result.inductionCompleted ? Colors.green : Colors.red,
+                        ),
+                        title: const Text('Site Induction'),
+                        subtitle: Text(result.inductionCompleted ? 'Completed' : 'Not completed'),
+                      ),
                       GSpacing.vLg,
 
                       // Permits
@@ -407,27 +371,29 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                         ),
                       ),
                       GSpacing.vSm,
-                      if (permits.isEmpty)
+                      Text(
+                        '${result.activePtwCount} active permit(s)',
+                        style: TextStyle(
+                          color: result.activePtwCount > 0 ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      if (issues.isNotEmpty) ...[
+                        GSpacing.vLg,
+                        const Divider(),
+                        GSpacing.vSm,
                         const Text(
-                          'No active permits',
-                          style: TextStyle(color: Colors.orange),
-                        )
-                      else
-                        ...permits.map(
-                          (p) => ListTile(
-                            leading: const Icon(
-                              Icons.assignment_turned_in,
-                              color: Colors.green,
-                            ),
-                            title: Text(
-                              p['title'] ?? 'Permit ${p['permitNumber'] ?? ''}',
-                            ),
-                            subtitle: Text(
-                              'Type: ${p['type'] ?? 'N/A'} • Status: ${p['status']}',
-                            ),
+                          'Issues',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+                        ),
+                        GSpacing.vSm,
+                        ...issues.map(
+                          (i) => ListTile(
                             dense: true,
+                            leading: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+                            title: Text(i),
                           ),
                         ),
+                      ],
                       GSpacing.vLg,
 
                       SizedBox(
@@ -453,8 +419,8 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
     required String projectName,
     required String scopeOfWork,
     required String safetyRating,
-    required int safetyFileScore,
-    required List<Map<String, dynamic>> permits,
+    required ComplianceCheckResult result,
+    required List<String> issues,
     required bool isCompliant,
     required bool isStale,
   }) {
@@ -545,14 +511,12 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                       ListTile(
                         leading: Icon(
                           Icons.health_and_safety,
-                          color:
-                              safetyFileScore >= 80
-                                  ? Colors.green
-                                  : Colors.orange,
+                          color: result.level == ComplianceLevel.compliant
+                              ? Colors.green
+                              : Colors.orange,
                         ),
-                        title: Text('Safety File Score: $safetyFileScore%'),
-                        subtitle: Text(
-                          safetyFileScore >= 80
+                        title: Text(
+                          result.level == ComplianceLevel.compliant
                               ? 'Compliant'
                               : 'Needs attention',
                         ),
@@ -566,27 +530,29 @@ class _QrScannerScreenState extends ConsumerState<QrScannerScreen> {
                         ),
                       ),
                       GSpacing.vSm,
-                      if (permits.isEmpty)
+                      Text(
+                        '${result.activePtwCount} active permit(s)',
+                        style: TextStyle(
+                          color: result.activePtwCount > 0 ? Colors.green : Colors.grey,
+                        ),
+                      ),
+                      if (issues.isNotEmpty) ...[
+                        GSpacing.vLg,
+                        const Divider(),
+                        GSpacing.vSm,
                         const Text(
-                          'No active permits',
-                          style: TextStyle(color: Colors.orange),
-                        )
-                      else
-                        ...permits.map(
-                          (p) => ListTile(
-                            leading: const Icon(
-                              Icons.assignment_turned_in,
-                              color: Colors.green,
-                            ),
-                            title: Text(
-                              p['title'] ?? 'Permit ${p['permitNumber'] ?? ''}',
-                            ),
-                            subtitle: Text(
-                              'Type: ${p['type'] ?? 'N/A'} • Status: ${p['status']}',
-                            ),
+                          'Issues',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+                        ),
+                        GSpacing.vSm,
+                        ...issues.map(
+                          (i) => ListTile(
                             dense: true,
+                            leading: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+                            title: Text(i),
                           ),
                         ),
+                      ],
                       GSpacing.vLg,
                       SizedBox(
                         width: double.infinity,

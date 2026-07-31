@@ -55,7 +55,6 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
               'ownerId': _ownerId,
               'expiryDate': _expiry.toIso8601String(),
               'reviewDate': _reviewDate.toIso8601String(),
-              'daysUntilExpiry': _expiry.difference(DateTime.now()).inDays,
               'authorId': p.uid,
               'siteId': p.tenantId,
               'createdAt': DateTime.now().toIso8601String(),

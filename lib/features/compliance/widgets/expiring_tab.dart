@@ -26,8 +26,13 @@ class ExpiringTab extends ConsumerWidget {
                     'compliance_docs',
                   )
                   .where('siteId', isEqualTo: siteId)
-                  .where('daysUntilExpiry', isLessThanOrEqualTo: 90)
-                  .orderBy('daysUntilExpiry')
+                  .where(
+                    'expiryDate',
+                    isLessThanOrEqualTo: DateTime.now()
+                        .add(const Duration(days: 90))
+                        .toIso8601String(),
+                  )
+                  .orderBy('expiryDate')
                   .limit(50)
                   .snapshots(),
       builder: (ctx, snap) {

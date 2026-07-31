@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
@@ -16,7 +17,13 @@ class DocListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final days = data['daysUntilExpiry'] as int? ?? 999;
+    final rawExpiry = data['expiryDate'];
+    final expiryDate = rawExpiry is Timestamp
+        ? rawExpiry.toDate()
+        : DateTime.tryParse(rawExpiry?.toString() ?? '');
+    final days = expiryDate == null
+        ? 999
+        : expiryDate.difference(DateTime.now()).inDays;
 
     Color statusColor = XMTheme.success;
     IconData statusIcon = Icons.check_circle_outline_rounded;

@@ -16,6 +16,7 @@ import '../widgets/incident_location_date_fields.dart';
 import '../widgets/incident_photo_capture_section.dart';
 import '../widgets/incident_cost_tracking_fields.dart';
 import '../services/safety_service.dart';
+import '../../people/providers/employee_providers.dart';
 
 class IncidentReportForm extends ConsumerStatefulWidget {
   const IncidentReportForm({super.key});
@@ -43,6 +44,8 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
 
   String _treatmentType = 'First Aid';
   final _bodyPartController = TextEditingController();
+  bool _lostTimeInjury = false;
+  final _daysLostController = TextEditingController();
 
   String _envUnit = 'Liters';
   final _substanceController = TextEditingController();
@@ -60,6 +63,7 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
       _directCostsController,
       _indirectCostsController,
       _bodyPartController,
+      _daysLostController,
       _substanceController,
       _volumeController,
       _assetIdController,
@@ -99,6 +103,12 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
       final dCosts = double.tryParse(_directCostsController.text) ?? 0;
       final iCosts = double.tryParse(_indirectCostsController.text) ?? 0;
 
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final reporterName = _selectedReporterId == null
+          ? profile.displayName
+          : employees.where((e) => e.id == _selectedReporterId).firstOrNull?.fullName ??
+              profile.displayName;
+
       final data = <String, dynamic>{
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
@@ -107,7 +117,7 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
         'location': _locationController.text.trim(),
         'status': 'Open',
         'reportedBy': _selectedReporterId ?? profile.uid,
-        'reporterName': 'Selected Employee',
+        'reporterName': reporterName,
         'tenantId': profile.tenantId,
         'contractorId': _selectedContractorId,
         'dateOfIncident': _dateOfIncident.toIso8601String(),
@@ -120,6 +130,8 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
       };
 
       if (_type == 'Injury') {
+        data['lostTimeInjury'] = _lostTimeInjury;
+        data['daysLost'] = _lostTimeInjury ? int.tryParse(_daysLostController.text) ?? 0 : 0;
         data['injuryDetails'] = {
           'bodyPart': _bodyPartController.text.trim(),
           'treatmentType': _treatmentType,
@@ -289,6 +301,10 @@ class _IncidentReportFormState extends ConsumerState<IncidentReportForm> {
                 treatmentType: _treatmentType,
                 onTreatmentTypeChanged:
                     (val) => setState(() => _treatmentType = val),
+                lostTimeInjury: _lostTimeInjury,
+                onLostTimeInjuryChanged:
+                    (val) => setState(() => _lostTimeInjury = val),
+                daysLostController: _daysLostController,
                 substanceController: _substanceController,
                 volumeController: _volumeController,
                 envUnit: _envUnit,

@@ -7,6 +7,8 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import 'rtw_badge.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
 
 class ClaimsTab extends ConsumerStatefulWidget {
   const ClaimsTab({super.key});
@@ -19,7 +21,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
   bool _showClaimForm = false;
   bool _isSub = false;
 
-  final _empCtrl = TextEditingController();
+  String? _employeeId;
   final _idCtrl = TextEditingController();
   final _claimNoCtrl = TextEditingController();
   final _lostDaysCtrl = TextEditingController();
@@ -27,7 +29,6 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
 
   @override
   void dispose() {
-    _empCtrl.dispose();
     _idCtrl.dispose();
     _claimNoCtrl.dispose();
     _lostDaysCtrl.dispose();
@@ -35,18 +36,21 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
   }
 
   Future<void> _submitClaim() async {
-    if (_empCtrl.text.isEmpty) return;
+    if (_employeeId == null) return;
     setState(() => _isSub = true);
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final employeeName = employees.where((e) => e.id == _employeeId).firstOrNull?.fullName ?? 'Unknown Employee';
       await ref
           .read(firestoreServiceProvider)
           .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'coida_claims',
             data: {
-              'employeeName': _empCtrl.text.trim(),
+              'employeeId': _employeeId,
+              'employeeName': employeeName,
               'idNumber': _idCtrl.text.trim(),
               'claimNumber': _claimNoCtrl.text.trim(),
               'incidentDate': _incidentDate.toIso8601String(),
@@ -62,7 +66,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
         UIUtils.showToast(context, 'Claim submitted successfully');
         setState(() {
           _showClaimForm = false;
-          _empCtrl.clear();
+          _employeeId = null;
           _idCtrl.clear();
           _claimNoCtrl.clear();
           _lostDaysCtrl.clear();
@@ -126,11 +130,10 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
-                        controller: _empCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Employee Name *',
-                        ),
+                      child: EmployeeSelector(
+                        value: _employeeId,
+                        onChanged: (val) => setState(() => _employeeId = val),
+                        label: 'Employee *',
                       ),
                     ),
                     GSpacing.hMd,

@@ -1,49 +1,78 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'base_incident.dart';
 
-/// Incident model — mirrors the Firestore `incidents` collection
-class Incident {
-  final String? id;
-  final String tenantId;
+/// Incident model — mirrors the Firestore `incidents` collection.
+///
+/// `type`/`severity`/`status` are capitalized display strings ('Injury',
+/// 'Minor', 'Open', etc.), not lowercase snake_case — this matches what
+/// `incident_report_form.dart` actually writes and every reading screen
+/// (`incident_card.dart`, `incidents_register_screen.dart`,
+/// `incident_detail_sheet.dart`, `safety_analytics_screen.dart`,
+/// dashboard KPIs) already consistently expects and filters on. An earlier
+/// draft of this model assumed lowercase snake_case values; normalizing the
+/// model to the convention already live everywhere else avoids breaking a
+/// working register screen — see F-101 in docs/fixes/FIX_LIST.md.
+class Incident extends BaseIncident {
   final String title;
-  final String description;
-  final String
-  type; // injury, near_miss, property_damage, environmental, fire, chemical
-  final String severity; // critical, major, moderate, minor, negligible
-  final String status; // open, investigating, resolved, closed
-  final String? location;
-  final String? area;
-  final DateTime? dateOfIncident;
-  final String? reporterId;
+  final String type; // Injury, Near Miss, Property Damage, Environmental, Hazard Observation
+  final String? contractorId;
   final String? assigneeId;
   final String? rootCause;
   final String? immediateAction;
   final String? correctiveAction;
   final bool lostTimeInjury;
   final int? daysLost;
+  final String? photoUrl;
+  final bool isAnonymous;
+  final double directCosts;
+  final double indirectCosts;
+  final double totalCost;
+  final Map<String, dynamic>? injuryDetails;
+  final Map<String, dynamic>? environmentalDetails;
+  final Map<String, dynamic>? propertyDamageDetails;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   const Incident({
-    this.id,
-    required this.tenantId,
+    String? id,
+    required String tenantId,
     required this.title,
-    required this.description,
+    required String description,
     required this.type,
-    this.severity = 'minor',
-    this.status = 'open',
-    this.location,
-    this.area,
-    this.dateOfIncident,
-    this.reporterId,
+    String severity = 'Minor',
+    String status = 'Open',
+    String? location,
+    DateTime? dateOfIncident,
+    String? reporterId,
+    String? reporterName,
+    this.contractorId,
     this.assigneeId,
     this.rootCause,
     this.immediateAction,
     this.correctiveAction,
     this.lostTimeInjury = false,
     this.daysLost,
+    this.photoUrl,
+    this.isAnonymous = false,
+    this.directCosts = 0,
+    this.indirectCosts = 0,
+    this.totalCost = 0,
+    this.injuryDetails,
+    this.environmentalDetails,
+    this.propertyDamageDetails,
     this.createdAt,
     this.updatedAt,
-  });
+  }) : super(
+         id: id,
+         tenantId: tenantId,
+         description: description,
+         severity: severity,
+         status: status,
+         location: location,
+         dateOfIncident: dateOfIncident,
+         reporterId: reporterId,
+         reporterName: reporterName,
+       );
 
   factory Incident.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
@@ -52,21 +81,30 @@ class Incident {
       tenantId: data['tenantId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'] ?? '',
-      type: data['type'] ?? 'near_miss',
-      severity: data['severity'] ?? 'minor',
-      status: data['status'] ?? 'open',
+      type: data['type'] ?? 'Near Miss',
+      severity: data['severity'] ?? 'Minor',
+      status: data['status'] ?? 'Open',
       location: data['location'],
-      area: data['area'],
-      dateOfIncident: (data['dateOfIncident'] as Timestamp?)?.toDate(),
+      dateOfIncident: BaseIncident.parseFlexibleDate(data['dateOfIncident']),
       reporterId: data['reportedBy'],
+      reporterName: data['reporterName'],
+      contractorId: data['contractorId'],
       assigneeId: data['assignedTo'],
       rootCause: data['rootCause'],
       immediateAction: data['immediateAction'],
       correctiveAction: data['correctiveAction'],
       lostTimeInjury: data['lostTimeInjury'] ?? false,
       daysLost: data['daysLost'],
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      photoUrl: data['photoUrl'],
+      isAnonymous: data['isAnonymous'] ?? false,
+      directCosts: (data['directCosts'] as num?)?.toDouble() ?? 0,
+      indirectCosts: (data['indirectCosts'] as num?)?.toDouble() ?? 0,
+      totalCost: (data['totalCost'] as num?)?.toDouble() ?? 0,
+      injuryDetails: data['injuryDetails'] as Map<String, dynamic>?,
+      environmentalDetails: data['environmentalDetails'] as Map<String, dynamic>?,
+      propertyDamageDetails: data['propertyDamageDetails'] as Map<String, dynamic>?,
+      createdAt: BaseIncident.parseFlexibleDate(data['createdAt']),
+      updatedAt: BaseIncident.parseFlexibleDate(data['updatedAt']),
     );
   }
 
@@ -78,21 +116,26 @@ class Incident {
     'severity': severity,
     'status': status,
     'location': location,
-    'area': area,
-    'dateOfIncident':
-        dateOfIncident != null ? Timestamp.fromDate(dateOfIncident!) : null,
-    'reporterId': reporterId,
-    'assigneeId': assigneeId,
+    'dateOfIncident': dateOfIncident?.toIso8601String(),
+    'reportedBy': reporterId,
+    'reporterName': reporterName,
+    'contractorId': contractorId,
+    'assignedTo': assigneeId,
     'rootCause': rootCause,
     'immediateAction': immediateAction,
     'correctiveAction': correctiveAction,
     'lostTimeInjury': lostTimeInjury,
     'daysLost': daysLost,
-    'createdAt':
-        createdAt != null
-            ? Timestamp.fromDate(createdAt!)
-            : FieldValue.serverTimestamp(),
-    'updatedAt': FieldValue.serverTimestamp(),
+    'photoUrl': photoUrl,
+    'isAnonymous': isAnonymous,
+    'directCosts': directCosts,
+    'indirectCosts': indirectCosts,
+    'totalCost': totalCost,
+    if (injuryDetails != null) 'injuryDetails': injuryDetails,
+    if (environmentalDetails != null) 'environmentalDetails': environmentalDetails,
+    if (propertyDamageDetails != null) 'propertyDamageDetails': propertyDamageDetails,
+    'createdAt': createdAt != null ? createdAt!.toIso8601String() : DateTime.now().toIso8601String(),
+    'updatedAt': DateTime.now().toIso8601String(),
   };
 
   Incident copyWith({
@@ -102,7 +145,6 @@ class Incident {
     String? severity,
     String? status,
     String? location,
-    String? area,
     DateTime? dateOfIncident,
     String? assigneeId,
     String? rootCause,
@@ -119,15 +161,24 @@ class Incident {
     severity: severity ?? this.severity,
     status: status ?? this.status,
     location: location ?? this.location,
-    area: area ?? this.area,
     dateOfIncident: dateOfIncident ?? this.dateOfIncident,
     reporterId: reporterId,
+    reporterName: reporterName,
+    contractorId: contractorId,
     assigneeId: assigneeId ?? this.assigneeId,
     rootCause: rootCause ?? this.rootCause,
     immediateAction: immediateAction ?? this.immediateAction,
     correctiveAction: correctiveAction ?? this.correctiveAction,
     lostTimeInjury: lostTimeInjury ?? this.lostTimeInjury,
     daysLost: daysLost ?? this.daysLost,
+    photoUrl: photoUrl,
+    isAnonymous: isAnonymous,
+    directCosts: directCosts,
+    indirectCosts: indirectCosts,
+    totalCost: totalCost,
+    injuryDetails: injuryDetails,
+    environmentalDetails: environmentalDetails,
+    propertyDamageDetails: propertyDamageDetails,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );
