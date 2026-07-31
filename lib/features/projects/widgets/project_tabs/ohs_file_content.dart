@@ -326,7 +326,7 @@ class OHSFileContent extends ConsumerWidget {
   Future<Map<String, dynamic>> _loadOHSData(dynamic fs, String tenantId) async {
     final subQ =
         await fs
-            .tenantCollection(tenantId, 'safetyFileSubmissions')
+            .tenantCollection(tenantId, 'safety_file_submissions')
             .where('contractorId', isEqualTo: contractorId)
             .where('projectId', isEqualTo: projectId)
             .limit(1)

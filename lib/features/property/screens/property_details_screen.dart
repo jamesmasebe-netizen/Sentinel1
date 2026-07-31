@@ -56,10 +56,10 @@ class _PropertyDetailsScreenState extends ConsumerState<PropertyDetailsScreen>
               IconButton(
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () {
-                  showModalBottomSheet(
+                  UIUtils.showSideSheet(
                     context: context,
-                    isScrollControlled: true,
-                    builder: (context) => PropertyFormSheet(property: property),
+                    title: 'Edit Property',
+                    builder: (ctx) => PropertyFormSheet(property: property),
                   );
                 },
               ),

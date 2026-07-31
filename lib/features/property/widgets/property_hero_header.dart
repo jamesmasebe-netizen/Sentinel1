@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
 import '../models/property_models.dart';
+import '../providers/property_providers.dart';
 
-class PropertyHeroHeader extends StatelessWidget {
+class PropertyHeroHeader extends ConsumerWidget {
   final Property property;
 
   const PropertyHeroHeader({super.key, required this.property});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final assetCount = ref.watch(propertyAssetsProvider(property.id)).valueOrNull?.length ?? 0;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -107,7 +110,7 @@ class PropertyHeroHeader extends StatelessWidget {
                       'COMPLIANCE',
                       '${property.complianceScore}%',
                     ),
-                    _buildHeroStat('ASSETS', property.totalAssets.toString()),
+                    _buildHeroStat('ASSETS', assetCount.toString()),
                   ],
                 ),
               ],

@@ -34,10 +34,10 @@ class _PropertyHubScreenState extends ConsumerState<PropertyHubScreen> {
                   'Manage and track real-estate assets across the enterprise',
               trailing: ElevatedButton.icon(
                 onPressed: () {
-                  showModalBottomSheet(
+                  UIUtils.showSideSheet(
                     context: context,
-                    isScrollControlled: true,
-                    builder: (context) => const PropertyFormSheet(),
+                    title: 'Add Property',
+                    builder: (ctx) => const PropertyFormSheet(),
                   );
                 },
                 icon: const Icon(Icons.add, size: 18),

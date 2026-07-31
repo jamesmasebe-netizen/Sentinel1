@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../config/theme.dart';
 import '../models/property_models.dart';
+import '../providers/property_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 
-class PropertyCard extends StatelessWidget {
+class PropertyCard extends ConsumerWidget {
   final Property property;
 
   const PropertyCard({super.key, required this.property});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final assetCount = ref.watch(propertyAssetsProvider(property.id)).valueOrNull?.length ?? 0;
     double occupancyPercent = (property.occupancy / property.capacity);
     Color statusColor =
         property.status == 'Optimal'
@@ -76,7 +79,7 @@ class PropertyCard extends StatelessWidget {
                   children: [
                     _buildMiniStat(
                       'ASSETS',
-                      property.totalAssets.toString(),
+                      assetCount.toString(),
                       Icons.inventory_2_outlined,
                     ),
                     _buildMiniStat(

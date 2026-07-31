@@ -259,7 +259,7 @@ class ContractorCard extends ConsumerWidget {
 
     final submissionQuery =
         await fs
-            .tenantCollection(tenantId, 'safetyFileSubmissions')
+            .tenantCollection(tenantId, 'safety_file_submissions')
             .where('contractorId', isEqualTo: contractorId)
             .where('projectId', isEqualTo: projectId)
             .limit(1)

@@ -14,8 +14,8 @@ class Property {
   final String status;
   final DateTime constructionDate;
   final String managerId;
-  final double complianceScore; // Added for traceability
-  final int totalAssets; // Added for traceability
+  // Manual entry — no live compliance-scoring source exists yet (see F-211).
+  final double complianceScore;
 
   Property({
     required this.id,
@@ -32,7 +32,6 @@ class Property {
     required this.constructionDate,
     required this.managerId,
     this.complianceScore = 0.0,
-    this.totalAssets = 0,
   });
 
   factory Property.fromFirestore(DocumentSnapshot doc) {
@@ -54,7 +53,6 @@ class Property {
       ),
       managerId: data['manager'] ?? '',
       complianceScore: (data['complianceScore'] as num?)?.toDouble() ?? 0.0,
-      totalAssets: data['totalAssets'] ?? 0,
     );
   }
 }

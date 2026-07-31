@@ -26,10 +26,10 @@ class _PropertyFormSheetState extends ConsumerState<PropertyFormSheet> {
   late TextEditingController _floorsController;
   late TextEditingController _occupancyController;
   late TextEditingController _capacityController;
-  late TextEditingController _statusController;
   late TextEditingController _complianceScoreController;
-  late TextEditingController _totalAssetsController;
-  
+
+  static const _statuses = ['Optimal', 'Warning', 'Critical'];
+  String _status = 'Optimal';
   DateTime? _constructionDate;
   String? _managerId;
 
@@ -46,10 +46,9 @@ class _PropertyFormSheetState extends ConsumerState<PropertyFormSheet> {
     _floorsController = TextEditingController(text: p?.floors.toString() ?? '');
     _occupancyController = TextEditingController(text: p?.occupancy.toString() ?? '');
     _capacityController = TextEditingController(text: p?.capacity.toString() ?? '');
-    _statusController = TextEditingController(text: p?.status ?? '');
     _complianceScoreController = TextEditingController(text: p?.complianceScore.toString() ?? '');
-    _totalAssetsController = TextEditingController(text: p?.totalAssets.toString() ?? '');
-    
+
+    _status = _statuses.contains(p?.status) ? p!.status : 'Optimal';
     _constructionDate = p?.constructionDate ?? DateTime.now();
     _managerId = p?.managerId;
   }
@@ -65,9 +64,7 @@ class _PropertyFormSheetState extends ConsumerState<PropertyFormSheet> {
     _floorsController.dispose();
     _occupancyController.dispose();
     _capacityController.dispose();
-    _statusController.dispose();
     _complianceScoreController.dispose();
-    _totalAssetsController.dispose();
     super.dispose();
   }
 
@@ -88,11 +85,10 @@ class _PropertyFormSheetState extends ConsumerState<PropertyFormSheet> {
       'floors': int.tryParse(_floorsController.text.trim()) ?? 0,
       'occupancy': int.tryParse(_occupancyController.text.trim()) ?? 0,
       'capacity': int.tryParse(_capacityController.text.trim()) ?? 0,
-      'status': _statusController.text.trim(),
+      'status': _status,
       'constructionDate': _constructionDate?.toIso8601String(),
       'manager': _managerId ?? '',
       'complianceScore': double.tryParse(_complianceScoreController.text.trim()) ?? 0.0,
-      'totalAssets': int.tryParse(_totalAssetsController.text.trim()) ?? 0,
     };
 
     if (widget.property == null) {
@@ -194,29 +190,42 @@ class _PropertyFormSheetState extends ConsumerState<PropertyFormSheet> {
                 ],
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _statusController,
+              DropdownButtonFormField<String>(
+                value: _status,
                 decoration: const InputDecoration(labelText: 'Status'),
+                items: _statuses
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (val) => setState(() => _status = val ?? _status),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _complianceScoreController,
-                      decoration: const InputDecoration(labelText: 'Compliance Score'),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _totalAssetsController,
-                      decoration: const InputDecoration(labelText: 'Total Assets'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Construction Date'),
+                subtitle: Text(
+                  _constructionDate != null
+                      ? '${_constructionDate!.day}/${_constructionDate!.month}/${_constructionDate!.year}'
+                      : 'Not set',
+                ),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _constructionDate ?? DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) setState(() => _constructionDate = picked);
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _complianceScoreController,
+                decoration: const InputDecoration(
+                  labelText: 'Compliance Score (manual)',
+                  helperText: 'No automated compliance-scoring source exists yet — entered by hand',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 16),
               EmployeeSelector(

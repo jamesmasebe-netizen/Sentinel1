@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/providers/app_providers.dart';
+import '../../../../core/widgets/entity_selector.dart';
 import '../../../../core/widgets/searchable_multi_select.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../../people/providers/employee_providers.dart';
 import '../../../people/widgets/employee_selector.dart';
+import '../../../property/models/property_models.dart';
+import '../../../property/providers/property_providers.dart';
 import '../../models/project_models.dart';
 import '../../providers/project_providers.dart';
 import 'new_project_header.dart';
@@ -36,6 +39,7 @@ class _NewProjectDialogContentState
 
   String? _selectedLeadId;
   String? _selectedFallbackId;
+  String? _selectedPropertyId;
 
   String _category = 'Maintenance';
   DateTime _startDate = DateTime.now();
@@ -101,7 +105,7 @@ class _NewProjectDialogContentState
       final project = Project(
         id: '',
         tenantId: siteId,
-        propertyId: 'default-property',
+        propertyId: _selectedPropertyId ?? '',
         name: _nameCtrl.text.trim(),
         description: _descCtrl.text.trim(),
         category: _category,
@@ -242,6 +246,15 @@ class _NewProjectDialogContentState
                     ],
                   ),
                   const SizedBox(height: 16),
+                  EntitySelector<Property>(
+                    label: 'Linked Property (optional)',
+                    asyncEntities: ref.watch(propertiesProvider),
+                    value: _selectedPropertyId,
+                    idMapper: (p) => p.id,
+                    displayMapper: (p) => p.name,
+                    onChanged: (val) => setState(() => _selectedPropertyId = val),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -367,7 +380,7 @@ class _NewProjectDialogContentState
                           final Map<String, String> empLabels = {};
                           final List<String> availableEmpIds = [];
                           for (var e in employees) {
-                            empLabels[e.id] = '\${e.firstName} \${e.lastName} (\${e.department})';
+                            empLabels[e.id] = '${e.fullName} (${e.department})';
                             availableEmpIds.add(e.id);
                           }
                           return SearchableStringMultiSelect(
