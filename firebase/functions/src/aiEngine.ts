@@ -1,4 +1,4 @@
-import { onCall } from "firebase-functions/v2/https";
+import { onCall, CallableRequest } from "firebase-functions/v2/https";
 import { logger } from "firebase-functions/v2";
 
 interface AiSuggestReplyRequest {
@@ -6,12 +6,8 @@ interface AiSuggestReplyRequest {
   caseSubject: string;
 }
 
-interface AiSuggestReplyResponse {
-  suggestedReply: string;
-}
-
-export const aiSuggestReply = onCall<AiSuggestReplyRequest, AiSuggestReplyResponse>(
-  async (request) => {
+export const aiSuggestReply = onCall(
+  async (request: CallableRequest<AiSuggestReplyRequest>) => {
     const { threadMessages, caseSubject } = request.data;
 
     logger.info("aiSuggestReply called", { caseSubject, messageCount: threadMessages.length });
