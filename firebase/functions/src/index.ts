@@ -479,21 +479,34 @@ export const postJournalEntry = onCall(
         t.update(doc.ref, { currentBalance: admin.firestore.FieldValue.increment(balanceChange) });
       }
 
-      // Write journal header
+      // Write journal header. Field names/shape must match what the Dart
+      // client's JournalEntry.fromJson() reads (finance_models.dart) — it
+      // does a non-nullable Timestamp cast on transaction_date, so this
+      // isn't just cosmetic: a mismatch here means the entry this function
+      // just posted throws when the app tries to read it back.
       t.set(journalRef, {
-        date,
+        transaction_date: admin.firestore.Timestamp.fromDate(new Date(date)),
         description,
-        totalDebit,
-        totalCredit,
-        createdBy: request.auth?.uid,
-        status: "posted",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        source_module: "GL",
+        type: "STANDARD",
+        currency_code: "USD",
+        total_debit: totalDebit,
+        total_credit: totalCredit,
+        created_by: request.auth?.uid,
+        status: "POSTED",
+        posted_at: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Write journal lines
+      // Write journal lines — same field-name concern as above, matching
+      // JournalLine.fromJson()'s expected keys.
       for (const line of lines) {
         const lineRef = journalRef.collection("lines").doc();
-        t.set(lineRef, line);
+        t.set(lineRef, {
+          account_id: line.accountId,
+          debit_amount: line.debit,
+          credit_amount: line.credit,
+          description: line.memo ?? null,
+        });
       }
     });
 
@@ -555,19 +568,29 @@ export const onInvoiceStatusChanged = onDocumentUpdated(
         
         t.update(arRef, { currentBalance: admin.firestore.FieldValue.increment(amount) });
         t.update(revRef, { currentBalance: admin.firestore.FieldValue.increment(amount) });
-        
+
+        // Same field-name shape as postJournalEntry — must match
+        // JournalEntry.fromJson()/JournalLine.fromJson() in finance_models.dart.
         t.set(journalRef, {
-          date: journalData.date,
+          transaction_date: admin.firestore.Timestamp.fromDate(new Date(journalData.date)),
           description: journalData.description,
-          totalDebit: amount,
-          totalCredit: amount,
-          createdBy: "system",
-          status: "posted",
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          source_module: "AR",
+          type: "STANDARD",
+          currency_code: "USD",
+          total_debit: amount,
+          total_credit: amount,
+          created_by: "system",
+          status: "POSTED",
+          posted_at: admin.firestore.FieldValue.serverTimestamp(),
         });
-        
+
         journalData.lines.forEach(line => {
-          t.set(journalRef.collection("lines").doc(), line);
+          t.set(journalRef.collection("lines").doc(), {
+            account_id: line.accountId,
+            debit_amount: line.debit,
+            credit_amount: line.credit,
+            description: line.memo ?? null,
+          });
         });
       });
       logger.info(`Auto-posted journal ${journalRef.id} for Invoice ${invoiceId}`);

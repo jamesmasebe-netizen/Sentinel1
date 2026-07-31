@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../models/finance_models.dart';
 import '../services/finance_service.dart';
 import '../providers/finance_providers.dart';
 import '../../crm/providers/crm_providers.dart';
 import '../../crm/models/crm_models.dart';
+import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/entity_selector.dart';
 
 class InvoiceForm extends ConsumerStatefulWidget {
@@ -34,8 +36,10 @@ class _InvoiceFormState extends ConsumerState<InvoiceForm> {
   DateTime _invoiceDate = DateTime.now();
   DateTime _dueDate = DateTime.now().add(const Duration(days: 30));
   String _status = 'DRAFT';
+  String? _selectedTaxCodeId;
 
   bool _isLoading = false;
+  bool _isCalculatingTax = false;
 
   @override
   void initState() {
@@ -114,6 +118,37 @@ class _InvoiceFormState extends ConsumerState<InvoiceForm> {
     final tax = double.tryParse(_taxAmountController.text) ?? 0.0;
     final net = gross + tax;
     _netAmountController.text = net.toStringAsFixed(2);
+  }
+
+  Future<void> _calculateTax(List<TaxCode> taxCodes) async {
+    if (_selectedTaxCodeId == null) return;
+    final taxCode = taxCodes.where((t) => t.id == _selectedTaxCodeId).firstOrNull;
+    if (taxCode == null) return;
+    final gross = double.tryParse(_grossAmountController.text) ?? 0.0;
+    setState(() => _isCalculatingTax = true);
+    try {
+      final tenantId = ref.read(currentTenantIdProvider) ?? '';
+      final callable = FirebaseFunctions.instanceFor(region: 'europe-west1')
+          .httpsCallable('calculateTax');
+      final result = await callable.call({
+        'tenantId': tenantId,
+        'total': gross,
+        'jurisdiction': taxCode.jurisdictionId,
+      });
+      final taxAmount = (result.data['taxAmount'] as num).toDouble();
+      setState(() {
+        _taxAmountController.text = taxAmount.toStringAsFixed(2);
+      });
+      _calculateNetAmount();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to calculate tax: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCalculatingTax = false);
+    }
   }
 
   Future<void> _saveForm() async {
@@ -320,6 +355,25 @@ class _InvoiceFormState extends ConsumerState<InvoiceForm> {
               ),
               const SizedBox(width: 16),
               Expanded(
+                child: ref.watch(taxCodesStreamProvider).when(
+                  data: (taxCodes) => EntitySelector<TaxCode>(
+                    label: 'Tax Code (Jurisdiction)',
+                    value: _selectedTaxCodeId,
+                    asyncEntities: AsyncValue.data(taxCodes),
+                    idMapper: (t) => t.id,
+                    displayMapper: (t) => '${t.code} (${(t.rate * 100).toStringAsFixed(1)}%)',
+                    onChanged: (val) => setState(() => _selectedTaxCodeId = val),
+                  ),
+                  loading: () => const CircularProgressIndicator(),
+                  error: (e, s) => Text('Error: $e'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
                 child: TextFormField(
                   controller: _taxAmountController,
                   decoration: const InputDecoration(
@@ -329,6 +383,24 @@ class _InvoiceFormState extends ConsumerState<InvoiceForm> {
                   keyboardType: TextInputType.number,
                   onChanged: (_) => _calculateNetAmount(),
                 ),
+              ),
+              const SizedBox(width: 8),
+              ref.watch(taxCodesStreamProvider).when(
+                data: (taxCodes) => IconButton.filledTonal(
+                  tooltip: 'Calculate tax from selected Tax Code',
+                  onPressed: _isCalculatingTax || _selectedTaxCodeId == null
+                      ? null
+                      : () => _calculateTax(taxCodes),
+                  icon: _isCalculatingTax
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.calculate_outlined),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (e, s) => const SizedBox.shrink(),
               ),
               const SizedBox(width: 16),
               Expanded(

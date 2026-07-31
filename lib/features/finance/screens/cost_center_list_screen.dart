@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../models/finance_models.dart';
 import '../services/finance_service.dart';
+import '../widgets/cost_center_form.dart';
 import 'cost_center_detail_screen.dart';
 
 class CostCenterListScreen extends ConsumerWidget {
@@ -50,9 +52,11 @@ class CostCenterListScreen extends ConsumerWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement Create Cost Center
-        },
+        onPressed: () => UIUtils.showSideSheet(
+          context: context,
+          title: 'New Cost Center',
+          builder: (ctx) => const CostCenterForm(),
+        ),
         child: const Icon(Icons.add),
       ),
     );

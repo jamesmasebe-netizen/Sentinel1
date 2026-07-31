@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../models/finance_models.dart';
 import '../services/finance_service.dart';
+import '../widgets/budget_plan_form.dart';
 import 'budget_plan_detail_screen.dart';
 
 class BudgetPlanListScreen extends ConsumerWidget {
@@ -49,9 +51,11 @@ class BudgetPlanListScreen extends ConsumerWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement Create Budget Plan
-        },
+        onPressed: () => UIUtils.showSideSheet(
+          context: context,
+          title: 'New Budget Plan',
+          builder: (ctx) => const BudgetPlanForm(),
+        ),
         child: const Icon(Icons.add),
       ),
     );

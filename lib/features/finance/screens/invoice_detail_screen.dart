@@ -6,6 +6,7 @@ import '../models/finance_models.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/lead_to_cash_bpf.dart';
 import '../../../core/bpf/procure_to_pay_bpf.dart';
+import 'journal_entry_detail_screen.dart';
 
 class InvoiceDetailScreen extends ConsumerWidget {
   final String invoiceId;
@@ -180,7 +181,14 @@ class InvoiceDetailScreen extends ConsumerWidget {
         subtitle: Text('ID: ${invoice.journalEntryId}'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
         onTap: () {
-          // Typically navigation to Journal Entry Detail Screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => JournalEntryDetailScreen(
+                journalEntryId: invoice.journalEntryId!,
+              ),
+            ),
+          );
         },
       ),
     );
