@@ -44,7 +44,6 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
               'nextInspectionDate': _inspDateCtrl.text.trim(),
               'status': _equipStatus,
               'authorId': p.uid,
-              'siteId': p.tenantId,
               'createdAt': DateTime.now().toIso8601String(),
             },
           );

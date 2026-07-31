@@ -77,6 +77,15 @@ class CrmService {
     return Account.fromJson(doc.data()!, doc.id);
   }
 
+  Stream<Account?> streamAccount(String accountId) {
+    return _tenantDoc.collection('accounts').doc(accountId).snapshots().map((
+      doc,
+    ) {
+      if (!doc.exists) return null;
+      return Account.fromJson(doc.data()!, doc.id);
+    });
+  }
+
   // ---------- CONTACTS ----------
 
   Future<void> createContact(Contact contact) async {

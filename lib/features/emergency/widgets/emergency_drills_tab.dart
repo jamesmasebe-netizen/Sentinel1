@@ -55,7 +55,6 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
                           ref.watch(currentTenantIdProvider) ?? "",
                           'emergency_drills',
                         )
-                        .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)
                         .limit(50)
                         .snapshots(),

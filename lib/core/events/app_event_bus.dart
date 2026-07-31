@@ -32,6 +32,19 @@ class HighRiskIncidentReportedEvent extends AppEvent {
   });
 }
 
+class WonOpportunityEvent extends AppEvent {
+  final String opportunityId;
+  final String accountId;
+  final double amount;
+
+  WonOpportunityEvent({
+    required this.opportunityId,
+    required this.accountId,
+    required this.amount,
+    super.sourceModule = 'CRM',
+  });
+}
+
 /// The centralized Event Bus Provider
 final appEventBusProvider = Provider<AppEventBus>((ref) {
   return AppEventBus();

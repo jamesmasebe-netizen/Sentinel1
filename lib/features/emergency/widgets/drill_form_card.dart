@@ -51,7 +51,6 @@ class _DrillFormCardState extends ConsumerState<DrillFormCard> {
               'scenarioDescription': _scenarioCtrl.text.trim(),
               'areasForImprovement': _improvementsCtrl.text.trim(),
               'authorId': p.uid,
-              'siteId': p.tenantId,
               'createdAt': DateTime.now().toIso8601String(),
             },
           );

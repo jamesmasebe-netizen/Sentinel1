@@ -59,7 +59,6 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
                           ref.watch(currentTenantIdProvider) ?? "",
                           'emergency_equipment',
                         )
-                        .where('siteId', isEqualTo: siteId)
                         .orderBy('createdAt', descending: true)
                         .limit(100)
                         .snapshots(),

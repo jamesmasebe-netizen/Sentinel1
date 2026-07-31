@@ -4,6 +4,7 @@ import '../models/crm_models.dart';
 import '../services/crm_service.dart';
 import '../providers/crm_providers.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../../../core/events/app_event_bus.dart';
 import '../../../core/widgets/entity_selector.dart';
 class OpportunityForm extends ConsumerStatefulWidget {
   final Opportunity? opportunity;
@@ -77,10 +78,19 @@ class _OpportunityFormState extends ConsumerState<OpportunityForm> {
         createdAt: widget.opportunity?.createdAt,
       );
 
+      String savedId = opp.id;
       if (widget.opportunity == null) {
-        await service.createOpportunity(opp);
+        savedId = await service.createOpportunity(opp);
       } else {
         await service.updateOpportunity(opp);
+      }
+
+      if (stage == 'Closed Won' && widget.opportunity?.stage != 'Closed Won') {
+        ref.read(appEventBusProvider).fire(WonOpportunityEvent(
+              opportunityId: savedId,
+              accountId: opp.accountId,
+              amount: opp.amount,
+            ));
       }
 
       if (mounted) {
