@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/dynamic_risk_assessment.dart';
+import '../services/dra_service.dart';
 import '../../../core/widgets/searchable_multi_select.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../../people/providers/employee_providers.dart';
@@ -83,38 +84,31 @@ class _DRAFormState extends ConsumerState<DRAForm> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
       final score = _riskScore(_likelihood, _severity);
+      // taskDescription/location are the canonical fields — DynamicRiskAssessment.toFirestore()
+      // still dual-writes them to the legacy activity/area keys too, per
+      // docs/fixes/FIX_LIST.md F-306 (preserved exactly, not cleaned up here).
       await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'dynamic_risk_assessments',
-            data: {
-              'type': 'dra',
-              'title': 'DRA: ${_taskCtrl.text.trim()}',
-              'description': _hazards.join(', '),
-              'activity': _taskCtrl.text.trim(),
-              'area': _locCtrl.text.trim(),
-              // taskDescription/location/task are the field names dra_card.dart and
-              // risk_command_center_screen.dart actually read (2 different keys for the
-              // same concept, verified directly) — see docs/fixes/FIX_LIST.md F-306.
-              'taskDescription': _taskCtrl.text.trim(),
-              'location': _locCtrl.text.trim(),
-              'task': _taskCtrl.text.trim(),
-              'likelihood': _likelihood,
-              'severity': _severity,
-              'riskLevel': _riskLevel(score),
-              'status': 'Pending',
-              'hazardsIdentified': _hazards,
-              'controlsApplied': _controls,
-              'teamMembers': _teamMembers,
-              'approverId': _approverId,
-              'reviewDate': _reviewDate?.toIso8601String(),
-              'isSafeToProceed': _isSafe,
-              'assessedBy': profile.uid,
-              'authorName': profile.displayName,
-              'siteId': profile.tenantId,
-              'createdAt': FieldValue.serverTimestamp(),
-            },
+          .read(draServiceProvider)
+          .createAssessment(
+            DynamicRiskAssessment(
+              siteId: profile.tenantId ?? '',
+              title: 'DRA: ${_taskCtrl.text.trim()}',
+              description: _hazards.join(', '),
+              taskDescription: _taskCtrl.text.trim(),
+              location: _locCtrl.text.trim(),
+              likelihood: _likelihood,
+              severity: _severity,
+              riskLevel: _riskLevel(score),
+              status: 'Pending',
+              hazardsIdentified: _hazards,
+              controlsApplied: _controls,
+              teamMembers: _teamMembers,
+              approverId: _approverId,
+              reviewDate: _reviewDate,
+              isSafeToProceed: _isSafe,
+              assessedBy: profile.uid,
+              authorName: profile.displayName,
+            ),
           );
       if (formCtx.mounted) {
         Navigator.pop(formCtx);

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../models/strategic_risk.dart';
 
 class StrategicRiskCard extends StatelessWidget {
-  final Map<String, dynamic> d;
+  final StrategicRisk risk;
 
-  const StrategicRiskCard({super.key, required this.d});
+  const StrategicRiskCard({super.key, required this.risk});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final rating = d['riskRating'] ?? 'Low';
-    final score = d['riskScore'] ?? 0;
-    final status = d['status'] ?? 'Open';
+    final rating = risk.riskRating;
+    final score = risk.riskScore;
+    final status = risk.status;
 
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -29,7 +30,7 @@ class StrategicRiskCard extends StatelessWidget {
               ),
               GSpacing.hSm,
               GStatusTag(
-                label: (d['category'] ?? 'Operational').toUpperCase(),
+                label: risk.category.toUpperCase(),
                 color: theme.colorScheme.secondary,
               ),
               const Spacer(),
@@ -42,15 +43,15 @@ class StrategicRiskCard extends StatelessWidget {
           ),
           GSpacing.vMd,
           Text(
-            d['title'] ?? 'Untitled Risk',
+            risk.title.isEmpty ? 'Untitled Risk' : risk.title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (d['description']?.toString().isNotEmpty ?? false) ...[
+          if (risk.description.isNotEmpty) ...[
             GSpacing.vSm,
             Text(
-              d['description'],
+              risk.description,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -63,7 +64,7 @@ class StrategicRiskCard extends StatelessWidget {
           GSpacing.vMd,
           Row(
             children: [
-              if (d['owner']?.toString().isNotEmpty ?? false) ...[
+              if (risk.owner.isNotEmpty) ...[
                 Icon(
                   Icons.person_outline_rounded,
                   size: 16,
@@ -71,7 +72,7 @@ class StrategicRiskCard extends StatelessWidget {
                 ),
                 GSpacing.hSm,
                 Text(
-                  d['owner'],
+                  risk.owner,
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
@@ -86,7 +87,7 @@ class StrategicRiskCard extends StatelessWidget {
               ),
               GSpacing.hSm,
               Text(
-                'L: ${d['likelihood']} • I: ${d['impact']}',
+                'L: ${risk.likelihood} • I: ${risk.impact}',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

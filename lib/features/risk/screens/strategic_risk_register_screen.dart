@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../services/strategic_risk_service.dart';
 import '../widgets/strategic_risk_card.dart';
 import '../widgets/strategic_risk_form.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Strategic Risk Register — corporate-level risks with likelihood × impact scoring.
 class StrategicRiskRegisterScreen extends ConsumerStatefulWidget {
@@ -53,8 +52,8 @@ class _StrategicRiskRegisterScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final siteId = ref.watch(currentTenantIdProvider);
-    final firestore = ref.watch(firestoreProvider);
     if (siteId == null) return const Center(child: Text('No site assigned'));
+    final risksAsync = ref.watch(strategicRisksProvider);
 
     return Column(
       children: [
@@ -88,22 +87,10 @@ class _StrategicRiskRegisterScreenState
 
         // ─── List ───
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                firestore
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'strategic_risks',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
+          child: risksAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (docs) {
               if (docs.isEmpty) {
                 return Center(
                   child: Column(
@@ -129,8 +116,7 @@ class _StrategicRiskRegisterScreenState
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,
                 itemBuilder: (context, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return StrategicRiskCard(d: d);
+                  return StrategicRiskCard(risk: docs[i]);
                 },
               );
             },

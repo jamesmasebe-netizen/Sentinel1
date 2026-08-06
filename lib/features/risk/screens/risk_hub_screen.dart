@@ -12,6 +12,7 @@ import 'bowtie_screen.dart';
 import 'risk_command_center_screen.dart';
 import 'widgets/stream_metric_card.dart';
 import 'widgets/risk_module_card.dart';
+import '../services/dra_service.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Risk Management Hub — Unified access to HIRAs, DRAs, Bowties, and command centers.
@@ -23,6 +24,14 @@ class RiskHubScreen extends ConsumerWidget {
     final siteId = ref.watch(currentTenantIdProvider);
     final firestore = ref.watch(firestoreProvider);
 
+    // `hazards` is owned by the `safety` module (written by
+    // lib/features/safety/widgets/hazard_form_sheet.dart), not by any of this extraction's 4 Risk
+    // services — intentionally left as a raw inline query. Checked
+    // lib/features/safety/providers/safety_providers.dart first: its `permitHazardsProvider`/
+    // `riskAssessmentHazardsProvider` both read a `hazards` *subcollection* scoped under a
+    // specific permit/riskAssessment doc id, not the tenant-wide, severity-filtered top-level
+    // query this screen needs, so there's no existing provider to reuse here. Out of scope for
+    // this Risk-module extraction.
     final criticalRisksStream =
         siteId == null
             ? Stream.value('0')
@@ -45,42 +54,9 @@ class RiskHubScreen extends ConsumerWidget {
                           .toString(),
                 );
 
-    final openAssessmentsStream =
-        siteId == null
-            ? Stream.value('0')
-            : firestore
-                .tenantCollection(
-                  ref.watch(currentTenantIdProvider) ?? "",
-                  'dynamic_risk_assessments',
-                )
-                .where('siteId', isEqualTo: siteId)
-                .snapshots()
-                .map(
-                  (s) =>
-                      s.docs
-                          .where((d) => d.data()['status'] != 'Approved')
-                          .length
-                          .toString(),
-                );
-
-    final controlStrengthStream =
-        siteId == null
-            ? Stream.value('100%')
-            : firestore
-                .tenantCollection(
-                  ref.watch(currentTenantIdProvider) ?? "",
-                  'dynamic_risk_assessments',
-                )
-                .where('siteId', isEqualTo: siteId)
-                .snapshots()
-                .map((s) {
-                  if (s.docs.isEmpty) return '80%';
-                  final approved =
-                      s.docs
-                          .where((d) => d.data()['status'] == 'Approved')
-                          .length;
-                  return '${((approved / s.docs.length) * 100).round()}%';
-                });
+    final draService = ref.watch(draServiceProvider);
+    final openAssessmentsStream = draService.streamOpenAssessmentsCount();
+    final controlStrengthStream = draService.streamControlStrength();
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,

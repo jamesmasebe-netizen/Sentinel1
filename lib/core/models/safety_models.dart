@@ -96,90 +96,118 @@ class Permit {
   };
 }
 
-/// Risk Assessment (HIRA / DRA)
+/// Risk Assessment — backs the Risk module's HIRA (`type: 'hira'`) sub-feature, stored in the
+/// tenant-scoped `risk_assessments` collection (see `HiraService`,
+/// `lib/features/risk/services/hira_service.dart`). Was previously a dead/unused class (zero
+/// references anywhere outside this file) whose field mapping didn't actually match what
+/// `hira_form.dart` writes: `approverId`/`assessorId` were read from the wrong raw keys
+/// (`approvedBy`/would-be `assessorId` instead of the real `approverId`/`assessedBy`),
+/// `reviewDate` was force-cast to `Timestamp` even though it's written as an ISO8601 string (a
+/// real on-disk read would have thrown), and several fields the writer actually populates —
+/// `hazard`, `consequence`, `controlMeasure`, `residualRiskLevel`, `teamMembers` — were missing
+/// entirely while unused ones (`area`, `activity`, `assessmentDate`, `expiryDate`,
+/// `residualRiskScore`) were present. Corrected in place (Wave 2b, 2026-08-06) to match the real
+/// on-disk shape exactly, safe to do since nothing else referenced this class yet (confirmed via
+/// repo-wide grep). `createdAt` is a real Firestore `Timestamp` (`FieldValue.serverTimestamp()`);
+/// `reviewDate` is an ISO8601 string — `_parseDate` below handles both shapes defensively so a
+/// legacy/differently-shaped document can never throw on read.
 class RiskAssessment {
   final String? id;
-  final String tenantId;
-  final String type; // hira, dra
+  final String siteId;
+  final String
+  type; // hira (DRA uses its own DynamicRiskAssessment model — see dra_service.dart)
   final String title;
   final String description;
-  final String status; // draft, review, approved, expired
-  final String? area;
-  final String? activity;
+  final String hazard;
+  final String consequence;
+  final String likelihood;
+  final String severity;
   final int? inherentRiskScore;
-  final int? residualRiskScore;
-  final String? riskRating; // extreme, high, medium, low
+  final String? riskRating; // Extreme, High, Medium, Low
+  final String? controlMeasure;
+  final String? residualRiskLevel;
+  final List<String> teamMembers;
+  final String? approverId;
+  final DateTime? reviewDate;
+  final String status; // active, draft, review, expired
   final String? assessorId;
   final String? reviewerId;
-  final String? approverId;
-  final DateTime? assessmentDate;
-  final DateTime? reviewDate;
-  final DateTime? expiryDate;
   final DateTime? createdAt;
 
   const RiskAssessment({
     this.id,
-    required this.tenantId,
-    required this.type,
+    required this.siteId,
+    this.type = 'hira',
     required this.title,
-    required this.description,
-    this.status = 'draft',
-    this.area,
-    this.activity,
+    this.description = '',
+    this.hazard = '',
+    this.consequence = '',
+    this.likelihood = '',
+    this.severity = '',
     this.inherentRiskScore,
-    this.residualRiskScore,
     this.riskRating,
+    this.controlMeasure,
+    this.residualRiskLevel,
+    this.teamMembers = const [],
+    this.approverId,
+    this.reviewDate,
+    this.status = 'active',
     this.assessorId,
     this.reviewerId,
-    this.approverId,
-    this.assessmentDate,
-    this.reviewDate,
-    this.expiryDate,
     this.createdAt,
   });
 
-  factory RiskAssessment.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>? ?? {};
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  factory RiskAssessment.fromFirestore(Map<String, dynamic> json, String id) {
     return RiskAssessment(
-      id: doc.id,
-      tenantId: data['tenantId'] ?? '',
-      type: data['type'] ?? 'hira',
-      title: data['title'] ?? '',
-      description: data['description'] ?? '',
-      status: data['status'] ?? 'draft',
-      area: data['area'],
-      activity: data['activity'],
-      inherentRiskScore: data['inherentRiskScore'],
-      residualRiskScore: data['residualRiskScore'],
-      riskRating: data['riskRating'],
-      assessorId: data['assessedBy'],
-      reviewerId: data['reviewedBy'],
-      approverId: data['approvedBy'],
-      assessmentDate: (data['assessmentDate'] as Timestamp?)?.toDate(),
-      reviewDate: (data['reviewDate'] as Timestamp?)?.toDate(),
-      expiryDate: (data['expiryDate'] as Timestamp?)?.toDate(),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      id: id,
+      siteId: json['siteId'] ?? '',
+      type: json['type'] ?? 'hira',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      hazard: json['hazard'] ?? '',
+      consequence: json['consequence'] ?? '',
+      likelihood: json['likelihood'] ?? '',
+      severity: json['severity'] ?? '',
+      inherentRiskScore: json['inherentRiskScore'],
+      riskRating: json['riskRating'],
+      controlMeasure: json['controlMeasure'],
+      residualRiskLevel: json['residualRiskLevel'],
+      teamMembers: List<String>.from(json['teamMembers'] ?? []),
+      approverId: json['approverId'],
+      reviewDate: _parseDate(json['reviewDate']),
+      status: json['status'] ?? 'active',
+      assessorId: json['assessedBy'],
+      reviewerId: json['reviewedBy'],
+      createdAt: _parseDate(json['createdAt']),
     );
   }
 
   Map<String, dynamic> toFirestore() => {
-    'tenantId': tenantId,
+    'siteId': siteId,
     'type': type,
     'title': title,
     'description': description,
-    'status': status,
-    'area': area,
-    'activity': activity,
+    'hazard': hazard,
+    'consequence': consequence,
+    'likelihood': likelihood,
+    'severity': severity,
     'inherentRiskScore': inherentRiskScore,
-    'residualRiskScore': residualRiskScore,
     'riskRating': riskRating,
-    'assessorId': assessorId,
-    'reviewerId': reviewerId,
+    'controlMeasure': controlMeasure,
+    'residualRiskLevel': residualRiskLevel,
+    'teamMembers': teamMembers,
     'approverId': approverId,
-    'assessmentDate':
-        assessmentDate != null ? Timestamp.fromDate(assessmentDate!) : null,
-    'reviewDate': reviewDate != null ? Timestamp.fromDate(reviewDate!) : null,
-    'expiryDate': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
+    'reviewDate': reviewDate?.toIso8601String(),
+    'status': status,
+    'assessedBy': assessorId,
+    if (reviewerId != null) 'reviewedBy': reviewerId,
     'createdAt':
         createdAt != null
             ? Timestamp.fromDate(createdAt!)

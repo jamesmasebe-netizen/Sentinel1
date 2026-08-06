@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../models/bowtie_analysis.dart';
 
 class BowTieCard extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const BowTieCard({super.key, required this.data});
+  final BowtieAnalysis analysis;
+  const BowTieCard({super.key, required this.analysis});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final status = data['status'] ?? 'Draft';
+    final status = analysis.status;
 
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -38,13 +39,13 @@ class BowTieCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data['title'] ?? 'Untitled Analysis',
+                      analysis.title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      UIUtils.formatTimestamp(data['createdAt']),
+                      UIUtils.formatTimestamp(analysis.createdAt),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -75,8 +76,8 @@ class BowTieCard extends StatelessWidget {
                 _buildExpressiveRow(
                   context,
                   'THREATS & PREVENTION',
-                  data['threats'],
-                  data['preventiveBarriers'],
+                  analysis.threats,
+                  analysis.preventiveBarriers,
                   XMTheme.riskHigh,
                   Icons.shield_rounded,
                   true,
@@ -93,7 +94,9 @@ class BowTieCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      data['topEvent']?.toUpperCase() ?? 'TOP EVENT',
+                      analysis.topEvent.isEmpty
+                          ? 'TOP EVENT'
+                          : analysis.topEvent.toUpperCase(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -106,8 +109,8 @@ class BowTieCard extends StatelessWidget {
                 _buildExpressiveRow(
                   context,
                   'MITIGATION & RECOVERY',
-                  data['mitigationBarriers'],
-                  data['consequences'],
+                  analysis.mitigationBarriers,
+                  analysis.consequences,
                   XMTheme.success,
                   Icons.healing_rounded,
                   false,

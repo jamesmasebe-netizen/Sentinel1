@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
+import '../../../core/models/safety_models.dart';
 import '../../../core/widgets/ds_widgets.dart';
 
 class HiraCard extends StatelessWidget {
-  final Map<String, dynamic> d;
+  final RiskAssessment assessment;
   final VoidCallback onTap;
 
-  const HiraCard({super.key, required this.d, required this.onTap});
+  const HiraCard({super.key, required this.assessment, required this.onTap});
 
   static Color getLevelColor(String level) {
     switch (level) {
@@ -24,8 +25,13 @@ class HiraCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final level = d['riskLevel'] ?? 'Low';
-    final score = d['riskScore'] ?? 0;
+    // Fixed 2026-08-06 (same class of bug as FIX_LIST.md F-306): hira_form.dart only ever writes
+    // inherentRiskScore/riskRating — riskScore/riskLevel are never written, so these used to read
+    // as permanently absent (score always 0, level always 'Low' regardless of the real
+    // assessment). risk_matrix_widget.dart's use of riskRating already proved these are the
+    // correct, canonical field names.
+    final level = assessment.riskRating ?? 'Low';
+    final score = assessment.inherentRiskScore ?? 0;
 
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -55,14 +61,16 @@ class HiraCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      d['title'] ?? 'Untitled Assessment',
+                      assessment.title.isEmpty
+                          ? 'Untitled Assessment'
+                          : assessment.title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     GSpacing.vXs,
                     Text(
-                      'Hazard: ${d['hazard'] ?? ''}',
+                      'Hazard: ${assessment.hazard}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -89,21 +97,21 @@ class HiraCard extends StatelessWidget {
               ),
               GSpacing.hSm,
               HiraInfoBadge(
-                label: 'Likelihood: ${d['likelihood']}',
+                label: 'Likelihood: ${assessment.likelihood}',
                 icon: Icons.show_chart_rounded,
               ),
               GSpacing.hSm,
               HiraInfoBadge(
-                label: 'Severity: ${d['severity']}',
+                label: 'Severity: ${assessment.severity}',
                 icon: Icons.layers_outlined,
               ),
             ],
           ),
-          if (d['controlMeasure'] != null &&
-              d['controlMeasure'].toString().isNotEmpty) ...[
+          if (assessment.controlMeasure != null &&
+              assessment.controlMeasure!.isNotEmpty) ...[
             GSpacing.vMd,
             HiraInfoBadge(
-              label: 'Control: ${d['controlMeasure']}',
+              label: 'Control: ${assessment.controlMeasure}',
               icon: Icons.shield_outlined,
               color: XMTheme.success,
             ),

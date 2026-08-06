@@ -1,11 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/models/safety_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'hira_card.dart';
+import '../services/hira_service.dart';
 import '../../../core/widgets/searchable_multi_select.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../../people/providers/employee_providers.dart';
@@ -82,30 +83,28 @@ class _HiraFormState extends ConsumerState<HiraForm> {
       if (profile == null) throw Exception('Not logged in');
       final score = _riskScore(_likelihood, _severity);
       await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'risk_assessments',
-            data: {
-              'type': 'hira',
-              'title': _titleCtrl.text.trim(),
-              'description': _hazardCtrl.text.trim(),
-              'hazard': _hazardCtrl.text.trim(),
-              'consequence': _consequenceCtrl.text.trim(),
-              'likelihood': _likelihood,
-              'severity': _severity,
-              'inherentRiskScore': score,
-              'riskRating': _riskLevel(score),
-              'controlMeasure': _controlMeasure,
-              'residualRiskLevel': _riskLevel(_riskScore(_residualLikelihood, _residualSeverity)),
-              'teamMembers': _teamMembers,
-              'approverId': _approverId,
-              'reviewDate': _reviewDate?.toIso8601String(),
-              'status': 'active',
-              'assessedBy': profile.uid,
-              'siteId': profile.tenantId,
-              'createdAt': FieldValue.serverTimestamp(),
-            },
+          .read(hiraServiceProvider)
+          .createAssessment(
+            RiskAssessment(
+              siteId: profile.tenantId ?? '',
+              title: _titleCtrl.text.trim(),
+              description: _hazardCtrl.text.trim(),
+              hazard: _hazardCtrl.text.trim(),
+              consequence: _consequenceCtrl.text.trim(),
+              likelihood: _likelihood,
+              severity: _severity,
+              inherentRiskScore: score,
+              riskRating: _riskLevel(score),
+              controlMeasure: _controlMeasure,
+              residualRiskLevel: _riskLevel(
+                _riskScore(_residualLikelihood, _residualSeverity),
+              ),
+              teamMembers: _teamMembers,
+              approverId: _approverId,
+              reviewDate: _reviewDate,
+              status: 'active',
+              assessorId: profile.uid,
+            ),
           );
       if (formCtx.mounted) {
         Navigator.pop(formCtx);

@@ -2,23 +2,18 @@ import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../models/dynamic_risk_assessment.dart';
 
 class DRACard extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const DRACard({super.key, required this.data});
+  final DynamicRiskAssessment assessment;
+  const DRACard({super.key, required this.assessment});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hazards =
-        (data['hazardsIdentified'] as List?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        [];
-    final controls =
-        (data['controlsApplied'] as List?)?.map((e) => e.toString()).toList() ??
-        [];
-    final isSafe = data['isSafeToProceed'] == true;
+    final hazards = assessment.hazardsIdentified;
+    final controls = assessment.controlsApplied;
+    final isSafe = assessment.isSafeToProceed;
 
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -48,14 +43,16 @@ class DRACard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data['taskDescription'] ?? 'Untitled Assessment',
+                      assessment.taskDescription.isEmpty
+                          ? 'Untitled Assessment'
+                          : assessment.taskDescription,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     GSpacing.vXs,
                     Text(
-                      UIUtils.formatTimestamp(data['createdAt']),
+                      UIUtils.formatTimestamp(assessment.createdAt),
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -70,8 +67,7 @@ class DRACard extends StatelessWidget {
             ],
           ),
           GSpacing.vMd,
-          if (data['location'] != null &&
-              data['location'].toString().isNotEmpty) ...[
+          if (assessment.location.isNotEmpty) ...[
             Row(
               children: [
                 Icon(
@@ -81,7 +77,7 @@ class DRACard extends StatelessWidget {
                 ),
                 GSpacing.hSm,
                 Text(
-                  data['location'],
+                  assessment.location,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

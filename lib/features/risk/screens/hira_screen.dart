@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../core/models/safety_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../services/hira_service.dart';
 import '../widgets/hira_card.dart';
 import '../widgets/hira_form.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Baseline HIRA (Hazard Identification & Risk Assessment) — full CRUD register.
 class HiraScreen extends ConsumerStatefulWidget {
@@ -47,8 +47,8 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final siteId = ref.watch(currentTenantIdProvider);
-    final firestore = ref.watch(firestoreProvider);
     if (siteId == null) return const Center(child: Text('No site assigned'));
+    final assessmentsAsync = ref.watch(hiraAssessmentsProvider);
 
     return Column(
       children: [
@@ -81,22 +81,10 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
 
         // ─── Assessment List ───
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                firestore
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'risk_assessments',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(50)
-                    .snapshots(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
+          child: assessmentsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (docs) {
               if (docs.isEmpty) {
                 return Center(
                   child: Column(
@@ -122,8 +110,11 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,
                 itemBuilder: (context, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return HiraCard(d: d, onTap: () => _showDetails(context, d));
+                  final assessment = docs[i];
+                  return HiraCard(
+                    assessment: assessment,
+                    onTap: () => _showDetails(context, assessment),
+                  );
                 },
               );
             },
@@ -133,14 +124,20 @@ class _HiraScreenState extends ConsumerState<HiraScreen> {
     );
   }
 
-  void _showDetails(BuildContext context, Map<String, dynamic> data) {
+  void _showDetails(BuildContext context, RiskAssessment assessment) {
     showDialog(
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: Text(data['title'] ?? data['task'] ?? 'Details'),
+            title: Text(
+              assessment.title.isEmpty ? 'Details' : assessment.title,
+            ),
             content: Text(
-              'Prepared by: ${data['preparedBy'] ?? data['assessorId'] ?? 'Unknown'}\nRisk Score: ${data['riskScore'] ?? 0}',
+              // Fixed 2026-08-06 (same class of bug as FIX_LIST.md F-306): previously read
+              // data['preparedBy']/data['riskScore'], neither of which hira_form.dart ever
+              // writes — this always showed "Unknown"/0. assessorId maps to the real
+              // 'assessedBy' key; inherentRiskScore is the real, always-populated score field.
+              'Prepared by: ${assessment.assessorId ?? 'Unknown'}\nRisk Score: ${assessment.inherentRiskScore ?? 0}',
             ),
             actions: [
               TextButton(

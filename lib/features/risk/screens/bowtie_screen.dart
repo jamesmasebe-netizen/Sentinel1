@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../services/bowtie_service.dart';
 import '../widgets/bowtie_card.dart';
 import '../widgets/bowtie_form.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Bow-Tie Analysis — register for threat/barrier/consequence chains.
 class BowtieScreen extends ConsumerStatefulWidget {
@@ -19,8 +18,8 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final siteId = ref.watch(currentTenantIdProvider);
-    final firestore = ref.watch(firestoreProvider);
     if (siteId == null) return const Center(child: Text('No site assigned'));
+    final analysesAsync = ref.watch(bowtieAnalysesProvider);
 
     return Column(
       children: [
@@ -53,22 +52,10 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
 
         // ─── List ───
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                firestore
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'bowtie_analyses',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(30)
-                    .snapshots(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
+          child: analysesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (docs) {
               if (docs.isEmpty) {
                 return Center(
                   child: Column(
@@ -94,8 +81,7 @@ class _BowtieScreenState extends ConsumerState<BowtieScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,
                 itemBuilder: (context, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return BowTieCard(data: d);
+                  return BowTieCard(analysis: docs[i]);
                 },
               );
             },

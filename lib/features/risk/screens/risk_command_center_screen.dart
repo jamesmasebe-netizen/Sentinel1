@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../models/dynamic_risk_assessment.dart';
+import '../services/dra_service.dart';
 import '../widgets/kpi_card.dart';
 import '../widgets/risk_matrix_widget.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 /// Risk Command Center — KPI cards + risk distribution overview.
 class RiskCommandCenterScreen extends ConsumerWidget {
@@ -15,7 +16,6 @@ class RiskCommandCenterScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final siteId = ref.watch(currentTenantIdProvider);
-    final firestore = ref.watch(firestoreProvider);
     final theme = Theme.of(context);
 
     if (siteId == null) return const Center(child: Text('No site assigned'));
@@ -26,89 +26,68 @@ class RiskCommandCenterScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ─── KPI Grid ───
-          StreamBuilder<QuerySnapshot>(
-            stream:
-                firestore
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'dynamic_risk_assessments',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .snapshots(),
-            builder: (context, snap) {
-              final docs = snap.data?.docs ?? [];
-              int extreme = 0, high = 0, medium = 0, low = 0, unapproved = 0;
-              for (final doc in docs) {
-                final d = doc.data() as Map<String, dynamic>;
-                switch (d['riskLevel']) {
-                  case 'Extreme':
-                    extreme++;
-                  case 'High':
-                    high++;
-                  case 'Medium':
-                    medium++;
-                  case 'Low':
-                    low++;
-                }
-                if (d['approved'] != true) unapproved++;
-              }
-
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final crossAxisCount =
-                      constraints.maxWidth > 900
-                          ? 6
-                          : (constraints.maxWidth > 600 ? 3 : 2);
-                  return GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: constraints.maxWidth > 600 ? 1.4 : 1.1,
-                    children: [
-                      KpiCard(
-                        label: 'Total Risks',
-                        value: '${docs.length}',
-                        icon: Icons.shield_outlined,
-                        color: theme.colorScheme.primary,
-                      ),
-                      KpiCard(
-                        label: 'Extreme',
-                        value: '$extreme',
-                        icon: Icons.warning_amber_rounded,
-                        color: XMTheme.riskExtreme,
-                      ),
-                      KpiCard(
-                        label: 'High',
-                        value: '$high',
-                        icon: Icons.priority_high_rounded,
-                        color: XMTheme.riskHigh,
-                      ),
-                      KpiCard(
-                        label: 'Medium',
-                        value: '$medium',
-                        icon: Icons.remove_circle_outline_rounded,
-                        color: XMTheme.riskMedium,
-                      ),
-                      KpiCard(
-                        label: 'Low',
-                        value: '$low',
-                        icon: Icons.check_circle_outline_rounded,
-                        color: XMTheme.riskLow,
-                      ),
-                      KpiCard(
-                        label: 'Pending',
-                        value: '$unapproved',
-                        icon: Icons.hourglass_empty_rounded,
-                        color: XMTheme.warning,
-                      ),
-                    ],
+          ref
+              .watch(draKpiCountsProvider)
+              .when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('Error: $err')),
+                data: (counts) {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final crossAxisCount =
+                          constraints.maxWidth > 900
+                              ? 6
+                              : (constraints.maxWidth > 600 ? 3 : 2);
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: constraints.maxWidth > 600 ? 1.4 : 1.1,
+                        children: [
+                          KpiCard(
+                            label: 'Total Risks',
+                            value: '${counts.total}',
+                            icon: Icons.shield_outlined,
+                            color: theme.colorScheme.primary,
+                          ),
+                          KpiCard(
+                            label: 'Extreme',
+                            value: '${counts.extreme}',
+                            icon: Icons.warning_amber_rounded,
+                            color: XMTheme.riskExtreme,
+                          ),
+                          KpiCard(
+                            label: 'High',
+                            value: '${counts.high}',
+                            icon: Icons.priority_high_rounded,
+                            color: XMTheme.riskHigh,
+                          ),
+                          KpiCard(
+                            label: 'Medium',
+                            value: '${counts.medium}',
+                            icon: Icons.remove_circle_outline_rounded,
+                            color: XMTheme.riskMedium,
+                          ),
+                          KpiCard(
+                            label: 'Low',
+                            value: '${counts.low}',
+                            icon: Icons.check_circle_outline_rounded,
+                            color: XMTheme.riskLow,
+                          ),
+                          KpiCard(
+                            label: 'Pending',
+                            value: '${counts.unapproved}',
+                            icon: Icons.hourglass_empty_rounded,
+                            color: XMTheme.warning,
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
-              );
-            },
-          ),
+              ),
           GSpacing.vLg,
 
           Text(
@@ -143,135 +122,136 @@ class RiskCommandCenterScreen extends ConsumerWidget {
             ),
           ),
           GSpacing.vMd,
-          StreamBuilder<QuerySnapshot>(
-            stream:
-                firestore
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'dynamic_risk_assessments',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: true)
-                    .limit(10)
-                    .snapshots(),
-            builder: (context, snap) {
-              final theme = Theme.of(context);
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return GCard(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.assessment_outlined,
-                            size: 48,
-                            color: theme.colorScheme.outline,
-                          ),
-                          GSpacing.vMd,
-                          Text(
-                            'No assessments found',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }
-              return Column(
-                children:
-                    docs.map((doc) {
-                      final d = doc.data() as Map<String, dynamic>;
-                      final level = d['riskLevel'] ?? 'Low';
-                      final approved = d['approved'] == true;
-                      return GCard(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: EdgeInsets.zero,
-                        onTap: () => _showDetails(context, d),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: _riskColor(level).withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.assessment_rounded,
-                              color: _riskColor(level),
-                              size: 24,
-                            ),
-                          ),
-                          title: Text(
-                            d['task'] ?? 'Untitled Assessment',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              '${d['assessorName'] ?? 'Unknown'} • ${d['createdAt'] != null ? d['createdAt'].toString().split('T')[0] : 'No date'}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+          ref
+              .watch(draRecentAssessmentsProvider)
+              .when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('Error: $err')),
+                data: (docs) {
+                  if (docs.isEmpty) {
+                    return GCard(
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.assessment_outlined,
+                                size: 48,
+                                color: theme.colorScheme.outline,
                               ),
-                            ),
-                          ),
-                          trailing: SizedBox(
-                            height: 56,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                GStatusTag(
-                                  label: level.toUpperCase(),
-                                  color: _riskColor(level),
+                              GSpacing.vMd,
+                              Text(
+                                'No assessments found',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
-                                const SizedBox(height: 4),
-                                GStatusTag(
-                                  label: approved ? 'APPROVED' : 'PENDING',
-                                  color:
-                                      approved
-                                          ? XMTheme.success
-                                          : XMTheme.warning,
-                                  icon:
-                                      approved
-                                          ? Icons.check_circle
-                                          : Icons.pending,
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      );
-                    }).toList(),
-              );
-            },
-          ),
+                      ),
+                    );
+                  }
+                  return Column(
+                    children:
+                        docs.map((assessment) {
+                          final level = assessment.riskLevel ?? 'Low';
+                          final approved = assessment.approved;
+                          return GCard(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: EdgeInsets.zero,
+                            onTap: () => _showDetails(context, assessment),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: _riskColor(
+                                    level,
+                                  ).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.assessment_rounded,
+                                  color: _riskColor(level),
+                                  size: 24,
+                                ),
+                              ),
+                              title: Text(
+                                assessment.taskDescription.isEmpty
+                                    ? 'Untitled Assessment'
+                                    : assessment.taskDescription,
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  // authorName is the real field dra_form.dart writes — the
+                                  // previous inline code read a nonexistent 'assessorName' key
+                                  // here and always showed "Unknown"; fixed as a side effect of
+                                  // moving to the typed model (not a change asked for by this
+                                  // extraction's named bug, but a real, separate finding).
+                                  '${assessment.authorName ?? 'Unknown'} • ${UIUtils.formatTimestamp(assessment.createdAt)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              trailing: SizedBox(
+                                height: 56,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    GStatusTag(
+                                      label: level.toUpperCase(),
+                                      color: _riskColor(level),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    GStatusTag(
+                                      label: approved ? 'APPROVED' : 'PENDING',
+                                      color:
+                                          approved
+                                              ? XMTheme.success
+                                              : XMTheme.warning,
+                                      icon:
+                                          approved
+                                              ? Icons.check_circle
+                                              : Icons.pending,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  );
+                },
+              ),
         ],
       ),
     );
   }
 
-  void _showDetails(BuildContext context, Map<String, dynamic> data) {
+  void _showDetails(BuildContext context, DynamicRiskAssessment assessment) {
     showDialog(
       context: context,
       builder:
           (ctx) => AlertDialog(
-            title: Text(data['task'] ?? 'Details'),
+            title: Text(
+              assessment.taskDescription.isEmpty
+                  ? 'Details'
+                  : assessment.taskDescription,
+            ),
             content: Text(
-              'Assessor: ${data['assessorName'] ?? 'Unknown'}\nRisk Level: ${data['riskLevel'] ?? 'Low'}',
+              'Assessor: ${assessment.authorName ?? 'Unknown'}\nRisk Level: ${assessment.riskLevel ?? 'Low'}',
             ),
             actions: [
               TextButton(

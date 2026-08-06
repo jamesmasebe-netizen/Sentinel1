@@ -6,6 +6,8 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../models/strategic_risk.dart';
+import '../services/strategic_risk_service.dart';
 
 class StrategicRiskForm extends ConsumerStatefulWidget {
   const StrategicRiskForm({super.key});
@@ -82,25 +84,24 @@ class _StrategicRiskFormState extends ConsumerState<StrategicRiskForm> {
       if (profile == null) throw Exception('Not logged in');
       final score = _riskScore();
       await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'strategic_risks',
-            data: {
-              'title': _titleCtrl.text.trim(),
-              'description': _descriptionCtrl.text.trim(),
-              'category': _category,
-              'owner': _ownerId ?? '',
-              'likelihood': _likelihood,
-              'impact': _impact,
-              'riskScore': score,
-              'riskRating': _riskRating(score),
-              'mitigation': _mitigationCtrl.text.trim(),
-              'status': _status,
-              'authorId': profile.uid,
-              'siteId': profile.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+          .read(strategicRiskServiceProvider)
+          .createRisk(
+            StrategicRisk(
+              id: '',
+              title: _titleCtrl.text.trim(),
+              description: _descriptionCtrl.text.trim(),
+              category: _category,
+              owner: _ownerId ?? '',
+              likelihood: _likelihood,
+              impact: _impact,
+              riskScore: score,
+              riskRating: _riskRating(score),
+              mitigation: _mitigationCtrl.text.trim(),
+              status: _status,
+              authorId: profile.uid,
+              siteId: profile.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (formCtx.mounted) {
         Navigator.pop(formCtx);

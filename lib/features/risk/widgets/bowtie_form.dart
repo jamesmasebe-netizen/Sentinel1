@@ -5,6 +5,8 @@ import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../models/bowtie_analysis.dart';
+import '../services/bowtie_service.dart';
 
 class BowTieForm extends ConsumerStatefulWidget {
   const BowTieForm({super.key});
@@ -46,22 +48,21 @@ class _BowTieFormState extends ConsumerState<BowTieForm> {
       final profile = ref.read(userProfileProvider).valueOrNull;
       if (profile == null) throw Exception('Not logged in');
       await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'bowtie_analyses',
-            data: {
-              'title': _titleCtrl.text.trim(),
-              'topEvent': _topEvent,
-              'threats': _threatCtrl.text.trim(),
-              'consequences': _consequenceCtrl.text.trim(),
-              'preventiveBarriers': _preventiveCtrl.text.trim(),
-              'mitigationBarriers': _mitigationCtrl.text.trim(),
-              'status': 'Draft',
-              'authorId': profile.uid,
-              'siteId': profile.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+          .read(bowtieServiceProvider)
+          .createAnalysis(
+            BowtieAnalysis(
+              id: '',
+              title: _titleCtrl.text.trim(),
+              topEvent: _topEvent,
+              threats: _threatCtrl.text.trim(),
+              consequences: _consequenceCtrl.text.trim(),
+              preventiveBarriers: _preventiveCtrl.text.trim(),
+              mitigationBarriers: _mitigationCtrl.text.trim(),
+              status: 'Draft',
+              authorId: profile.uid,
+              siteId: profile.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (formCtx.mounted) {
         Navigator.pop(formCtx);
