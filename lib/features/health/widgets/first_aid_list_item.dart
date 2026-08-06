@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../models/first_aid_entry.dart';
 
 class FirstAidListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const FirstAidListItem({super.key, required this.data});
+  final FirstAidEntry entry;
+  const FirstAidListItem({super.key, required this.entry});
 
   @override
   Widget build(BuildContext context) {
@@ -36,13 +37,13 @@ class FirstAidListItem extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      data['employeeName'] ?? 'Unknown',
+                      entry.employeeName,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      UIUtils.formatTimestamp(data['date']).split(',').first,
+                      UIUtils.formatTimestamp(entry.date).split(',').first,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -51,7 +52,7 @@ class FirstAidListItem extends StatelessWidget {
                 ),
                 GSpacing.vSm,
                 Text(
-                  data['description'] ?? 'No description',
+                  entry.description.isEmpty ? 'No description' : entry.description,
                   style: theme.textTheme.bodySmall,
                 ),
                 GSpacing.vMd,
@@ -73,7 +74,7 @@ class FirstAidListItem extends StatelessWidget {
                       GSpacing.hMd,
                       Expanded(
                         child: Text(
-                          'Treatment: ${data['treatment'] ?? "None recorded"}',
+                          'Treatment: ${entry.treatment.isEmpty ? "None recorded" : entry.treatment}',
                           style: theme.textTheme.labelSmall?.copyWith(
                             fontStyle: FontStyle.italic,
                           ),

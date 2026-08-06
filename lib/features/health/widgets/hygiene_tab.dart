@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../services/health_service.dart';
 import 'hygiene_form.dart';
 import 'hygiene_list_item.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
-class HygieneTab extends ConsumerStatefulWidget {
+class HygieneTab extends ConsumerWidget {
   const HygieneTab({super.key});
 
   @override
-  ConsumerState<HygieneTab> createState() => _HygieneTabState();
-}
-
-class _HygieneTabState extends ConsumerState<HygieneTab> {
-  @override
-  Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final surveysAsync = ref.watch(hygieneSurveysProvider);
 
     return Column(
       children: [
@@ -59,31 +51,17 @@ class _HygieneTabState extends ConsumerState<HygieneTab> {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : fs
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'hygiene_surveys',
-                        )
-                        .where('siteId', isEqualTo: siteId)
-                        .orderBy('createdAt', descending: true)
-                        .limit(50)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
+          child: surveysAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (surveys) {
+              if (surveys.isEmpty) {
                 return const Center(child: Text('No hygiene surveys logged'));
               }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return HygieneListItem(data: d);
-                },
+                itemCount: surveys.length,
+                itemBuilder: (ctx, i) => HygieneListItem(survey: surveys[i]),
               );
             },
           ),

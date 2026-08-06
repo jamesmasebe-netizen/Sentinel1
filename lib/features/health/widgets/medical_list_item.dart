@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../models/medical_record.dart';
 
 class MedicalListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const MedicalListItem({super.key, required this.data});
+  final MedicalRecord record;
+  const MedicalListItem({super.key, required this.record});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final status = data['status'] ?? 'Unknown';
-    final type = data['medicalType'] ?? 'Exam';
+    final status = record.status;
+    final type = record.medicalType;
 
     Color color = XMTheme.success;
     IconData icon = Icons.check_circle_outline_rounded;
@@ -43,14 +44,14 @@ class MedicalListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data['employeeName'] ?? 'Unknown Employee',
+                  record.employeeName,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 GSpacing.vXs,
                 Text(
-                  '$type • ${data['idNumber'] ?? "No ID"}',
+                  '$type • ${record.idNumber.isEmpty ? "No ID" : record.idNumber}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -65,7 +66,7 @@ class MedicalListItem extends StatelessWidget {
               GStatusTag(label: status.toUpperCase(), color: color),
               GSpacing.vXs,
               Text(
-                'Due: ${UIUtils.formatTimestamp(data['nextDueDate']).split(',').first}',
+                'Due: ${UIUtils.formatTimestamp(record.nextDueDate).split(',').first}',
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,

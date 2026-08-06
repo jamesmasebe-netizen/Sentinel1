@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../services/health_service.dart';
 import 'first_aid_form.dart';
 import 'first_aid_list_item.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
-class FirstAidTab extends ConsumerStatefulWidget {
+class FirstAidTab extends ConsumerWidget {
   const FirstAidTab({super.key});
 
   @override
-  ConsumerState<FirstAidTab> createState() => _FirstAidTabState();
-}
-
-class _FirstAidTabState extends ConsumerState<FirstAidTab> {
-  @override
-  Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final entriesAsync = ref.watch(firstAidLogProvider);
 
     return Column(
       children: [
@@ -62,31 +54,17 @@ class _FirstAidTabState extends ConsumerState<FirstAidTab> {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : fs
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'first_aid_logs',
-                        )
-                        .where('siteId', isEqualTo: siteId)
-                        .orderBy('createdAt', descending: true)
-                        .limit(50)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
+          child: entriesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (entries) {
+              if (entries.isEmpty) {
                 return const Center(child: Text('No first aid entries logged'));
               }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return FirstAidListItem(data: d);
-                },
+                itemCount: entries.length,
+                itemBuilder: (ctx, i) => FirstAidListItem(entry: entries[i]),
               );
             },
           ),

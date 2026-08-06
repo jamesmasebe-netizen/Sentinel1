@@ -4,6 +4,9 @@ import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../../people/providers/employee_providers.dart';
+import '../models/first_aid_entry.dart';
+import '../services/health_service.dart';
 
 class FirstAidForm extends ConsumerStatefulWidget {
   const FirstAidForm({super.key});
@@ -43,23 +46,26 @@ class _FirstAidFormState extends ConsumerState<FirstAidForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'first_aid_logs',
-            data: {
-              'patientId': _patientId,
-              'firstAiderId': _firstAiderId,
-              'description': _faDescCtrl.text.trim(),
-              'treatment': _faTreatCtrl.text.trim(),
-              'actionTaken': _actionTakenCtrl.text.trim(),
-              'referredToMedical': _referredToMedical,
-              'date': DateTime.now().toIso8601String(),
-              'authorId': p.uid,
-              'siteId': p.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+      // Resolve the patient's display name at write time (same pattern MedicalForm already
+      // uses) — cheaper than a live lookup at read time, and fixes the bug where
+      // FirstAidListItem expected `employeeName` but this form never wrote it.
+      final employees = ref.read(employeesProvider).valueOrNull ?? [];
+      final patient = employees.where((e) => e.id == _patientId).firstOrNull;
+      await ref.read(healthServiceProvider).createFirstAidEntry(
+            FirstAidEntry(
+              id: '',
+              patientId: _patientId!,
+              employeeName: patient?.fullName ?? 'Unknown',
+              firstAiderId: _firstAiderId!,
+              description: _faDescCtrl.text.trim(),
+              treatment: _faTreatCtrl.text.trim(),
+              actionTaken: _actionTakenCtrl.text.trim(),
+              referredToMedical: _referredToMedical,
+              date: DateTime.now(),
+              authorId: p.uid,
+              siteId: p.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (mounted) {
         Navigator.pop(context); // Close SideSheet

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../models/hygiene_survey.dart';
+import '../services/health_service.dart';
 
 class HygieneForm extends ConsumerStatefulWidget {
   const HygieneForm({super.key});
@@ -45,24 +47,21 @@ class _HygieneFormState extends ConsumerState<HygieneForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'hygiene_surveys',
-            data: {
-              'zoneName': _zoneCtrl.text.trim(),
-              'location': _locationCtrl.text.trim(),
-              'hazardType': _hazardType,
-              'readingValue': _readingCtrl.text.trim(),
-              'legalLimit': _limitCtrl.text.trim(),
-              'samplesTaken': int.tryParse(_samplesTakenCtrl.text.trim()) ?? 0,
-              'requiresMedicalSurveillance': _requiresSurveillance,
-              'dateConducted': DateTime.now().toIso8601String(),
-              'authorId': p.uid,
-              'siteId': p.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+      await ref.read(healthServiceProvider).createHygieneSurvey(
+            HygieneSurvey(
+              id: '',
+              zoneName: _zoneCtrl.text.trim(),
+              location: _locationCtrl.text.trim(),
+              hazardType: _hazardType,
+              readingValue: _readingCtrl.text.trim(),
+              legalLimit: _limitCtrl.text.trim(),
+              samplesTaken: int.tryParse(_samplesTakenCtrl.text.trim()) ?? 0,
+              requiresMedicalSurveillance: _requiresSurveillance,
+              dateConducted: DateTime.now(),
+              authorId: p.uid,
+              siteId: p.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (mounted) {
         Navigator.pop(context); // Close SideSheet

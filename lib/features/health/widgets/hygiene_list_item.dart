@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/widgets/ds_widgets.dart';
+import '../models/hygiene_survey.dart';
 
 class HygieneListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const HygieneListItem({super.key, required this.data});
+  final HygieneSurvey survey;
+  const HygieneListItem({super.key, required this.survey});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final reading =
-        double.tryParse(data['readingValue']?.toString() ?? '0') ?? 0;
-    final limit =
-        double.tryParse(data['legalLimit']?.toString() ?? '100') ?? 100;
+    final reading = double.tryParse(survey.readingValue) ?? 0;
+    final limit = double.tryParse(survey.legalLimit) ?? 100;
     final isOver = reading > limit;
     final color = isOver ? XMTheme.error : XMTheme.info;
 
@@ -29,13 +28,13 @@ class HygieneListItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data['zoneName'] ?? 'Unknown Zone',
+                      survey.zoneName,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      data['hazardType'] ?? 'Unknown Hazard',
+                      survey.hazardType,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -54,17 +53,17 @@ class HygieneListItem extends StatelessWidget {
             children: [
               SurveyMetric(
                 label: 'READING',
-                value: '${data['readingValue'] ?? "0"}',
+                value: survey.readingValue,
                 color: color,
               ),
               GSpacing.hLg,
               SurveyMetric(
                 label: 'LEGAL LIMIT',
-                value: '${data['legalLimit'] ?? "0"}',
+                value: survey.legalLimit,
                 color: theme.colorScheme.outline,
               ),
               const Spacer(),
-              if (data['requiresMedicalSurveillance'] == true)
+              if (survey.requiresMedicalSurveillance)
                 const TinyBadge(
                   label: 'SURVEILLANCE REQ',
                   color: XMTheme.warning,

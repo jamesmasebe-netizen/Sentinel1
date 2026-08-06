@@ -5,6 +5,8 @@ import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../../people/providers/employee_providers.dart';
+import '../models/medical_record.dart';
+import '../services/health_service.dart';
 
 class MedicalForm extends ConsumerStatefulWidget {
   const MedicalForm({super.key});
@@ -51,26 +53,23 @@ class _MedicalFormState extends ConsumerState<MedicalForm> {
       final employees = ref.read(employeesProvider).valueOrNull ?? [];
       final selectedEmployee =
           employees.where((e) => e.id == _selectedEmployeeId).firstOrNull;
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'medical_records',
-            data: {
-              'employeeId': _selectedEmployeeId,
-              'employeeName': selectedEmployee?.fullName ?? 'Unknown Employee',
-              'idNumber': _medIdCtrl.text.trim(),
-              'medicalType': _medType,
-              'status': _medStatus,
-              'restrictions': _medRestCtrl.text.trim(),
-              'practitionerName': _practitionerCtrl.text.trim(),
-              'facility': _facilityCtrl.text.trim(),
-              'dateConducted': _medDate.toIso8601String(),
-              'nextDueDate': _medNextDue.toIso8601String(),
-              'authorId': p.uid,
-              'siteId': p.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+      await ref.read(healthServiceProvider).createMedicalRecord(
+            MedicalRecord(
+              id: '',
+              employeeId: _selectedEmployeeId!,
+              employeeName: selectedEmployee?.fullName ?? 'Unknown Employee',
+              idNumber: _medIdCtrl.text.trim(),
+              medicalType: _medType,
+              status: _medStatus,
+              restrictions: _medRestCtrl.text.trim(),
+              practitionerName: _practitionerCtrl.text.trim(),
+              facility: _facilityCtrl.text.trim(),
+              dateConducted: _medDate,
+              nextDueDate: _medNextDue,
+              authorId: p.uid,
+              siteId: p.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (mounted) {
         Navigator.pop(context); // Close SideSheet
