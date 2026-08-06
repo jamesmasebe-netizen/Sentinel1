@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../services/emergency_service.dart';
 import 'equipment_form_card.dart';
 import 'equipment_list_item.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EmergencyEquipmentTab extends ConsumerStatefulWidget {
   const EmergencyEquipmentTab({super.key});
@@ -20,8 +18,7 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
 
   @override
   Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final equipmentAsync = ref.watch(emergencyEquipmentProvider);
     return Column(
       children: [
         Padding(
@@ -50,24 +47,11 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
           ),
 
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : fs
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'emergency_equipment',
-                        )
-                        .orderBy('createdAt', descending: true)
-                        .limit(100)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
+          child: equipmentAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (equipment) {
+              if (equipment.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -88,11 +72,8 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
               }
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return EquipmentListItem(data: d);
-                },
+                itemCount: equipment.length,
+                itemBuilder: (ctx, i) => EquipmentListItem(equipment: equipment[i]),
               );
             },
           ),

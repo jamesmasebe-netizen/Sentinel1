@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../services/emergency_service.dart';
 import 'drill_form_card.dart';
 import 'drill_list_item.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class EmergencyDrillsTab extends ConsumerStatefulWidget {
   const EmergencyDrillsTab({super.key});
@@ -19,8 +17,7 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final drillsAsync = ref.watch(emergencyDrillsProvider);
     return Column(
       children: [
         Padding(
@@ -46,24 +43,11 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
         if (_showDrillForm)
           DrillFormCard(onCancel: () => setState(() => _showDrillForm = false)),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : fs
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'emergency_drills',
-                        )
-                        .orderBy('createdAt', descending: true)
-                        .limit(50)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
+          child: drillsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (drills) {
+              if (drills.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -84,11 +68,8 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
               }
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return DrillListItem(data: d);
-                },
+                itemCount: drills.length,
+                itemBuilder: (ctx, i) => DrillListItem(drill: drills[i]),
               );
             },
           ),

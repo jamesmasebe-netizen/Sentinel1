@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../models/emergency_contact.dart';
+import '../services/emergency_service.dart';
 
 class EmergencyContactFormCard extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
@@ -30,16 +32,15 @@ class _EmergencyContactFormCardState extends ConsumerState<EmergencyContactFormC
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref.read(firestoreServiceProvider).createDocument(
-        tenantId: ref.read(currentTenantIdProvider) ?? '',
-        collection: 'emergency_contacts',
-        data: {
-          'name': _nameCtrl.text.trim(),
-          'number': _numberCtrl.text.trim(),
-          'authorId': p.uid,
-          'siteId': p.tenantId,
-          'createdAt': DateTime.now().toIso8601String(),
-        },
+      await ref.read(emergencyServiceProvider).createContact(
+        EmergencyContact(
+          id: '',
+          name: _nameCtrl.text.trim(),
+          number: _numberCtrl.text.trim(),
+          authorId: p.uid,
+          siteId: p.tenantId ?? '',
+          createdAt: DateTime.now(),
+        ),
       );
       if (mounted) {
         UIUtils.showToast(context, 'Contact added', type: ToastType.success);

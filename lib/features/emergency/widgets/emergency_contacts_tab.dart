@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/emergency_service.dart';
 import 'emergency_contact_form_card.dart';
 
-const _defaultContacts = [
-  {'name': 'Fire Department', 'number': '10111', 'icon': Icons.local_fire_department, 'color': XMTheme.error},
-  {'name': 'Ambulance / EMS', 'number': '10177', 'icon': Icons.local_hospital, 'color': XMTheme.info},
-  {'name': 'Police / SAPS', 'number': '10111', 'icon': Icons.local_police, 'color': XMTheme.primary},
-  {'name': 'Poison Information', 'number': '0800 111 990', 'icon': Icons.warning, 'color': XMTheme.warning},
+// Display-only metadata (icon/color) for the well-known default contacts, matched back to
+// EmergencyService.defaultContacts by name — the (name, number) pairs actually written live on
+// the service, this list is UI-only.
+const _defaultContactDisplay = [
+  {'name': 'Fire Department', 'icon': Icons.local_fire_department, 'color': XMTheme.error},
+  {'name': 'Ambulance / EMS', 'icon': Icons.local_hospital, 'color': XMTheme.info},
+  {'name': 'Police / SAPS', 'icon': Icons.local_police, 'color': XMTheme.primary},
+  {'name': 'Poison Information', 'icon': Icons.warning, 'color': XMTheme.warning},
 ];
 
 class EmergencyContactsTab extends ConsumerStatefulWidget {
@@ -32,21 +34,7 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      final tenantId = ref.read(currentTenantIdProvider) ?? '';
-      final fs = ref.read(firestoreServiceProvider);
-      for (final c in _defaultContacts) {
-        await fs.createDocument(
-          tenantId: tenantId,
-          collection: 'emergency_contacts',
-          data: {
-            'name': c['name'],
-            'number': c['number'],
-            'authorId': p.uid,
-            'siteId': p.tenantId,
-            'createdAt': DateTime.now().toIso8601String(),
-          },
-        );
-      }
+      await ref.read(emergencyServiceProvider).seedDefaultContacts(authorId: p.uid);
       if (mounted) UIUtils.showToast(context, 'Default contacts added', type: ToastType.success);
     } catch (e) {
       if (mounted) UIUtils.showToast(context, '$e', type: ToastType.error);
@@ -57,8 +45,7 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final contactsAsync = ref.watch(emergencyContactsProvider);
 
     return Column(
       children: [
@@ -81,21 +68,11 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
         ),
         if (_showForm) EmergencyContactFormCard(onCancel: () => setState(() => _showForm = false)),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: siteId == null
-                ? null
-                : fs
-                    .tenantCollection(siteId, 'emergency_contacts')
-                    .where('siteId', isEqualTo: siteId)
-                    .orderBy('createdAt', descending: false)
-                    .snapshots(),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final docs = snap.data?.docs ?? [];
-
-              if (docs.isEmpty) {
+          child: contactsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (contacts) {
+              if (contacts.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -115,13 +92,9 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
 
               return ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: docs.length,
+                itemCount: contacts.length,
                 itemBuilder: (context, i) {
-                  final data = docs[i].data() as Map<String, dynamic>;
-                  return _ContactCard(
-                    name: data['name'] ?? 'Unknown',
-                    number: data['number'] ?? '',
-                  );
+                  return _ContactCard(name: contacts[i].name, number: contacts[i].number);
                 },
               );
             },
@@ -138,7 +111,7 @@ class _ContactCard extends StatelessWidget {
   const _ContactCard({required this.name, required this.number});
 
   IconData get _icon {
-    final match = _defaultContacts.firstWhere(
+    final match = _defaultContactDisplay.firstWhere(
       (c) => c['name'] == name,
       orElse: () => const {'icon': Icons.person},
     );
@@ -146,7 +119,7 @@ class _ContactCard extends StatelessWidget {
   }
 
   Color get _color {
-    final match = _defaultContacts.firstWhere(
+    final match = _defaultContactDisplay.firstWhere(
       (c) => c['name'] == name,
       orElse: () => const {'color': XMTheme.success},
     );

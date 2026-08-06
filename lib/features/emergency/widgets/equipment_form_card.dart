@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../models/emergency_equipment.dart';
+import '../services/emergency_service.dart';
 
 class EquipmentFormCard extends ConsumerStatefulWidget {
   final VoidCallback onCancel;
@@ -33,19 +35,16 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'emergency_equipment',
-            data: {
-              'equipmentType': _equipType,
-              'location': _equipLocCtrl.text.trim(),
-              'nextInspectionDate': _inspDateCtrl.text.trim(),
-              'status': _equipStatus,
-              'authorId': p.uid,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+      await ref.read(emergencyServiceProvider).createEquipment(
+            EmergencyEquipment(
+              id: '',
+              equipmentType: _equipType,
+              location: _equipLocCtrl.text.trim(),
+              nextInspectionDate: _inspDateCtrl.text.trim(),
+              status: _equipStatus,
+              authorId: p.uid,
+              createdAt: DateTime.now(),
+            ),
           );
       if (mounted) {
         UIUtils.showToast(context, 'Equipment added', type: ToastType.success);

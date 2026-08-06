@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/widgets/ds_widgets.dart';
+import '../models/emergency_equipment.dart';
 
 class EquipmentListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const EquipmentListItem({super.key, required this.data});
+  final EmergencyEquipment equipment;
+  const EquipmentListItem({super.key, required this.equipment});
 
-  IconData _equipIcon(String? type) {
+  IconData _equipIcon(String type) {
     switch (type) {
       case 'Extinguisher':
         return Icons.fire_extinguisher;
@@ -24,9 +25,9 @@ class EquipmentListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor =
-        data['status'] == 'Operational'
+        equipment.status == 'Operational'
             ? XMTheme.success
-            : data['status'] == 'Out of Service'
+            : equipment.status == 'Out of Service'
             ? XMTheme.error
             : XMTheme.warning;
 
@@ -43,7 +44,7 @@ class EquipmentListItem extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _equipIcon(data['equipmentType']),
+                _equipIcon(equipment.equipmentType),
                 size: 20,
                 color: statusColor,
               ),
@@ -54,14 +55,18 @@ class EquipmentListItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['equipmentType'] ?? 'Unknown Item',
+                    equipment.equipmentType.isEmpty
+                        ? 'Unknown Item'
+                        : equipment.equipmentType,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   GSpacing.vSm,
                   Text(
-                    data['location'] ?? 'No location',
+                    equipment.location.isEmpty
+                        ? 'No location'
+                        : equipment.location,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -69,7 +74,10 @@ class EquipmentListItem extends StatelessWidget {
                 ],
               ),
             ),
-            GStatusTag(label: data['status'] ?? 'Unknown', color: statusColor),
+            GStatusTag(
+              label: equipment.status.isEmpty ? 'Unknown' : equipment.status,
+              color: statusColor,
+            ),
           ],
         ),
       ),

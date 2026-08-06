@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/widgets/ds_widgets.dart';
+import '../models/emergency_drill.dart';
 
 class DrillListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const DrillListItem({super.key, required this.data});
+  final EmergencyDrill drill;
+  const DrillListItem({super.key, required this.drill});
 
-  IconData _drillIcon(String? type) {
+  IconData _drillIcon(String type) {
     switch (type) {
       case 'Fire':
         return Icons.local_fire_department;
@@ -37,10 +38,10 @@ class DrillListItem extends StatelessWidget {
             ).colorScheme.errorContainer.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
-          child: Icon(_drillIcon(data['drillType']), color: XMTheme.error),
+          child: Icon(_drillIcon(drill.drillType), color: XMTheme.error),
         ),
         title: Text(
-          '${data['drillType']} Drill',
+          '${drill.drillType} Drill',
           style: Theme.of(
             context,
           ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -50,12 +51,12 @@ class DrillListItem extends StatelessWidget {
           children: [
             GSpacing.vSm,
             Text(
-              '${data['durationMinutes'] ?? 0} min • ${data['evaluatorName'] ?? 'No evaluator'}',
+              '${drill.durationMinutes} min • ${drill.evaluatorName.isEmpty ? 'No evaluator' : drill.evaluatorName}',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             GSpacing.vSm,
             Text(
-              data['scenarioDescription'] ?? '',
+              drill.scenarioDescription,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
