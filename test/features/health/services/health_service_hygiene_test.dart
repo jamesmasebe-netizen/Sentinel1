@@ -2,13 +2,20 @@
 // coverage. Wave 2b service-layer extraction, mirroring compliance_service_test.dart's pattern.
 // This collection had no field-shape bug (unlike first_aid_logs) — this file just verifies the
 // extraction preserves exact prior behavior: field shapes, siteId filter, ordering.
-import 'package:cloud_firestore/cloud_firestore.dart';
+//
+// FIXED 2026-08-06: createHygieneSurvey now routes through FirestoreService.createDocument
+// (offline-queue + audit-log), not a direct Firestore write — see compliance_service_test.dart's
+// header comment for the full story. Stream tests seed raw documents directly.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/core/providers/app_providers.dart';
+import 'package:sentinel1/core/services/offline_sync_service.dart';
 import 'package:sentinel1/features/health/models/hygiene_survey.dart';
 import 'package:sentinel1/features/health/services/health_service.dart';
+
+class MockOfflineSyncService extends Mock implements OfflineSyncService {}
 
 const _tenantId = 'test-tenant';
 const _otherTenantId = 'other-tenant';
@@ -42,28 +49,51 @@ HygieneSurvey _buildSurvey({
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(OfflineOperation.create);
+    registerFallbackValue(<String, dynamic>{});
+  });
+
   late FakeFirebaseFirestore db;
+  late MockOfflineSyncService offlineSync;
   late ProviderContainer container;
   late HealthService service;
 
   setUp(() {
     db = FakeFirebaseFirestore();
+    offlineSync = MockOfflineSyncService();
+    when(() => offlineSync.queueOperation(
+          operation: any(named: 'operation'),
+          collection: any(named: 'collection'),
+          data: any(named: 'data'),
+          documentId: any(named: 'documentId'),
+        )).thenAnswer((_) async => 'queued-op-1');
+
     container = ProviderContainer(overrides: [
       firestoreProvider.overrideWithValue(db),
+      offlineSyncServiceProvider.overrideWithValue(offlineSync),
       currentTenantIdProvider.overrideWithValue(_tenantId),
     ]);
     addTearDown(container.dispose);
     service = container.read(healthServiceProvider);
   });
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> rawDocs() async {
-    final snap =
-        await db.collection('tenants').doc(_tenantId).collection('hygiene_surveys').get();
-    return snap.docs;
+  List<dynamic> capturedQueueArgs() {
+    return verify(() => offlineSync.queueOperation(
+          operation: captureAny(named: 'operation'),
+          collection: captureAny(named: 'collection'),
+          data: captureAny(named: 'data'),
+          documentId: captureAny(named: 'documentId'),
+        )).captured;
+  }
+
+  Future<void> seedRawSurvey(HygieneSurvey survey, {String tenantId = _tenantId}) async {
+    await db.collection('tenants').doc(tenantId).collection('hygiene_surveys').add(survey.toFirestore());
   }
 
   group('createHygieneSurvey', () {
-    test('writes the exact field shape HygieneForm previously wrote inline', () async {
+    test('queues the exact field shape HygieneForm previously wrote inline, via the offline-first path',
+        () async {
       await service.createHygieneSurvey(_buildSurvey(
         zoneName: 'Paint Booth',
         hazardType: 'Chemical',
@@ -72,9 +102,9 @@ void main() {
         requiresMedicalSurveillance: true,
       ));
 
-      final docs = await rawDocs();
-      expect(docs, hasLength(1));
-      final data = docs.single.data();
+      final args = capturedQueueArgs();
+      expect(args[1], 'tenants/$_tenantId/hygiene_surveys');
+      final data = args[2] as Map<String, dynamic>;
       expect(data.keys.toSet(), {
         'zoneName',
         'location',
@@ -102,15 +132,11 @@ void main() {
 
   group('streamHygieneSurveys', () {
     test('returns only this tenant\'s surveys, newest first', () async {
-      await service.createHygieneSurvey(_buildSurvey(zoneName: 'Older Survey'));
+      await seedRawSurvey(_buildSurvey(zoneName: 'Older Survey'));
       await Future.delayed(const Duration(milliseconds: 5));
-      await service.createHygieneSurvey(_buildSurvey(zoneName: 'Newer Survey'));
-      await db
-          .collection('tenants')
-          .doc(_otherTenantId)
-          .collection('hygiene_surveys')
-          .add(_buildSurvey(zoneName: 'Other Tenant Survey', siteId: _otherTenantId)
-              .toFirestore());
+      await seedRawSurvey(_buildSurvey(zoneName: 'Newer Survey'));
+      await seedRawSurvey(_buildSurvey(zoneName: 'Other Tenant Survey', siteId: _otherTenantId),
+          tenantId: _otherTenantId);
 
       final surveys = await service.streamHygieneSurveys().first;
 

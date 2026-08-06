@@ -4,6 +4,12 @@
 // 2026-08-06), mirroring compliance_service_test.dart's structure/rigor. Split from the checklist
 // half (workers_comp_service_checklist_test.dart) to respect the 200-line threshold (AGENTS.md §4).
 //
+// FIXED 2026-08-06: createClaim now routes through FirestoreService.createDocument (offline-queue
+// + audit-log), not a direct Firestore write — see compliance_service_test.dart's header comment
+// for the full story. Stream/update tests seed raw claims directly (updateClaimStatus/
+// updateClaimRtwStatus were always direct writes already, matching the original, so those are
+// unaffected).
+//
 // Specific focus: claims_tab.dart and rtw_tab.dart previously each hand-copied a generic
 // `_updateStatus(id, field, value)` Firestore field-updater verbatim; this file asserts the two
 // typed replacement methods (updateClaimStatus/updateClaimRtwStatus) each touch only their own
@@ -12,9 +18,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/core/providers/app_providers.dart';
+import 'package:sentinel1/core/services/offline_sync_service.dart';
 import 'package:sentinel1/features/workers_comp/models/workers_comp_claim.dart';
 import 'package:sentinel1/features/workers_comp/services/workers_comp_service.dart';
+
+class MockOfflineSyncService extends Mock implements OfflineSyncService {}
 
 const _tenantId = 'test-tenant';
 const _otherTenantId = 'other-tenant';
@@ -48,27 +58,61 @@ WorkersCompClaim _buildClaim({
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(OfflineOperation.create);
+    registerFallbackValue(<String, dynamic>{});
+  });
+
   late FakeFirebaseFirestore db;
+  late MockOfflineSyncService offlineSync;
   late ProviderContainer container;
   late WorkersCompService service;
 
   setUp(() {
     db = FakeFirebaseFirestore();
+    offlineSync = MockOfflineSyncService();
+    when(() => offlineSync.queueOperation(
+          operation: any(named: 'operation'),
+          collection: any(named: 'collection'),
+          data: any(named: 'data'),
+          documentId: any(named: 'documentId'),
+        )).thenAnswer((_) async => 'queued-op-1');
+
     container = ProviderContainer(overrides: [
       firestoreProvider.overrideWithValue(db),
+      offlineSyncServiceProvider.overrideWithValue(offlineSync),
       currentTenantIdProvider.overrideWithValue(_tenantId),
     ]);
     addTearDown(container.dispose);
     service = container.read(workersCompServiceProvider);
   });
 
+  List<dynamic> capturedQueueArgs() {
+    return verify(() => offlineSync.queueOperation(
+          operation: captureAny(named: 'operation'),
+          collection: captureAny(named: 'collection'),
+          data: captureAny(named: 'data'),
+          documentId: captureAny(named: 'documentId'),
+        )).captured;
+  }
+
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> rawClaims() async {
     final snap = await db.collection('tenants').doc(_tenantId).collection('coida_claims').get();
     return snap.docs;
   }
 
+  Future<String> seedRawClaim(WorkersCompClaim claim, {String tenantId = _tenantId}) async {
+    final ref = await db
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('coida_claims')
+        .add(claim.toFirestore());
+    return ref.id;
+  }
+
   group('createClaim', () {
-    test('writes the exact field shape ClaimsTab previously wrote inline', () async {
+    test('queues the exact field shape ClaimsTab previously wrote inline, via the offline-first path',
+        () async {
       await service.createClaim(_buildClaim(
         employeeId: 'emp-42',
         employeeName: 'John Smith',
@@ -77,9 +121,9 @@ void main() {
         lostDays: 12,
       ));
 
-      final docs = await rawClaims();
-      expect(docs, hasLength(1));
-      final data = docs.single.data();
+      final args = capturedQueueArgs();
+      expect(args[1], 'tenants/$_tenantId/coida_claims');
+      final data = args[2] as Map<String, dynamic>;
       expect(data.keys.toSet(), {
         'employeeId',
         'employeeName',
@@ -110,16 +154,11 @@ void main() {
 
   group('streamClaims', () {
     test('returns only this tenant\'s claims, newest first', () async {
-      await service.createClaim(_buildClaim(employeeName: 'Older Claim'));
+      await seedRawClaim(_buildClaim(employeeName: 'Older Claim'));
       await Future.delayed(const Duration(milliseconds: 5));
-      await service.createClaim(_buildClaim(employeeName: 'Newer Claim'));
-      // A claim belonging to another tenant must not leak in — written directly at the raw path
-      // since WorkersCompService itself is tenant-scoped and can't write cross-tenant.
-      await db
-          .collection('tenants')
-          .doc(_otherTenantId)
-          .collection('coida_claims')
-          .add(_buildClaim(employeeName: 'Other Tenant Claim', siteId: _otherTenantId).toFirestore());
+      await seedRawClaim(_buildClaim(employeeName: 'Newer Claim'));
+      await seedRawClaim(_buildClaim(employeeName: 'Other Tenant Claim', siteId: _otherTenantId),
+          tenantId: _otherTenantId);
 
       final claims = await service.streamClaims().first;
 
@@ -129,16 +168,12 @@ void main() {
 
   group('streamActiveRtwCases', () {
     test('excludes Closed claims and other tenants', () async {
-      await service.createClaim(_buildClaim(employeeName: 'Open Case', status: 'Submitted'));
-      await service.createClaim(_buildClaim(employeeName: 'Accepted Case', status: 'Accepted'));
-      await service.createClaim(_buildClaim(employeeName: 'Closed Case', status: 'Closed'));
-      await db
-          .collection('tenants')
-          .doc(_otherTenantId)
-          .collection('coida_claims')
-          .add(_buildClaim(
-                  employeeName: 'Other Tenant Open', status: 'Submitted', siteId: _otherTenantId)
-              .toFirestore());
+      await seedRawClaim(_buildClaim(employeeName: 'Open Case', status: 'Submitted'));
+      await seedRawClaim(_buildClaim(employeeName: 'Accepted Case', status: 'Accepted'));
+      await seedRawClaim(_buildClaim(employeeName: 'Closed Case', status: 'Closed'));
+      await seedRawClaim(
+          _buildClaim(employeeName: 'Other Tenant Open', status: 'Submitted', siteId: _otherTenantId),
+          tenantId: _otherTenantId);
 
       final claims = await service.streamActiveRtwCases().first;
 
@@ -148,8 +183,7 @@ void main() {
 
   group('updateClaimStatus vs updateClaimRtwStatus', () {
     test('updateClaimStatus changes only status, leaving rtwStatus untouched', () async {
-      await service.createClaim(_buildClaim(status: 'Submitted', rtwStatus: 'Off Sick'));
-      final id = (await rawClaims()).single.id;
+      final id = await seedRawClaim(_buildClaim(status: 'Submitted', rtwStatus: 'Off Sick'));
 
       await service.updateClaimStatus(id, 'Accepted');
 
@@ -159,8 +193,7 @@ void main() {
     });
 
     test('updateClaimRtwStatus changes only rtwStatus, leaving status untouched', () async {
-      await service.createClaim(_buildClaim(status: 'Submitted', rtwStatus: 'Off Sick'));
-      final id = (await rawClaims()).single.id;
+      final id = await seedRawClaim(_buildClaim(status: 'Submitted', rtwStatus: 'Off Sick'));
 
       await service.updateClaimRtwStatus(id, 'Light Duty');
 
@@ -170,8 +203,7 @@ void main() {
     });
 
     test('both methods together only ever touch their own field, cumulatively', () async {
-      await service.createClaim(_buildClaim(status: 'Submitted', rtwStatus: 'Off Sick'));
-      final id = (await rawClaims()).single.id;
+      final id = await seedRawClaim(_buildClaim(status: 'Submitted', rtwStatus: 'Off Sick'));
 
       await service.updateClaimStatus(id, 'Accepted');
       await service.updateClaimRtwStatus(id, 'Full Duty');

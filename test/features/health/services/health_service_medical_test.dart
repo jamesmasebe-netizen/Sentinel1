@@ -4,13 +4,20 @@
 // unlike first_aid_logs) — this file verifies the extraction preserves exact prior behavior,
 // plus that the status distribution MedicalsTab aggregates into Fit/Restricted/Unfit counts for
 // OHStatChip survives the stream unchanged.
-import 'package:cloud_firestore/cloud_firestore.dart';
+//
+// FIXED 2026-08-06: createMedicalRecord now routes through FirestoreService.createDocument
+// (offline-queue + audit-log), not a direct Firestore write — see compliance_service_test.dart's
+// header comment for the full story. Stream tests seed raw documents directly.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/core/providers/app_providers.dart';
+import 'package:sentinel1/core/services/offline_sync_service.dart';
 import 'package:sentinel1/features/health/models/medical_record.dart';
 import 'package:sentinel1/features/health/services/health_service.dart';
+
+class MockOfflineSyncService extends Mock implements OfflineSyncService {}
 
 const _tenantId = 'test-tenant';
 const _otherTenantId = 'other-tenant';
@@ -48,28 +55,51 @@ MedicalRecord _buildRecord({
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(OfflineOperation.create);
+    registerFallbackValue(<String, dynamic>{});
+  });
+
   late FakeFirebaseFirestore db;
+  late MockOfflineSyncService offlineSync;
   late ProviderContainer container;
   late HealthService service;
 
   setUp(() {
     db = FakeFirebaseFirestore();
+    offlineSync = MockOfflineSyncService();
+    when(() => offlineSync.queueOperation(
+          operation: any(named: 'operation'),
+          collection: any(named: 'collection'),
+          data: any(named: 'data'),
+          documentId: any(named: 'documentId'),
+        )).thenAnswer((_) async => 'queued-op-1');
+
     container = ProviderContainer(overrides: [
       firestoreProvider.overrideWithValue(db),
+      offlineSyncServiceProvider.overrideWithValue(offlineSync),
       currentTenantIdProvider.overrideWithValue(_tenantId),
     ]);
     addTearDown(container.dispose);
     service = container.read(healthServiceProvider);
   });
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> rawDocs() async {
-    final snap =
-        await db.collection('tenants').doc(_tenantId).collection('medical_records').get();
-    return snap.docs;
+  List<dynamic> capturedQueueArgs() {
+    return verify(() => offlineSync.queueOperation(
+          operation: captureAny(named: 'operation'),
+          collection: captureAny(named: 'collection'),
+          data: captureAny(named: 'data'),
+          documentId: captureAny(named: 'documentId'),
+        )).captured;
+  }
+
+  Future<void> seedRawRecord(MedicalRecord record, {String tenantId = _tenantId}) async {
+    await db.collection('tenants').doc(tenantId).collection('medical_records').add(record.toFirestore());
   }
 
   group('createMedicalRecord', () {
-    test('writes the exact field shape MedicalForm previously wrote inline', () async {
+    test('queues the exact field shape MedicalForm previously wrote inline, via the offline-first path',
+        () async {
       await service.createMedicalRecord(_buildRecord(
         employeeName: 'Thabo Nkosi',
         medicalType: 'Exit',
@@ -77,9 +107,9 @@ void main() {
         restrictions: 'No heavy lifting',
       ));
 
-      final docs = await rawDocs();
-      expect(docs, hasLength(1));
-      final data = docs.single.data();
+      final args = capturedQueueArgs();
+      expect(args[1], 'tenants/$_tenantId/medical_records');
+      final data = args[2] as Map<String, dynamic>;
       expect(data.keys.toSet(), {
         'employeeId',
         'employeeName',
@@ -106,15 +136,11 @@ void main() {
 
   group('streamMedicalRecords', () {
     test('returns only this tenant\'s records, newest first', () async {
-      await service.createMedicalRecord(_buildRecord(employeeName: 'Older Record'));
+      await seedRawRecord(_buildRecord(employeeName: 'Older Record'));
       await Future.delayed(const Duration(milliseconds: 5));
-      await service.createMedicalRecord(_buildRecord(employeeName: 'Newer Record'));
-      await db
-          .collection('tenants')
-          .doc(_otherTenantId)
-          .collection('medical_records')
-          .add(_buildRecord(employeeName: 'Other Tenant Record', siteId: _otherTenantId)
-              .toFirestore());
+      await seedRawRecord(_buildRecord(employeeName: 'Newer Record'));
+      await seedRawRecord(_buildRecord(employeeName: 'Other Tenant Record', siteId: _otherTenantId),
+          tenantId: _otherTenantId);
 
       final records = await service.streamMedicalRecords().first;
 
@@ -123,10 +149,9 @@ void main() {
 
     test('preserves each record\'s status distribution for MedicalsTab\'s Fit/Restricted/Unfit '
         'aggregation', () async {
-      await service.createMedicalRecord(_buildRecord(employeeName: 'A', status: 'Fit'));
-      await service.createMedicalRecord(
-          _buildRecord(employeeName: 'B', status: 'Fit with Restrictions'));
-      await service.createMedicalRecord(_buildRecord(employeeName: 'C', status: 'Unfit'));
+      await seedRawRecord(_buildRecord(employeeName: 'A', status: 'Fit'));
+      await seedRawRecord(_buildRecord(employeeName: 'B', status: 'Fit with Restrictions'));
+      await seedRawRecord(_buildRecord(employeeName: 'C', status: 'Unfit'));
 
       final records = await service.streamMedicalRecords().first;
 

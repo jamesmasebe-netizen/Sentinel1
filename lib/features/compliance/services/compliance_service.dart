@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/services/firestore_service.dart';
 import '../../../core/utils/tenant_firestore_extension.dart';
 import '../models/compliance_document.dart';
 
 final complianceServiceProvider = Provider<ComplianceService>((ref) {
   return ComplianceService(
     ref.watch(firestoreProvider),
+    ref.watch(firestoreServiceProvider),
     ref.watch(currentTenantIdProvider) ?? '',
   );
 });
@@ -26,15 +28,23 @@ final complianceExpiringDocumentsProvider =
 
 class ComplianceService {
   final FirebaseFirestore _db;
+  final FirestoreService _firestoreService;
   final String _tenantId;
 
-  ComplianceService(this._db, this._tenantId);
+  ComplianceService(this._db, this._firestoreService, this._tenantId);
 
   CollectionReference<Map<String, dynamic>> get _docsRef =>
       _db.tenantCollection(_tenantId, 'compliance_docs');
 
+  /// Routes through FirestoreService.createDocument (not a direct write) so this preserves
+  /// RegisterDocForm's original offline-queue + audit-log behavior — see FirestoreService's own
+  /// doc comment ("All writes go through OfflineSyncService") and AuditLogService.logAction.
   Future<void> createDocument(ComplianceDocument document) async {
-    await _docsRef.add(document.toFirestore());
+    await _firestoreService.createDocument(
+      tenantId: _tenantId,
+      collection: 'compliance_docs',
+      data: document.toFirestore(),
+    );
   }
 
   Stream<List<ComplianceDocument>> streamAllDocuments() {

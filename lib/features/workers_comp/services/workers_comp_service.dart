@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/services/firestore_service.dart';
 import '../../../core/utils/tenant_firestore_extension.dart';
 import '../models/workers_comp_claim.dart';
 import '../models/compliance_checklist_item.dart';
@@ -8,6 +9,7 @@ import '../models/compliance_checklist_item.dart';
 final workersCompServiceProvider = Provider<WorkersCompService>((ref) {
   return WorkersCompService(
     ref.watch(firestoreProvider),
+    ref.watch(firestoreServiceProvider),
     ref.watch(currentTenantIdProvider) ?? '',
   );
 });
@@ -33,9 +35,10 @@ final complianceChecklistProvider =
 
 class WorkersCompService {
   final FirebaseFirestore _db;
+  final FirestoreService _firestoreService;
   final String _tenantId;
 
-  WorkersCompService(this._db, this._tenantId);
+  WorkersCompService(this._db, this._firestoreService, this._tenantId);
 
   CollectionReference<Map<String, dynamic>> get _claimsRef =>
       _db.tenantCollection(_tenantId, 'coida_claims');
@@ -57,8 +60,14 @@ class WorkersCompService {
     'Death benefit notifications processed',
   ];
 
+  /// Routes through FirestoreService.createDocument (not a direct write) to preserve
+  /// ClaimsTab's original offline-queue + audit-log behavior.
   Future<void> createClaim(WorkersCompClaim claim) async {
-    await _claimsRef.add(claim.toFirestore());
+    await _firestoreService.createDocument(
+      tenantId: _tenantId,
+      collection: 'coida_claims',
+      data: claim.toFirestore(),
+    );
   }
 
   Stream<List<WorkersCompClaim>> streamClaims() {

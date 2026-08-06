@@ -2,6 +2,11 @@
 // coverage. Wave 2b service-layer extraction, mirroring compliance_service_test.dart's pattern
 // (see docs/testing/TEST_STRATEGY.md §3 for the ProviderContainer/override convention).
 //
+// FIXED 2026-08-06: createFirstAidEntry now routes through FirestoreService.createDocument
+// (offline-queue + audit-log), not a direct Firestore write — see compliance_service_test.dart's
+// header comment for the full story of why. Stream tests below seed raw documents directly
+// (bypassing the service) since createFirstAidEntry no longer writes to Firestore synchronously.
+//
 // Includes the regression-guard test for the real bug fixed as part of this extraction (same
 // class as FIX_LIST.md's F-306, a reader expecting a field the writer never populated):
 // FirstAidListItem read `data['employeeName']`, but FirstAidForm only ever wrote `patientId` (a
@@ -9,13 +14,16 @@
 // patient actually was. FirstAidForm now resolves the patient's name from the same
 // EmployeeSelector-backed employee list already used to pick `patientId`, and writes it as
 // `employeeName` at create time (matching how medical_records already does this).
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/core/providers/app_providers.dart';
+import 'package:sentinel1/core/services/offline_sync_service.dart';
 import 'package:sentinel1/features/health/models/first_aid_entry.dart';
 import 'package:sentinel1/features/health/services/health_service.dart';
+
+class MockOfflineSyncService extends Mock implements OfflineSyncService {}
 
 const _tenantId = 'test-tenant';
 const _otherTenantId = 'other-tenant';
@@ -49,35 +57,59 @@ FirstAidEntry _buildEntry({
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(OfflineOperation.create);
+    registerFallbackValue(<String, dynamic>{});
+  });
+
   late FakeFirebaseFirestore db;
+  late MockOfflineSyncService offlineSync;
   late ProviderContainer container;
   late HealthService service;
 
   setUp(() {
     db = FakeFirebaseFirestore();
+    offlineSync = MockOfflineSyncService();
+    when(() => offlineSync.queueOperation(
+          operation: any(named: 'operation'),
+          collection: any(named: 'collection'),
+          data: any(named: 'data'),
+          documentId: any(named: 'documentId'),
+        )).thenAnswer((_) async => 'queued-op-1');
+
     container = ProviderContainer(overrides: [
       firestoreProvider.overrideWithValue(db),
+      offlineSyncServiceProvider.overrideWithValue(offlineSync),
       currentTenantIdProvider.overrideWithValue(_tenantId),
     ]);
     addTearDown(container.dispose);
     service = container.read(healthServiceProvider);
   });
 
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> rawDocs() async {
-    final snap = await db.collection('tenants').doc(_tenantId).collection('first_aid_logs').get();
-    return snap.docs;
+  List<dynamic> capturedQueueArgs() {
+    return verify(() => offlineSync.queueOperation(
+          operation: captureAny(named: 'operation'),
+          collection: captureAny(named: 'collection'),
+          data: captureAny(named: 'data'),
+          documentId: captureAny(named: 'documentId'),
+        )).captured;
+  }
+
+  Future<void> seedRawEntry(FirstAidEntry entry, {String tenantId = _tenantId}) async {
+    await db.collection('tenants').doc(tenantId).collection('first_aid_logs').add(entry.toFirestore());
   }
 
   group('createFirstAidEntry', () {
-    test('writes the exact field shape FirstAidForm previously wrote inline', () async {
+    test('queues the exact field shape FirstAidForm previously wrote inline, via the offline-first path',
+        () async {
       await service.createFirstAidEntry(_buildEntry(
         description: 'Twisted ankle on stairwell',
         treatment: 'Ice pack applied, elevated',
       ));
 
-      final docs = await rawDocs();
-      expect(docs, hasLength(1));
-      final data = docs.single.data();
+      final args = capturedQueueArgs();
+      expect(args[1], 'tenants/$_tenantId/first_aid_logs');
+      final data = args[2] as Map<String, dynamic>;
       expect(data.keys.toSet(), {
         'patientId',
         'employeeName',
@@ -99,45 +131,41 @@ void main() {
     });
 
     test(
-        'REGRESSION GUARD: stored/streamed entry has a real, non-empty employeeName — not just '
+        'REGRESSION GUARD: the queued entry carries a real, non-empty employeeName — not just '
         'the raw patientId (the bug fixed in this extraction)', () async {
       await service.createFirstAidEntry(_buildEntry(
         patientId: 'emp-77',
         employeeName: 'Bongani Dlamini',
       ));
 
-      final docs = await rawDocs();
-      final data = docs.single.data();
+      final data = capturedQueueArgs()[2] as Map<String, dynamic>;
       expect(data['patientId'], 'emp-77');
       expect(data['employeeName'], 'Bongani Dlamini');
       expect(data['employeeName'], isNot(isEmpty));
       expect(data['employeeName'], isNot(equals(data['patientId'])));
-
-      // And the stream — what FirstAidListItem actually renders — surfaces the same real name,
-      // not 'Unknown', which was the exact visible symptom of the original bug.
-      final streamed = await service.streamFirstAidLog().first;
-      expect(streamed.single.employeeName, 'Bongani Dlamini');
-      expect(streamed.single.employeeName, isNot('Unknown'));
     });
   });
 
   group('streamFirstAidLog', () {
     test('returns only this tenant\'s entries, newest first', () async {
-      await service.createFirstAidEntry(_buildEntry(description: 'Older Entry'));
+      await seedRawEntry(_buildEntry(description: 'Older Entry'));
       await Future.delayed(const Duration(milliseconds: 5));
-      await service.createFirstAidEntry(_buildEntry(description: 'Newer Entry'));
-      // A document belonging to another tenant must not leak in — written directly at the raw
-      // path since HealthService itself is tenant-scoped and can't write cross-tenant.
-      await db
-          .collection('tenants')
-          .doc(_otherTenantId)
-          .collection('first_aid_logs')
-          .add(_buildEntry(description: 'Other Tenant Entry', siteId: _otherTenantId)
-              .toFirestore());
+      await seedRawEntry(_buildEntry(description: 'Newer Entry'));
+      await seedRawEntry(_buildEntry(description: 'Other Tenant Entry', siteId: _otherTenantId),
+          tenantId: _otherTenantId);
 
       final entries = await service.streamFirstAidLog().first;
 
       expect(entries.map((e) => e.description), ['Newer Entry', 'Older Entry']);
+    });
+
+    test('surfaces a real employeeName for a newly-shaped entry (not "Unknown")', () async {
+      await seedRawEntry(_buildEntry(patientId: 'emp-77', employeeName: 'Bongani Dlamini'));
+
+      final entries = await service.streamFirstAidLog().first;
+
+      expect(entries.single.employeeName, 'Bongani Dlamini');
+      expect(entries.single.employeeName, isNot('Unknown'));
     });
 
     test('a legacy document missing employeeName falls back to "Unknown", not a crash', () async {
