@@ -9,6 +9,13 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  exclude:
+    # firebase-tools (an npm package under firebase/functions/node_modules,
+    # installed for Cloud Functions testing) bundles unrelated .dart template
+    # files for its own `firebase init` scaffolding — not part of this app.
+    - firebase/**
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

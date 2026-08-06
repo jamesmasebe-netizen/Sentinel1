@@ -7,6 +7,8 @@
     "serve": "npm run build && firebase emulators:start --only functions",
     "deploy": "npm run build && firebase deploy --only functions",
     "logs": "firebase functions:log",
+    "test": "jest",
+    "test:rules": "firebase emulators:exec --only firestore,auth \"jest --config jest.rules.config.js\"",
     "backfill:contractor-status": "tsc scripts/backfill-contractor-status.ts --outDir lib/scripts --module commonjs --esModuleInterop --target es2017 --skipLibCheck --strict --noImplicitReturns --noUnusedLocals && node lib/scripts/backfill-contractor-status.js",
     "grant:admin": "tsc scripts/grant_admin_claims.ts --outDir lib/scripts --module commonjs --esModuleInterop --target es2017 --skipLibCheck --strict --noImplicitReturns --noUnusedLocals && node lib/scripts/grant_admin_claims.js"
   },
@@ -19,8 +21,14 @@
     "stripe": "^22.3.2"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.11.0",
     "@types/nodemailer": "^6.4.14",
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase-functions-test": "^3.4.0",
+    "firebase-tools": "^15.25.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.4.0"
   },
   "engines": {

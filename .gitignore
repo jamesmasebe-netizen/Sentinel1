@@ -46,6 +46,10 @@ app.*.map.json
 node_modules/
 firebase/functions/lib/
 
+# Firebase emulator
+firebase-export/
+.firebase/
+
 # Environment & Secrets
 .env
 .env.local
