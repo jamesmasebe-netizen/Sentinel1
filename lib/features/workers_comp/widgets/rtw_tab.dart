@@ -1,31 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/workers_comp_service.dart';
 
 class RtwTab extends ConsumerWidget {
   const RtwTab({super.key});
 
-  Future<void> _updateStatus(
+  Future<void> _updateRtwStatus(
     BuildContext context,
     WidgetRef ref,
     String id,
-    String field,
     String value,
   ) async {
     try {
-      await ref
-          .read(firestoreProvider)
-          .tenantCollection(
-            ref.watch(currentTenantIdProvider) ?? "",
-            'coida_claims',
-          )
-          .doc(id)
-          .update({field: value});
+      await ref.read(workersCompServiceProvider).updateClaimRtwStatus(id, value);
       if (context.mounted) {
         UIUtils.showToast(context, 'Status updated to $value');
       }
@@ -39,31 +29,20 @@ class RtwTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final activeCasesAsync = ref.watch(activeRtwCasesProvider);
 
-    return StreamBuilder<QuerySnapshot>(
-      stream:
-          siteId == null
-              ? null
-              : fs
-                  .tenantCollection(
-                    ref.watch(currentTenantIdProvider) ?? "",
-                    'coida_claims',
-                  )
-                  .where('siteId', isEqualTo: siteId)
-                  .where('status', isNotEqualTo: 'Closed')
-                  .snapshots(),
-      builder: (ctx, snap) {
-        final docs = snap.data?.docs ?? [];
-        if (docs.isEmpty) {
+    return activeCasesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Error: $err')),
+      data: (claims) {
+        if (claims.isEmpty) {
           return const Center(child: Text('No active RTW cases'));
         }
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: docs.length,
+          itemCount: claims.length,
           itemBuilder: (ctx, i) {
-            final d = docs[i].data() as Map<String, dynamic>;
+            final claim = claims[i];
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: GCard(
@@ -71,14 +50,14 @@ class RtwTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      d['employeeName'] ?? '',
+                      claim.employeeName,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     GSpacing.vSm,
                     Text(
-                      'Lost days to date: ${d['lostDays'] ?? 0}',
+                      'Lost days to date: ${claim.lostDays}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -93,31 +72,23 @@ class RtwTab extends ConsumerWidget {
                     GSpacing.vSm,
                     Wrap(
                       spacing: 8,
-                      children:
-                          ['Off Sick', 'Light Duty', 'Full Duty'].map((s) {
-                            final isSelected = d['rtwStatus'] == s;
-                            return ChoiceChip(
-                              label: Text(s),
-                              selected: isSelected,
-                              onSelected:
-                                  (_) => _updateStatus(
-                                    context,
-                                    ref,
-                                    docs[i].id,
-                                    'rtwStatus',
-                                    s,
-                                  ),
-                              selectedColor: XMTheme.success.withValues(
-                                alpha: 0.15,
-                              ),
-                              checkmarkColor: XMTheme.success,
-                              labelStyle: TextStyle(
-                                color: isSelected ? XMTheme.success : null,
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.bold : null,
-                              ),
-                            );
-                          }).toList(),
+                      children: ['Off Sick', 'Light Duty', 'Full Duty'].map((s) {
+                        final isSelected = claim.rtwStatus == s;
+                        return ChoiceChip(
+                          label: Text(s),
+                          selected: isSelected,
+                          onSelected: (_) => _updateRtwStatus(context, ref, claim.id, s),
+                          selectedColor: XMTheme.success.withValues(
+                            alpha: 0.15,
+                          ),
+                          checkmarkColor: XMTheme.success,
+                          labelStyle: TextStyle(
+                            color: isSelected ? XMTheme.success : null,
+                            fontSize: 12,
+                            fontWeight: isSelected ? FontWeight.bold : null,
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),

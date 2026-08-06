@@ -1,68 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/workers_comp_service.dart';
 
 class ComplianceTab extends ConsumerWidget {
   const ComplianceTab({super.key});
-
-  static const _defaultItems = [
-    'Register with COIDA Fund (RAF)',
-    'Annual Return of Earnings submitted',
-    'W.CL.2 form filed within 7 days of incident',
-    'Medical reports obtained from treating doctor',
-    'Employee notified of claim status',
-    'Return-to-work plan documented',
-    'COIDA claim file retained for 3 years',
-    'Compensation Commissioner correspondence filed',
-    'Section 56 investigation if applicable',
-    'Death benefit notifications processed',
-  ];
-
-  Future<void> _seedDefaults(WidgetRef ref, String tenantId) async {
-    final fs = ref.read(firestoreProvider);
-    final coll = fs.tenantCollection(tenantId, 'coida_compliance_checklist');
-    final batch = fs.batch();
-    for (var i = 0; i < _defaultItems.length; i++) {
-      batch.set(coll.doc('item_$i'), {
-        'label': _defaultItems[i],
-        'done': false,
-        'order': i,
-      });
-    }
-    await batch.commit();
-  }
-
-  Future<void> _toggle(WidgetRef ref, String tenantId, String docId, bool value) {
-    return ref
-        .read(firestoreProvider)
-        .tenantCollection(tenantId, 'coida_compliance_checklist')
-        .doc(docId)
-        .update({'done': value});
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final tenantId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final checklistAsync = ref.watch(complianceChecklistProvider);
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: tenantId == null
-          ? null
-          : fs
-              .tenantCollection(tenantId, 'coida_compliance_checklist')
-              .orderBy('order')
-              .snapshots(),
-      builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final docs = snap.data?.docs ?? [];
-        if (docs.isEmpty) {
+    return checklistAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Error: $err')),
+      data: (items) {
+        if (items.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(32),
@@ -72,7 +28,9 @@ class ComplianceTab extends ConsumerWidget {
                   const Text('No COIDA compliance checklist found for this tenant.'),
                   const SizedBox(height: 16),
                   FilledButton(
-                    onPressed: tenantId == null ? null : () => _seedDefaults(ref, tenantId),
+                    onPressed: tenantId == null
+                        ? null
+                        : () => ref.read(workersCompServiceProvider).seedComplianceChecklist(),
                     child: const Text('Create Default Checklist'),
                   ),
                 ],
@@ -81,8 +39,8 @@ class ComplianceTab extends ConsumerWidget {
           );
         }
 
-        final done = docs.where((d) => (d.data() as Map<String, dynamic>)['done'] == true).length;
-        final progress = done / docs.length;
+        final done = items.where((i) => i.done).length;
+        final progress = done / items.length;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -102,7 +60,7 @@ class ComplianceTab extends ConsumerWidget {
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           GSpacing.vSm,
-                          Text('$done / ${docs.length} requirements met', style: theme.textTheme.bodySmall),
+                          Text('$done / ${items.length} requirements met', style: theme.textTheme.bodySmall),
                         ],
                       ),
                     ),
@@ -128,31 +86,30 @@ class ComplianceTab extends ConsumerWidget {
               GSpacing.vLg,
               Text('Compliance Checklist', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
               GSpacing.vMd,
-              ...docs.map((doc) {
-                final d = doc.data() as Map<String, dynamic>;
-                final isDone = d['done'] == true;
+              ...items.map((item) {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: GCard(
                     padding: EdgeInsets.zero,
                     child: InkWell(
-                      onTap: tenantId == null ? null : () => _toggle(ref, tenantId, doc.id, !isDone),
+                      onTap: () =>
+                          ref.read(workersCompServiceProvider).toggleComplianceItem(item.id, !item.done),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         child: Row(
                           children: [
                             Icon(
-                              isDone ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                              color: isDone ? XMTheme.success : theme.colorScheme.outline,
+                              item.done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                              color: item.done ? XMTheme.success : theme.colorScheme.outline,
                               size: 22,
                             ),
                             GSpacing.hMd,
                             Expanded(
                               child: Text(
-                                d['label']?.toString() ?? '',
+                                item.label,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: isDone ? null : theme.colorScheme.onSurfaceVariant,
-                                  decoration: isDone ? TextDecoration.lineThrough : null,
+                                  color: item.done ? null : theme.colorScheme.onSurfaceVariant,
+                                  decoration: item.done ? TextDecoration.lineThrough : null,
                                 ),
                               ),
                             ),

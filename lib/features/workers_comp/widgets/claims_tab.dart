@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import 'rtw_badge.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../models/workers_comp_claim.dart';
+import '../services/workers_comp_service.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../../people/providers/employee_providers.dart';
 
@@ -43,24 +43,21 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
       if (p == null) throw Exception('Not logged in');
       final employees = ref.read(employeesProvider).valueOrNull ?? [];
       final employeeName = employees.where((e) => e.id == _employeeId).firstOrNull?.fullName ?? 'Unknown Employee';
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'coida_claims',
-            data: {
-              'employeeId': _employeeId,
-              'employeeName': employeeName,
-              'idNumber': _idCtrl.text.trim(),
-              'claimNumber': _claimNoCtrl.text.trim(),
-              'incidentDate': _incidentDate.toIso8601String(),
-              'lostDays': int.tryParse(_lostDaysCtrl.text) ?? 0,
-              'status': 'Submitted',
-              'rtwStatus': 'Off Sick',
-              'authorId': p.uid,
-              'siteId': p.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+      await ref.read(workersCompServiceProvider).createClaim(
+            WorkersCompClaim(
+              id: '',
+              employeeId: _employeeId!,
+              employeeName: employeeName,
+              idNumber: _idCtrl.text.trim(),
+              claimNumber: _claimNoCtrl.text.trim(),
+              incidentDate: _incidentDate,
+              lostDays: int.tryParse(_lostDaysCtrl.text) ?? 0,
+              status: 'Submitted',
+              rtwStatus: 'Off Sick',
+              authorId: p.uid,
+              siteId: p.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (mounted) {
         UIUtils.showToast(context, 'Claim submitted successfully');
@@ -79,16 +76,9 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
     }
   }
 
-  Future<void> _updateStatus(String id, String field, String value) async {
+  Future<void> _updateStatus(String id, String value) async {
     try {
-      await ref
-          .read(firestoreProvider)
-          .tenantCollection(
-            ref.watch(currentTenantIdProvider) ?? "",
-            'coida_claims',
-          )
-          .doc(id)
-          .update({field: value});
+      await ref.read(workersCompServiceProvider).updateClaimStatus(id, value);
       if (mounted) UIUtils.showToast(context, 'Status updated to $value');
     } catch (e) {
       if (mounted) UIUtils.showToast(context, '$e', type: ToastType.error);
@@ -98,8 +88,7 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final claimsAsync = ref.watch(workersCompClaimsProvider);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -210,22 +199,11 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
           ),
         ],
         GSpacing.vMd,
-        StreamBuilder<QuerySnapshot>(
-          stream:
-              siteId == null
-                  ? null
-                  : fs
-                      .tenantCollection(
-                        ref.watch(currentTenantIdProvider) ?? "",
-                        'coida_claims',
-                      )
-                      .where('siteId', isEqualTo: siteId)
-                      .orderBy('createdAt', descending: true)
-                      .limit(50)
-                      .snapshots(),
-          builder: (ctx, snap) {
-            final docs = snap.data?.docs ?? [];
-            if (docs.isEmpty) {
+        claimsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('Error: $err')),
+          data: (claims) {
+            if (claims.isEmpty) {
               return const Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 60),
@@ -234,88 +212,78 @@ class _ClaimsTabState extends ConsumerState<ClaimsTab> {
               );
             }
             return Column(
-              children:
-                  docs.map((doc) {
-                    final d = doc.data() as Map<String, dynamic>;
-                    final status = d['status'] ?? 'Submitted';
-                    final statusColor =
-                        status == 'Accepted'
-                            ? XMTheme.success
-                            : status == 'Rejected'
-                            ? XMTheme.error
-                            : status == 'Closed'
+              children: claims.map((claim) {
+                final statusColor = claim.status == 'Accepted'
+                    ? XMTheme.success
+                    : claim.status == 'Rejected'
+                        ? XMTheme.error
+                        : claim.status == 'Closed'
                             ? theme.colorScheme.outline
                             : XMTheme.warning;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: GCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: GCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    d['employeeName'] ?? 'Unknown Employee',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                GStatusTag(
-                                  label: status.toUpperCase(),
-                                  color: statusColor,
-                                ),
-                              ],
-                            ),
-                            GSpacing.vSm,
-                            Text(
-                              'Claim: ${d['claimNumber'] ?? 'N/A'} • Lost Days: ${d['lostDays'] ?? 0}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                            Expanded(
+                              child: Text(
+                                claim.employeeName,
+                                style: theme.textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
-                            GSpacing.vMd,
-                            Row(
-                              children: [
-                                RtwBadge(label: d['rtwStatus'] ?? 'Off Sick'),
-                                const Spacer(),
-                                if (status != 'Closed')
-                                  PopupMenuButton<String>(
-                                    initialValue: status,
-                                    onSelected:
-                                        (val) => _updateStatus(
-                                          doc.id,
-                                          'status',
-                                          val,
-                                        ),
-                                    itemBuilder:
-                                        (ctx) =>
-                                            ['Accepted', 'Rejected', 'Closed']
-                                                .map(
-                                                  (s) => PopupMenuItem(
-                                                    value: s,
-                                                    child: Text(s),
-                                                  ),
-                                                )
-                                                .toList(),
-                                    child: Text(
-                                      'Update Status',
-                                      style: theme.textTheme.labelMedium
-                                          ?.copyWith(
-                                            color: theme.colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                  ),
-                              ],
+                            GStatusTag(
+                              label: claim.status.toUpperCase(),
+                              color: statusColor,
                             ),
                           ],
                         ),
-                      ),
-                    );
-                  }).toList(),
+                        GSpacing.vSm,
+                        Text(
+                          'Claim: ${claim.claimNumber.isEmpty ? 'N/A' : claim.claimNumber} • Lost Days: ${claim.lostDays}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        GSpacing.vMd,
+                        Row(
+                          children: [
+                            RtwBadge(label: claim.rtwStatus),
+                            const Spacer(),
+                            if (claim.status != 'Closed')
+                              PopupMenuButton<String>(
+                                initialValue: claim.status,
+                                onSelected: (val) => _updateStatus(claim.id, val),
+                                itemBuilder: (ctx) =>
+                                    ['Accepted', 'Rejected', 'Closed']
+                                        .map(
+                                          (s) => PopupMenuItem(
+                                            value: s,
+                                            child: Text(s),
+                                          ),
+                                        )
+                                        .toList(),
+                                child: Text(
+                                  'Update Status',
+                                  style: theme.textTheme.labelMedium
+                                      ?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             );
           },
         ),
