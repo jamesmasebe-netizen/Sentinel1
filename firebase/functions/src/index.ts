@@ -10,6 +10,7 @@ import { logger } from "firebase-functions/v2";
 import * as nodemailer from "nodemailer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { defineString } from "firebase-functions/params";
+import { getDb } from "./lib/db";
 
 // ─── Runtime Parameters ─────────────────────────────────────────────────────
 const emailHost = defineString("EMAIL_HOST", { default: "" });
@@ -20,7 +21,7 @@ const geminiKey = defineString("GEMINI_API_KEY", { default: "" });
 
 // ─── Firebase Admin Init ────────────────────────────────────────────────────
 admin.initializeApp();
-const db = admin.firestore();
+const db = getDb();
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getTransporter() {

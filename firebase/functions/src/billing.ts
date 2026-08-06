@@ -2,6 +2,7 @@ import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 import Stripe from "stripe";
+import { getDb } from "./lib/db";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock", {
   apiVersion: "2026-06-24.dahlia" as any,
@@ -48,7 +49,7 @@ export const createBillingPortalSession = onCall(async (request) => {
   }
 
   try {
-    const db = admin.firestore();
+    const db = getDb();
     const subscriptionDoc = await db
       .collection("tenants")
       .doc(tenantId)
@@ -123,8 +124,8 @@ async function handleSubscriptionUpdated(subscription: any) {
     return;
   }
 
-  const db = admin.firestore();
-  
+  const db = getDb();
+
   const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
   let status = subscription.status; // e.g. active, past_due, trialing
 
@@ -147,7 +148,7 @@ async function handleSubscriptionDeleted(subscription: any) {
   const tenantId = subscription.metadata?.tenantId;
   if (!tenantId) return;
 
-  const db = admin.firestore();
+  const db = getDb();
 
   await db.collection("tenants").doc(tenantId).collection("subscription").doc("status").set({
     status: "canceled",

@@ -1,5 +1,5 @@
-import * as admin from "firebase-admin";
 import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
+import { getDb } from "./lib/db";
 
 interface CalculateTaxRequest {
   tenantId: string;
@@ -26,7 +26,7 @@ export const calculateTax = onCall(
       );
     }
 
-    const db = admin.firestore();
+    const db = getDb();
     const snap = await db
       .collection("tenants")
       .doc(tenantId)

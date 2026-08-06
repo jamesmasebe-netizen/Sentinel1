@@ -1,6 +1,7 @@
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
+import { getDb } from "./lib/db";
 
 export const revenueRecognition = onDocumentUpdated(
   "tenants/{tenantId}/project_milestones/{milestoneId}",
@@ -49,7 +50,7 @@ export const revenueRecognition = onDocumentUpdated(
       created_at: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    const db = admin.firestore();
+    const db = getDb();
     const journalRef = db.collection(`tenants/${tenantId}/fin_journal_headers`);
     await journalRef.add(journalEntry);
 

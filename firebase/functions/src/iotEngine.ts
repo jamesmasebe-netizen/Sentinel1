@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { getDb } from './lib/db';
 
 export const iotTelemetryIngest = functions.https.onRequest(async (req, res) => {
   try {
@@ -17,7 +18,7 @@ export const iotTelemetryIngest = functions.https.onRequest(async (req, res) => 
       return;
     }
 
-    const db = admin.firestore();
+    const db = getDb();
 
     // Option A: Trusted Gateway / JWT enriched tenantId
     // Option B: Central Registry Lookup (Best Practice for raw device telemetry)
