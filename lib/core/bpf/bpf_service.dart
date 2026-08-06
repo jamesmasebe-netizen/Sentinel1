@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../providers/app_providers.dart';
+import 'bpf_definitions.dart';
 import 'bpf_models.dart';
 
 final bpfServiceProvider = Provider<BpfService>((ref) {
@@ -32,6 +33,22 @@ class BpfService {
   CollectionReference get _bpfCollection =>
       _db.collection('tenants').doc(_tenantId).collection('bpf_instances');
 
+  /// Throws if [stageId] isn't a stage [bpfTypeId]'s BpfDefinition actually declares (see
+  /// bpf_definitions.dart). A bpfTypeId with no registered definition passes through unchecked —
+  /// this guards against a wrong *stage id* for a known flow, not against undeclared flow types.
+  void _assertKnownStage(String bpfTypeId, String stageId) {
+    final definition = bpfDefinitionsById[bpfTypeId];
+    if (definition == null) return;
+    final isKnownStage = definition.stages.any((s) => s.id == stageId);
+    if (!isKnownStage) {
+      final knownIds = definition.stages.map((s) => s.id).join(', ');
+      throw ArgumentError(
+        'BPF "$bpfTypeId" (${definition.title}) has no stage "$stageId". '
+        'Known stages: $knownIds.',
+      );
+    }
+  }
+
   Stream<BpfInstance?> streamBpfInstance(String id) {
     return _bpfCollection.doc(id).snapshots().map((snap) {
       if (!snap.exists) return null;
@@ -49,6 +66,8 @@ class BpfService {
   }
 
   Future<String> startBpf(String bpfTypeId, String startingStageId, String recordType, String recordId) async {
+    _assertKnownStage(bpfTypeId, startingStageId);
+
     final newRef = _bpfCollection.doc();
     final instance = BpfInstance(
       id: newRef.id,
@@ -66,8 +85,16 @@ class BpfService {
   Future<void> advanceStage(String bpfId, String nextStageId, {Map<String, String>? newlyLinkedRecords}) async {
     final doc = await _bpfCollection.doc(bpfId).get();
     if (!doc.exists) return;
-    
+
     final current = BpfInstance.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+
+    if (current.status != 'in_progress') {
+      throw StateError(
+        'Cannot advance BPF instance $bpfId: status is "${current.status}", not "in_progress".',
+      );
+    }
+    _assertKnownStage(current.bpfTypeId, nextStageId);
+
     final updatedLinks = Map<String, String>.from(current.linkedRecordIds);
     if (newlyLinkedRecords != null) {
       updatedLinks.addAll(newlyLinkedRecords);

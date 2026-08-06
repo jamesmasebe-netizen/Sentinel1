@@ -94,7 +94,7 @@ class BpfOrchestrator {
 
     await bpfService.advanceStage(
       bpfId,
-      'opportunity_management',
+      'opportunity',
       newlyLinkedRecords: {'opportunityId': oppId},
     );
 
@@ -123,7 +123,7 @@ class BpfOrchestrator {
 
     await bpfService.advanceStage(
       bpfId,
-      'quoting_and_proposals',
+      'quote',
       newlyLinkedRecords: {'quoteId': quoteId},
     );
 
@@ -197,7 +197,7 @@ class BpfOrchestrator {
 
     await bpfService.advanceStage(
       bpfId,
-      'billing_and_collection',
+      'invoice',
       newlyLinkedRecords: {'invoiceId': invoiceId},
     );
 

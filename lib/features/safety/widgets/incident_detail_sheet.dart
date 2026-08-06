@@ -281,7 +281,7 @@ void showIncidentDetail(
                                 String? bpfId = bpfInstances.isNotEmpty ? bpfInstances.first.id : null;
                                 if (bpfId == null) {
                                   bpfId = await bpfService.startBpf(
-                                      'issue_to_resolution', 'incident_logging', 'incident', docId);
+                                      'issue_to_resolution', 'logged', 'incident', docId);
                                 }
 
                                 final orchestrator = ref.read(bpfOrchestratorProvider);

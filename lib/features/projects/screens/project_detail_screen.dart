@@ -211,7 +211,7 @@ class ProjectDetailScreen extends ConsumerWidget {
                       if (bpfs.isNotEmpty) {
                         bpfId = bpfs.first.id;
                       } else {
-                        bpfId = await bpfService.startBpf('lead_to_cash', 'project', 'projectId', project.projectId);
+                        bpfId = await bpfService.startBpf('lead_to_cash', 'project_execution', 'projectId', project.projectId);
                       }
                       final invoiceId = await orchestrator.createInvoiceFromProject(project, bpfId);
                       if (context.mounted) {

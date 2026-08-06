@@ -80,7 +80,9 @@ class _EquipmentAssetTabState extends ConsumerState<EquipmentAssetTab> {
         final bpfService = ref.read(bpfServiceProvider);
         // recordType 'equipment' must match AssetDetailScreen's BpfRibbonWidget
         // lookup (asset_detail_screen.dart), which queries linkedRecordIds.equipment.
-        final bpfId = await bpfService.startBpf('asset_lifecycle', 'equipment', 'equipment', newId);
+        // Starting stage is 'acquisition' — the first stage of assetLifecycleDefinition
+        // (asset_lifecycle_bpf.dart); do not confuse with the 'equipment' recordType arg below.
+        final bpfId = await bpfService.startBpf('asset_lifecycle', 'acquisition', 'equipment', newId);
         final eq = EquipmentModel(
           id: newId,
           equipmentName: _nameCtrl.text.trim(),
