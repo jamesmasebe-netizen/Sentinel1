@@ -369,6 +369,37 @@ class SalesOrder {
   }
 }
 
+class SalesOrderLine {
+  final String id;
+  final String? itemId;
+  final double quantity;
+  final double unitPrice;
+
+  SalesOrderLine({
+    required this.id,
+    this.itemId,
+    this.quantity = 0.0,
+    this.unitPrice = 0.0,
+  });
+
+  factory SalesOrderLine.fromJson(Map<String, dynamic> json, String id) {
+    return SalesOrderLine(
+      id: id,
+      itemId: json['item_id'],
+      quantity: (json['quantity'] ?? 0).toDouble(),
+      unitPrice: (json['unit_price'] ?? 0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (itemId != null) 'item_id': itemId,
+      'quantity': quantity,
+      'unit_price': unitPrice,
+    };
+  }
+}
+
 class TransferOrder {
   final String id;
   final String orderNumber;

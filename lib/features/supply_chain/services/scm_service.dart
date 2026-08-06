@@ -215,6 +215,37 @@ class ScmService {
   }
 
   // ==========================================
+  // SALES ORDER LINES (Sub-collection: so_lines)
+  // ==========================================
+  CollectionReference<Map<String, dynamic>> _soLinesRef(String soId) =>
+      _salesOrdersRef.doc(soId).collection('so_lines');
+
+  Future<List<SalesOrderLine>> getSalesOrderLines(String soId) async {
+    final snap = await _soLinesRef(soId).get();
+    return snap.docs
+        .map((doc) => SalesOrderLine.fromJson(doc.data(), doc.id))
+        .toList();
+  }
+
+  Future<SalesOrderLine?> getSalesOrderLine(String soId, String lineId) async {
+    final doc = await _soLinesRef(soId).doc(lineId).get();
+    if (!doc.exists) return null;
+    return SalesOrderLine.fromJson(doc.data()!, doc.id);
+  }
+
+  Future<void> createSalesOrderLine(String soId, SalesOrderLine line) async {
+    await _soLinesRef(soId).doc(line.id).set(line.toJson());
+  }
+
+  Future<void> updateSalesOrderLine(String soId, SalesOrderLine line) async {
+    await _soLinesRef(soId).doc(line.id).update(line.toJson());
+  }
+
+  Future<void> deleteSalesOrderLine(String soId, String lineId) async {
+    await _soLinesRef(soId).doc(lineId).delete();
+  }
+
+  // ==========================================
   // TRANSFER ORDERS (Collection: transfer_orders)
   // ==========================================
   CollectionReference<Map<String, dynamic>> get _transferOrdersRef =>
