@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../services/compliance_service.dart';
 import 'doc_list_item.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ExpiringTab extends ConsumerWidget {
   const ExpiringTab({super.key});
@@ -13,33 +11,12 @@ class ExpiringTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final documentsAsync = ref.watch(complianceExpiringDocumentsProvider);
 
-    return StreamBuilder<QuerySnapshot>(
-      stream:
-          siteId == null
-              ? null
-              : fs
-                  .tenantCollection(
-                    ref.watch(currentTenantIdProvider) ?? "",
-                    'compliance_docs',
-                  )
-                  .where('siteId', isEqualTo: siteId)
-                  .where(
-                    'expiryDate',
-                    isLessThanOrEqualTo: DateTime.now()
-                        .add(const Duration(days: 90))
-                        .toIso8601String(),
-                  )
-                  .orderBy('expiryDate')
-                  .limit(50)
-                  .snapshots(),
-      builder: (ctx, snap) {
-        if (snap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final docs = snap.data?.docs ?? [];
+    return documentsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Error: $err')),
+      data: (docs) {
         if (docs.isEmpty) {
           return Center(
             child: Column(
@@ -78,10 +55,8 @@ class ExpiringTab extends ConsumerWidget {
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: docs.length,
-          itemBuilder: (ctx, i) {
-            final d = docs[i].data() as Map<String, dynamic>;
-            return DocListItem(data: d, showExpiryContext: true);
-          },
+          itemBuilder: (ctx, i) =>
+              DocListItem(document: docs[i], showExpiryContext: true),
         );
       },
     );

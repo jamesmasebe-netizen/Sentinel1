@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
+import '../services/compliance_service.dart';
 import 'doc_list_item.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class RegisterTab extends ConsumerStatefulWidget {
   const RegisterTab({super.key});
@@ -19,8 +17,7 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final documentsAsync = ref.watch(complianceDocumentsProvider);
 
     return Column(
       children: [
@@ -43,37 +40,18 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : fs
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'compliance_docs',
-                        )
-                        .where('siteId', isEqualTo: siteId)
-                        .orderBy('createdAt', descending: true)
-                        .limit(100)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              var docs = snap.data?.docs ?? [];
+          child: documentsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (allDocs) {
+              var docs = allDocs;
               if (_searchQuery.isNotEmpty) {
-                docs =
-                    docs.where((d) {
-                      final data = d.data() as Map<String, dynamic>;
-                      final title =
-                          (data['title'] ?? '').toString().toLowerCase();
-                      final ref =
-                          (data['referenceNumber'] ?? '')
-                              .toString()
-                              .toLowerCase();
-                      return title.contains(_searchQuery) ||
-                          ref.contains(_searchQuery);
-                    }).toList();
+                docs = docs.where((d) {
+                  final title = d.title.toLowerCase();
+                  final ref = d.referenceNumber.toLowerCase();
+                  return title.contains(_searchQuery) ||
+                      ref.contains(_searchQuery);
+                }).toList();
               }
 
               if (docs.isEmpty) {
@@ -101,10 +79,7 @@ class _RegisterTabState extends ConsumerState<RegisterTab> {
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return DocListItem(data: d);
-                },
+                itemBuilder: (ctx, i) => DocListItem(document: docs[i]),
               );
             },
           ),

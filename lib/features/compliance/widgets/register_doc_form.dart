@@ -5,6 +5,8 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../people/widgets/employee_selector.dart';
+import '../models/compliance_document.dart';
+import '../services/compliance_service.dart';
 
 class RegisterDocForm extends ConsumerStatefulWidget {
   const RegisterDocForm({super.key});
@@ -42,23 +44,20 @@ class _RegisterDocFormState extends ConsumerState<RegisterDocForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'compliance_docs',
-            data: {
-              'title': _titleCtrl.text.trim(),
-              'referenceNumber': _refCtrl.text.trim(),
-              'documentType': _docType,
-              'status': _docStatus,
-              'ownerId': _ownerId,
-              'expiryDate': _expiry.toIso8601String(),
-              'reviewDate': _reviewDate.toIso8601String(),
-              'authorId': p.uid,
-              'siteId': p.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+      await ref.read(complianceServiceProvider).createDocument(
+            ComplianceDocument(
+              id: '',
+              title: _titleCtrl.text.trim(),
+              referenceNumber: _refCtrl.text.trim(),
+              documentType: _docType,
+              status: _docStatus,
+              ownerId: _ownerId,
+              expiryDate: _expiry,
+              reviewDate: _reviewDate,
+              authorId: p.uid,
+              siteId: p.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ),
           );
       if (mounted) {
         Navigator.pop(context);

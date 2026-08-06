@@ -1,29 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../models/compliance_document.dart';
 
 class DocListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final ComplianceDocument document;
   final bool showExpiryContext;
 
   const DocListItem({
     super.key,
-    required this.data,
+    required this.document,
     this.showExpiryContext = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final rawExpiry = data['expiryDate'];
-    final expiryDate = rawExpiry is Timestamp
-        ? rawExpiry.toDate()
-        : DateTime.tryParse(rawExpiry?.toString() ?? '');
-    final days = expiryDate == null
-        ? 999
-        : expiryDate.difference(DateTime.now()).inDays;
+    final days = document.expiryDate.difference(DateTime.now()).inDays;
 
     Color statusColor = XMTheme.success;
     IconData statusIcon = Icons.check_circle_outline_rounded;
@@ -58,7 +52,7 @@ class DocListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data['title'] ?? 'Untitled Doc',
+                  document.title,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -67,7 +61,7 @@ class DocListItem extends StatelessWidget {
                 ),
                 GSpacing.vSm,
                 Text(
-                  '${data['documentType']} • ${data['referenceNumber'] ?? "No Ref"}',
+                  '${document.documentType} • ${document.referenceNumber.isEmpty ? "No Ref" : document.referenceNumber}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -88,7 +82,7 @@ class DocListItem extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
                     UIUtils.formatTimestamp(
-                      data['expiryDate'],
+                      document.expiryDate,
                     ).split(',').first,
                     style: theme.textTheme.labelSmall?.copyWith(
                       fontSize: 9,
