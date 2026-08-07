@@ -12,7 +12,7 @@
  */
 import { assertFails, assertSucceeds, RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getTestEnv } from "../helpers/rules_test_env";
+import { getTestEnv, TENANT_A } from "../helpers/rules_test_env";
 
 describe("firestore.rules — unauthenticated-context cases (Wave 2c)", () => {
   let testEnv: RulesTestEnvironment;
@@ -47,5 +47,20 @@ describe("firestore.rules — unauthenticated-context cases (Wave 2c)", () => {
     const ref = doc(anon.firestore(), rootLevelPath);
     await assertFails(getDoc(ref));
     await assertFails(setDoc(ref, { note: "anon root escape" }));
+  });
+
+  it("job_requisitions: allows a completely unauthenticated client to read (careers portal, F-501)", async () => {
+    await seed(`tenants/${TENANT_A}/job_requisitions/req-anon`, { note: "seed" });
+    const anon = testEnv.unauthenticatedContext();
+    await assertSucceeds(
+      getDoc(doc(anon.firestore(), `tenants/${TENANT_A}/job_requisitions/req-anon`))
+    );
+  });
+
+  it("job_applications: allows a completely unauthenticated client to create (careers portal, F-501), but not read", async () => {
+    const anon = testEnv.unauthenticatedContext();
+    const ref = doc(anon.firestore(), `tenants/${TENANT_A}/job_applications/app-anon`);
+    await assertSucceeds(setDoc(ref, { note: "anonymous applicant" }));
+    await assertFails(getDoc(ref));
   });
 });

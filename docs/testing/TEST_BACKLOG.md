@@ -305,7 +305,20 @@ match /{collection}/{docId} {
 
 `npx tsc --noEmit` clean. `npm run test:rules` 167/167 passing (15 suites, up from 134). Full regression gate: `flutter analyze` 48/0 (unaffected — no Dart files touched), `npm test` 26/26 (unaffected).
 
-**Gaps:** the remaining 2 clusters (CRM/Sales/CS/FieldService, People/Property/Risk/Environment — roughly 38 of the 117 total blocks) are not yet covered.
+**Gaps (at the time):** the remaining 2 clusters (CRM/Sales/CS/FieldService, People/Property/Risk/Environment — roughly 38 of the 117 total blocks) were not yet covered.
+
+#### [DONE] T2c-CRMCS: firestore.rules matrix — CRM/Sales/CS/FieldService cluster
+
+**File(s):** `firebase/functions/test/rules/crm_cs_fieldservice_cluster_standard.test.ts` + `crm_cs_fieldservice_cluster_distinctive.test.ts` (new), `zzz_unauthenticated_access.test.ts` (extended, per that file's own stated convention for every `unauthenticatedContext()` case in this suite).
+**Why:** 15 standard-shaped collections (leads, opportunities, accounts, contacts, customerJourneys, activities, deals, sla_kpi_instances, quotes, cs_assets, cs_knowledge_articles, route_plans, customer_assets, iot_devices, campaigns) plus 3 distinctively-shaped ones (cs_tickets + its messages subcollection, job_requisitions, job_applications).
+
+**Resolved 2026-08-07:** two standard shapes covered table-driven — `openWrite` (create/update open to any tenant member, delete admin-only: 8 collections) and `managerGated` (create/update isManager()-gated, delete admin-only: 7 collections, same shape as the Finance/SCM cluster). Distinctive file hand-writes: `cs_tickets` (create open to any tenant member, but **update** is isManager()-gated — most collections gate create+update together, this one splits them; delete is isAdmin()-gated, not isManager()) and its `messages` subcollection (create open, but update+delete are BOTH isAdmin()-gated with no manager tier, unlike the parent ticket); `job_requisitions`/`job_applications` authenticated-role cases (manager/admin gates), with their pre-authentication `read: if true` / `create: if true` cases added to `zzz_unauthenticated_access.test.ts` per its own header comment's explicit instruction to put future unauthenticated cases there. `job_applications` is also one of the 11 collections the catch-all vulnerability (T2c-SENSITIVE) used to expose — its "plain employee denied read" test doubles as a regression guard for that fix.
+
+**Two test-authoring bugs caught by the emulator run and fixed before commit (both mine, not rules bugs):** (1) the `openWrite` loop's cross-tenant-denial test initially called `.firestore()` twice on the same context object (once for `getDoc`, once for `setDoc`) — exactly the deterministic SDK bug documented in `TEST_STRATEGY.md` §7; fixed by caching the ref once. (2) `cs_tickets`' distinctive test initially asserted a manager could delete a ticket — wrong, delete is `isAdmin()`-gated, only update is `isManager()`-gated; fixed to assert manager-can-update-but-not-delete, admin-can-delete as two separate tests.
+
+`npx tsc --noEmit` clean. `npm run test:rules` 210/210 passing (17 suites, up from 167). Full regression gate: `flutter analyze` 48/0 (unaffected — no Dart files touched), `npm test` 26/26 (unaffected).
+
+**Gaps:** the People/Property/Risk/Environment cluster (roughly 22 of the 117 total blocks) is not yet covered — the last of the 6 planned clusters.
 
 ## Tier 3 — Medium (later phase)
 
