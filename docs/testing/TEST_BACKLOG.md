@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `notifications`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations` done — see below; only their widget/screen layers remain Tier 3).
+- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `dashboard`, `environment`, `notifications`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors` done — see below; only their widget/screen layers remain Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -462,6 +462,14 @@ This is now the **third** file this session found with this identical anti-patte
 **Worth noting, not a bug:** `InventoryService` reads/writes the exact same `inventory_items`/`warehouses` collections, via the exact same canonical models (`scm_models.dart`), as `ScmService` (`supply_chain` module, T3-SUPPLYCHAIN) — a second, distinct service class duplicating the same functionality. Confirmed both correctly use the tenant-scoped path with no divergence in field shape, so unlike the Project-schema split (T2-BPFORCHESTRATOR) or the Lead-conversion gap (T3-CRM), this is architectural redundancy rather than a functional bug — two UI contexts (`operations` vs `supply_chain`) apparently ended up with their own service class for the same data rather than sharing one. Not consolidated; flagged for whoever next touches either module's widget layer.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 275/275 (up from 267, +8).
+
+#### [DONE] T3-CONTRACTORS: `contractors` module coverage
+
+**File(s):** `lib/features/contractors/services/ai_compliance_service.dart` -> `test/features/contractors/services/ai_compliance_service_test.dart` (new, 6 tests). No bugs found.
+**Resolved 2026-08-07:** `AiComplianceService.triggerPreScreen` (Cloud Function wrapper, mocktail-mocked `FirebaseFunctions`/`HttpsCallable` — same pattern as T2-BILLING/T3-PEOPLE's `InviteService`: right callable name + payload, no-tenant no-op, error propagation) and `streamPreScreenResult` (real `fake_cloud_firestore`, including a no-active-tenant case).
+**Gaps:** the rest of the module (`contractor_management_screen.dart`'s CRUD, `add_contractor_form.dart`, safety-file submission review) has no dedicated `services/`/`providers/` layer — the logic is inline in widgets, same shape as the pre-Wave-2b Compliance/Health modules were before their extraction. Not extracted here; scoping a proper service layer for the rest of `contractors` is a larger unit of work than Tier 3's per-module pass, flagged for a future dedicated pass (mirroring Wave 2b's approach) rather than attempted piecemeal.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 281/281 (up from 275, +6).
 
 ---
 
