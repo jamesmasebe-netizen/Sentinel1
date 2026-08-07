@@ -143,6 +143,22 @@ Test 1 (all-defaults path) confirms `status` -> `'Open'`, `createdBy`/`createdBy
 
 Decision made on the scoping finding above: extract a proper service/provider layer per module (not widget-level tests against the embedded Firestore calls) before testing it, module by module.
 
+#### [DONE] T2b-COMPLIANCE: Compliance module service-layer extraction (established the Wave 2b reference pattern)
+
+**File(s):** `lib/features/compliance/{models/compliance_document,services/compliance_service}.dart` (new) + `RegisterTab`/`RegisterDocForm` refactored -> `test/features/compliance/services/compliance_service_test.dart`
+**Why:** `compliance` was one of the 5 modules named in the original Wave 2b scoping finding with no `services`/`providers` layer at all — the single tenant-scoped `compliance_docs` collection was driven entirely by an inline `StreamBuilder<QuerySnapshot>` for reads and a raw `.add()` call for writes in `RegisterDocForm`, untestable without brittle widget-level Firestore mocking. Picked as the first Wave 2b extraction specifically to establish the pattern the other 4 modules (health, workers_comp, emergency, risk) would then mirror.
+**Coverage target:** `createDocument`'s field shape and offline-queue/audit-log routing, `streamAllDocuments`/`streamExpiringDocuments`'s tenant isolation and filtering/ordering.
+
+**Resolved 2026-08-06 (backlog entry filed retroactively 2026-08-07 — the extraction itself, and its tests, were done and passing at the time; only this write-up was missing, flagged in the Module -> Tier cross-reference table as "backlog write-up still outstanding" until now):** Added `ComplianceDocument` (`fromFirestore`/`toFirestore`) and `ComplianceService` with `createDocument`, `streamAllDocuments` (siteId-filtered, `createdAt` desc, capped at 100 — exact prior query), `streamExpiringDocuments` (siteId + `expiryDate <= now+90d`, ordered by `expiryDate`, capped at 50 — exact prior query) — plus `complianceServiceProvider` and 2 `StreamProvider.autoDispose` providers (`complianceDocumentsProvider`, `complianceExpiringDocumentsProvider`). `RegisterTab`/`RegisterDocForm` refactored from `StreamBuilder<QuerySnapshot>`/raw `.add()` to `ref.watch(xProvider).when(...)`/`complianceServiceProvider.createDocument(...)`.
+
+**Real regression caught and fixed during the Emergency module's extraction (which mirrored this file), then backported here:** the first version of `createDocument` wrote directly to Firestore (`_docsRef.add(...)`), but `RegisterDocForm`'s original code called `firestoreServiceProvider.createDocument(...)` — which, per `SafetyService`'s earlier finding (T2-002), routes through `OfflineSyncService.queueOperation` (offline-first queue) and `AuditLogService.logAction` (audit trail) rather than writing directly. The direct-write version silently dropped both. Fixed by injecting `FirestoreService` and routing `createDocument()` through it, exactly like `SafetyService.createCapa` — see commit `af5ad38`. This became the template every later Wave 2b module (health, workers_comp, emergency, risk) followed from the start, rather than repeating the same regression.
+
+5 tests in `test/features/compliance/services/compliance_service_test.dart`: `createDocument` (2 — queues the exact field shape `RegisterDocForm` previously wrote inline via the offline-first path, and a real CREATE audit-log entry with the same data), `streamAllDocuments` (1 — tenant-isolated, newest-first), `streamExpiringDocuments` (2 — includes only documents expiring within 90 days soonest-first excluding other tenants, and a document already past its expiry date is still included since the query is `isLessThanOrEqualTo`, not a floor). Built via `ProviderContainer(overrides: [...])` per TEST_STRATEGY.md §3, mocking `OfflineSyncService` and cross-checking the real `fake_cloud_firestore`-backed `AuditLogService` write, same pattern `safety_service_test.dart` established and every later Wave 2b service test file reused.
+
+`flutter analyze lib/features/compliance/ test/features/compliance/` clean. `flutter test test/features/compliance/` 5/5 passing.
+
+**Gaps:** no widget tests (Tier 3); no `firestore.rules` coverage for `compliance_docs`/`compliance_documents` here — that's covered separately by T2c-SENSITIVE's rules-matrix work, a different test type per TEST_STRATEGY.md §1.
+
 #### [DONE] T2b-HEALTH: Health module service-layer extraction
 **File(s):** `lib/features/health/{models/first_aid_entry,models/hygiene_survey,models/medical_record,services/health_service}.dart` (new) + all 7 widgets under `lib/features/health/widgets/` refactored -> `test/features/health/services/health_service_{first_aid,hygiene,medical}_test.dart`
 **Why:** `health` was one of the 5 modules named in the scoping finding above with no `services`/`providers` layer at all — 3 tenant-scoped collections (`first_aid_logs`, `hygiene_surveys`, `medical_records`) driven entirely by inline `StreamBuilder<QuerySnapshot>`/raw `Map<String, dynamic>` reads, untestable without brittle widget-level Firestore mocking. Mirrors the `compliance` module's extraction pattern (`ComplianceDocument`/`ComplianceService`/`complianceServiceProvider` + `StreamProvider.autoDispose`) as the established reference.
@@ -356,6 +372,6 @@ match /{collection}/{docId} {
 | workers_comp | 2 (Wave 2b: T2b-WORKERSCOMP, done) | |
 | emergency | 2 (Wave 2b: T2b-EMERGENCY, done) | |
 | risk | 2 (Wave 2b: T2b-RISK, done) | |
-| compliance | 2 | backlog write-up still outstanding, per T2b-WORKERSCOMP/EMERGENCY notes |
+| compliance | 2 (Wave 2b: T2b-COMPLIANCE, done) | |
 | billing | 2 | |
 | ai_tools, auth, contractors, crm, customer_service, dashboard, environment, equipment, field_service, notifications, operations, people, projects, property, public, settings, supply_chain, training, copilot | 3 | |
