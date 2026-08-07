@@ -6,7 +6,7 @@ import '../../../core/utils/ui_utils.dart';
 
 class PurchaseOrderLineForm extends ConsumerStatefulWidget {
   final String poId;
-  const PurchaseOrderLineForm({Key? key, required this.poId}) : super(key: key);
+  const PurchaseOrderLineForm({super.key, required this.poId});
 
   @override
   ConsumerState<PurchaseOrderLineForm> createState() =>

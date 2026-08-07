@@ -19,7 +19,7 @@ class DraggableTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardContent = Card(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         side: BorderSide(color: color, width: 1),
         borderRadius: BorderRadius.circular(8),

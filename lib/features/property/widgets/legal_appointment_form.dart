@@ -21,7 +21,6 @@ class _LegalAppointmentFormState extends ConsumerState<LegalAppointmentForm> {
   String? _roleId;
   String? _roleTitle;
   String? _personId;
-  String? _personName; // Optional optimization to store name
   String _status = 'Appointed';
   DateTime? _expiry = DateTime.now().add(const Duration(days: 365));
 

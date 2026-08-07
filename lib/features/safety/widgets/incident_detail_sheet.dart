@@ -279,10 +279,8 @@ void showIncidentDetail(
                                     .first;
                                 
                                 String? bpfId = bpfInstances.isNotEmpty ? bpfInstances.first.id : null;
-                                if (bpfId == null) {
-                                  bpfId = await bpfService.startBpf(
-                                      'issue_to_resolution', 'logged', 'incident', docId);
-                                }
+                                bpfId ??= await bpfService.startBpf(
+                                    'issue_to_resolution', 'logged', 'incident', docId);
 
                                 final orchestrator = ref.read(bpfOrchestratorProvider);
                                 await orchestrator.createCapaFromIncident(

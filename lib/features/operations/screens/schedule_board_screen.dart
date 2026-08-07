@@ -5,7 +5,6 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../widgets/draggable_task_card.dart';
 import '../../people/providers/employee_providers.dart';
-import '../../field_service/providers/field_service_providers.dart';
 import '../../field_service/services/field_service_service.dart';
 import '../../field_service/models/field_service_models.dart';
 import '../../projects/providers/project_providers.dart';
@@ -155,12 +154,12 @@ class _ScheduleBoardScreenState extends ConsumerState<ScheduleBoardScreen> {
                       final tasks = assignedTasks[resource.id] ?? [];
                       
                       return DragTarget<Map<String, dynamic>>(
-                        onAccept: (taskData) => _assignTask(taskData['id'], resource.id, taskData['isWorkOrder'], taskData['projectId']),
+                        onAcceptWithDetails: (details) => _assignTask(details.data['id'], resource.id, details.data['isWorkOrder'], details.data['projectId']),
                         builder: (context, candidateData, rejectedData) {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             decoration: BoxDecoration(
-                              color: candidateData.isNotEmpty ? Colors.blue.withOpacity(0.1) : Colors.white,
+                              color: candidateData.isNotEmpty ? Colors.blue.withValues(alpha: 0.1) : Colors.white,
                               border: Border.all(color: Colors.grey[300]!),
                               borderRadius: BorderRadius.circular(8),
                             ),

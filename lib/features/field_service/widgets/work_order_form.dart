@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../models/field_service_models.dart';
@@ -410,15 +409,14 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
                 firstDate: DateTime(2000),
                 lastDate: DateTime(2100),
               );
-              if (date != null && mounted) {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (time != null) {
-                  final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                  _schedStartController.text = dt.toIso8601String();
-                }
+              if (date == null || !context.mounted) return;
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.now(),
+              );
+              if (time != null) {
+                final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                _schedStartController.text = dt.toIso8601String();
               }
             },
           ),
@@ -437,15 +435,14 @@ class _WorkOrderFormState extends ConsumerState<WorkOrderForm> {
                 firstDate: DateTime(2000),
                 lastDate: DateTime(2100),
               );
-              if (date != null && mounted) {
-                final time = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.now(),
-                );
-                if (time != null) {
-                  final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                  _schedEndController.text = dt.toIso8601String();
-                }
+              if (date == null || !context.mounted) return;
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.now(),
+              );
+              if (time != null) {
+                final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                _schedEndController.text = dt.toIso8601String();
               }
             },
           ),

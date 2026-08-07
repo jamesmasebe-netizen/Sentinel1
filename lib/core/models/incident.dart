@@ -34,17 +34,17 @@ class Incident extends BaseIncident {
   final DateTime? updatedAt;
 
   const Incident({
-    String? id,
-    required String tenantId,
+    super.id,
+    required super.tenantId,
     required this.title,
-    required String description,
+    required super.description,
     required this.type,
-    String severity = 'Minor',
-    String status = 'Open',
-    String? location,
-    DateTime? dateOfIncident,
-    String? reporterId,
-    String? reporterName,
+    super.severity = 'Minor',
+    super.status = 'Open',
+    super.location,
+    super.dateOfIncident,
+    super.reporterId,
+    super.reporterName,
     this.contractorId,
     this.assigneeId,
     this.rootCause,
@@ -62,17 +62,7 @@ class Incident extends BaseIncident {
     this.propertyDamageDetails,
     this.createdAt,
     this.updatedAt,
-  }) : super(
-         id: id,
-         tenantId: tenantId,
-         description: description,
-         severity: severity,
-         status: status,
-         location: location,
-         dateOfIncident: dateOfIncident,
-         reporterId: reporterId,
-         reporterName: reporterName,
-       );
+  });
 
   factory Incident.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};

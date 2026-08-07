@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'work_order_details_screen.dart';
 import '../providers/field_service_providers.dart';
 import '../widgets/work_order_form.dart';
-import '../models/field_service_models.dart';
 
 class WorkOrderListScreen extends ConsumerWidget {
   const WorkOrderListScreen({super.key});
@@ -120,24 +119,6 @@ class WorkOrderListScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                          )
-                        else if (requiresPtw && ptwCompleted)
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Safety PTW Approved',
-                                style: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
                           ),
                       ],
                     ),

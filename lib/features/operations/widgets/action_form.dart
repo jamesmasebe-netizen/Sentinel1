@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/ui_utils.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../people/widgets/employee_selector.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import '../services/action_tracker_service.dart';
 import '../models/action_tracker_models.dart';
 import '../../people/providers/employee_providers.dart';
@@ -36,7 +34,6 @@ class _ActionFormState extends ConsumerState<ActionForm> {
 
     setState(() => _isLoading = true);
     try {
-      final siteId = ref.read(currentTenantIdProvider);
       final employeesList = ref.read(employeesProvider).valueOrNull ?? [];
       final assigneeEmp = employeesList.firstWhere(
         (e) => e.id == _selectedEmployeeId,

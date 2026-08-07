@@ -431,7 +431,7 @@ class _TicketMessagesPanelState extends ConsumerState<_TicketMessagesPanel> {
         children: [
           Container(
             padding: const EdgeInsets.all(16.0),
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             width: double.infinity,
             child: const Text(
               'Ticket Conversation',
@@ -469,9 +469,9 @@ class _TicketMessagesPanelState extends ConsumerState<_TicketMessagesPanel> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
+        color: Colors.white.withValues(alpha: 0.04),
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.1)),
+          top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
       ),
       child: Column(
@@ -483,9 +483,9 @@ class _TicketMessagesPanelState extends ConsumerState<_TicketMessagesPanel> {
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.15)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                   ),
                   child: Row(
                     children: [
@@ -576,14 +576,14 @@ class _ChatBubble extends StatelessWidget {
                     gradient: isAgent
                         ? const LinearGradient(colors: [Color(0xFF6C3FC4), Color(0xFF5C3BC4)])
                         : null,
-                    color: isAgent ? null : Colors.white.withOpacity(0.09),
+                    color: isAgent ? null : Colors.white.withValues(alpha: 0.09),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
                       bottomLeft: Radius.circular(isAgent ? 16 : 4),
                       bottomRight: Radius.circular(isAgent ? 4 : 16),
                     ),
-                    border: isAgent ? null : Border.all(color: Colors.white.withOpacity(0.12)),
+                    border: isAgent ? null : Border.all(color: Colors.white.withValues(alpha: 0.12)),
                   ),
                   child: Text(
                     message.content ?? '',

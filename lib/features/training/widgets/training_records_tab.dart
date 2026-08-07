@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
-import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import 'record_form_sheet.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import '../providers/training_providers.dart';
 
 class TrainingRecordsTab extends ConsumerWidget {
@@ -22,9 +19,6 @@ class TrainingRecordsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final firestore = ref.watch(firestoreProvider);
-
     return Column(
       children: [
         Padding(

@@ -159,20 +159,20 @@ class _CopilotPanelState extends State<CopilotPanel>
         child: Container(
           width: 360,
           decoration: BoxDecoration(
-            color: _bg.withOpacity(0.92),
+            color: _bg.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: _neonPurple.withOpacity(0.35),
+              color: _neonPurple.withValues(alpha: 0.35),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: _neonPurple.withOpacity(0.18),
+                color: _neonPurple.withValues(alpha: 0.18),
                 blurRadius: 32,
                 spreadRadius: 2,
               ),
               BoxShadow(
-                color: _neonCyan.withOpacity(0.08),
+                color: _neonCyan.withValues(alpha: 0.08),
                 blurRadius: 20,
               ),
             ],
@@ -198,8 +198,8 @@ class _CopilotPanelState extends State<CopilotPanel>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _neonPurple.withOpacity(0.15),
-            _neonCyan.withOpacity(0.08),
+            _neonPurple.withValues(alpha: 0.15),
+            _neonCyan.withValues(alpha: 0.08),
           ],
         ),
       ),
@@ -215,7 +215,7 @@ class _CopilotPanelState extends State<CopilotPanel>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: _neonPurple.withOpacity(_pulseAnimation.value * 0.7),
+                    color: _neonPurple.withValues(alpha: _pulseAnimation.value * 0.7),
                     blurRadius: 16,
                     spreadRadius: 2,
                   ),
@@ -270,8 +270,8 @@ class _CopilotPanelState extends State<CopilotPanel>
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
                 colors: [
-                  _neonPurple.withOpacity(0.3),
-                  _neonCyan.withOpacity(0.2),
+                  _neonPurple.withValues(alpha: 0.3),
+                  _neonCyan.withValues(alpha: 0.2),
                 ],
               ),
             ),
@@ -321,8 +321,8 @@ class _CopilotPanelState extends State<CopilotPanel>
                 gradient: isUser
                     ? LinearGradient(
                         colors: [
-                          _neonPurple.withOpacity(0.7),
-                          _neonCyan.withOpacity(0.5),
+                          _neonPurple.withValues(alpha: 0.7),
+                          _neonCyan.withValues(alpha: 0.5),
                         ],
                       )
                     : null,
@@ -336,7 +336,7 @@ class _CopilotPanelState extends State<CopilotPanel>
                 border: isUser
                     ? null
                     : Border.all(
-                        color: _neonPurple.withOpacity(0.2),
+                        color: _neonPurple.withValues(alpha: 0.2),
                         width: 1,
                       ),
               ),
@@ -375,7 +375,7 @@ class _CopilotPanelState extends State<CopilotPanel>
         decoration: BoxDecoration(
           color: _surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _neonPurple.withOpacity(0.2)),
+          border: Border.all(color: _neonPurple.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -400,7 +400,7 @@ class _CopilotPanelState extends State<CopilotPanel>
                 color: _surface,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: _neonPurple.withOpacity(0.3),
+                  color: _neonPurple.withValues(alpha: 0.3),
                 ),
               ),
               child: TextField(
@@ -441,7 +441,7 @@ class _CopilotPanelState extends State<CopilotPanel>
                     ? []
                     : [
                         BoxShadow(
-                          color: _neonPurple.withOpacity(0.5),
+                          color: _neonPurple.withValues(alpha: 0.5),
                           blurRadius: 12,
                           spreadRadius: 1,
                         ),

@@ -56,7 +56,7 @@ class _ProductionOrderScreenState extends ConsumerState<ProductionOrderScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Colors.orange.withOpacity(0.1),
+                      backgroundColor: Colors.orange.withValues(alpha: 0.1),
                       child: const Icon(Icons.precision_manufacturing, color: Colors.orange),
                     ),
                     title: Text('${po['id']} - ${po['item']}'),
