@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `dashboard`, `environment`, `notifications`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors` done — see below; only their widget/screen layers remain Tier 3).
+- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `dashboard`, `environment`, `notifications`, `projects`, `property`, `public`, `settings` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training` done — see below; only their widget/screen layers remain Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -470,6 +470,13 @@ This is now the **third** file this session found with this identical anti-patte
 **Gaps:** the rest of the module (`contractor_management_screen.dart`'s CRUD, `add_contractor_form.dart`, safety-file submission review) has no dedicated `services/`/`providers/` layer — the logic is inline in widgets, same shape as the pre-Wave-2b Compliance/Health modules were before their extraction. Not extracted here; scoping a proper service layer for the rest of `contractors` is a larger unit of work than Tier 3's per-module pass, flagged for a future dedicated pass (mirroring Wave 2b's approach) rather than attempted piecemeal.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 281/281 (up from 275, +6).
+
+#### [DONE] T3-TRAINING: `training` module coverage
+
+**File(s):** `lib/features/training/services/training_service.dart` -> `test/features/training/services/training_service_test.dart` (new, 2 tests). No bugs found.
+**Resolved 2026-08-07:** `getComprehensiveEmployeeRecord` — aggregates `enrollments`/`training_enrollments`/`training_records` for one employee via `Future.wait`, confirmed cross-employee isolation (a second employee's `training_records` doc doesn't leak in) and the empty-data case. Reachable via `training_records_tab.dart`'s `comprehensiveTrainingProvider`.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 283/283 (up from 281, +2).
 
 ---
 
