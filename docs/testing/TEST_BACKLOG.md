@@ -291,7 +291,21 @@ match /{collection}/{docId} {
 
 **Resolved 2026-08-07:** `sensitive_cluster_standard.test.ts` covers 7 collections table-driven; `sensitive_cluster_distinctive.test.ts` hand-writes `medical_records`, `coida_claims`, `coida_compliance_checklist` (role-gated read — the collections that surfaced the vulnerability), `contractor_documents`, `compliance_prescreens`. `special_cluster_authed.test.ts`'s catch-all test flipped from asserting success to asserting denial, with a comment explaining why. `npx tsc --noEmit` clean. `npm run test:rules` 134/134 passing (14 suites). Full regression gate: `flutter analyze` 48/0 (unaffected — no Dart files touched), `npm test` 26/26 (unaffected).
 
-**Gaps:** the remaining 3 clusters (Finance/SCM, CRM/Sales/CS/FieldService, People/Property/Risk/Environment — roughly 71 of the 117 total blocks) are not yet covered. The People cluster in particular should double-check `departments`/`job_roles`/`ohs_roles`'s newly-added rules once it's written, since this pass added them opportunistically rather than as part of a dedicated People-cluster pass.
+**Gaps (at the time):** the remaining 3 clusters (Finance/SCM, CRM/Sales/CS/FieldService, People/Property/Risk/Environment — roughly 71 of the 117 total blocks) were not yet covered. The People cluster in particular should double-check `departments`/`job_roles`/`ohs_roles`'s newly-added rules once it's written, since this pass added them opportunistically rather than as part of a dedicated People-cluster pass.
+
+#### [DONE] T2c-FINSCM: firestore.rules matrix — Finance/SCM cluster
+
+**File(s):** `firebase/functions/test/rules/finance_scm_cluster_standard.test.ts` (new).
+**Why:** 15 top-level collections plus 3 subcollections covering Finance (invoices, journal headers, chart of accounts, tax codes, budget models, cost centers) and Supply Chain (assets, sales/purchase/transfer orders, MRP suggestions, warehouse bins, vendor metrics, BOMs).
+**Coverage target:** every collection's create/update/delete role gate, both directions, plus tenant isolation and the 3 subcollections (`po_lines`, `so_lines`, `fin_journal_headers/lines`).
+
+**Resolved 2026-08-07:** every single collection in this cluster shares the exact same shape (confirmed by reading the real rules text, not assumed) — read open to any tenant member, create/update gated to `isManager()`, delete gated to `isAdmin()` — so unlike HR/SHEQ and sensitive-data, no "distinctive" file was needed; one table-driven loop covers all 15 top-level collections, plus 3 explicit hand-written tests for the subcollections (parent/child doc paths don't fit the flat-loop shape cleanly).
+
+**Also found (not a bug, but worth recording):** `fin_ap_invoices`, `fin_ar_invoices`, `fin_journal_headers`, `fin_chart_of_accounts`, `fin_tax_codes`, `fin_budget_models`, and `fin_cost_centers` are each declared **twice** in `firestore.rules` (once under an early "Finance collections" section, again under a later "Finance" section). Checked both declarations of each are byte-for-byte identical in their access rules — harmless redundancy, not a divergent-permissiveness bug like the catch-all's, so no fix needed, but flagged as a maintainability risk (a future edit to one copy and not the other would silently create exactly that class of bug).
+
+`npx tsc --noEmit` clean. `npm run test:rules` 167/167 passing (15 suites, up from 134). Full regression gate: `flutter analyze` 48/0 (unaffected — no Dart files touched), `npm test` 26/26 (unaffected).
+
+**Gaps:** the remaining 2 clusters (CRM/Sales/CS/FieldService, People/Property/Risk/Environment — roughly 38 of the 117 total blocks) are not yet covered.
 
 ## Tier 3 — Medium (later phase)
 
