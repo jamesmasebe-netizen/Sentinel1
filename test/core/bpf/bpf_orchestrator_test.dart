@@ -34,7 +34,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/features/crm/models/crm_models.dart';
 import 'package:sentinel1/features/finance/models/finance_models.dart';
-import 'package:sentinel1/features/projects/models/pmo_models.dart';
+import 'package:sentinel1/features/projects/models/project_models.dart';
 
 import '../../helpers/bpf_orchestrator_fixtures.dart';
 import '../../helpers/bpf_orchestrator_model_fixtures.dart';
@@ -128,17 +128,27 @@ void main() {
           currentStageId: 'quote',
           linkedRecordIds: {'quoteId': 'QT-1'});
 
-      when(() => h.pmo.createProject(any())).thenAnswer((_) async {});
+      when(() => h.projectService.createProject(any()))
+          .thenAnswer((_) async => 'PRJ-NEW');
       when(() => h.crm.updateQuote(any())).thenAnswer((_) async {});
 
       final projectId =
           await h.orchestrator.createProjectFromQuote(quote, bpfId);
 
+      expect(projectId, 'PRJ-NEW');
+
       final createdProject =
-          verify(() => h.pmo.createProject(captureAny())).captured.single
-              as Project;
-      expect(createdProject.clientId, 'ACC-1');
-      expect(createdProject.projectId, projectId);
+          verify(() => h.projectService.createProject(captureAny()))
+              .captured
+              .single as Project;
+      expect(createdProject.accountId, 'ACC-1');
+      // Regression guard for the bug this fix addresses (see
+      // docs/testing/TEST_BACKLOG.md T2-BPFORCHESTRATOR): the project must
+      // carry real stages, or the project detail screen has nothing to
+      // render and no project_lifecycle BPF instance gets auto-started.
+      expect(createdProject.stages, isNotEmpty);
+      expect(createdProject.stages.map((s) => s.id),
+          containsAll(['stage_0', 'stage_1', 'stage_2', 'stage_3', 'stage_4', 'stage_5']));
 
       final acceptedQuote =
           verify(() => h.crm.updateQuote(captureAny())).captured.single
@@ -155,7 +165,7 @@ void main() {
   group('createInvoiceFromProject', () {
     test('creates an AR invoice for the project and advances to '
         'invoice with invoiceId linked', () async {
-      final project = buildTestProject(projectId: 'PRJ-1', clientId: 'ACC-1');
+      final project = buildTestProject(id: 'PRJ-1', accountId: 'ACC-1');
       final bpfId = await seedBpfInstance(h.db,
           bpfTypeId: 'lead_to_cash',
           currentStageId: 'project_execution',

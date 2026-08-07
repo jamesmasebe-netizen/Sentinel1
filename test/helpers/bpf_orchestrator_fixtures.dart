@@ -16,11 +16,12 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/core/automation/procure_to_pay_automation.dart';
 import 'package:sentinel1/core/bpf/bpf_orchestrator.dart';
 import 'package:sentinel1/core/bpf/bpf_service.dart';
+import 'package:sentinel1/core/providers/app_providers.dart';
 import 'package:sentinel1/features/crm/services/crm_service.dart';
 import 'package:sentinel1/features/equipment/services/equipment_service.dart';
 import 'package:sentinel1/features/finance/services/finance_service.dart';
 import 'package:sentinel1/features/people/services/hr_service.dart';
-import 'package:sentinel1/features/projects/services/pmo_service.dart';
+import 'package:sentinel1/features/projects/providers/project_providers.dart';
 import 'package:sentinel1/features/safety/services/safety_service.dart';
 import 'package:sentinel1/features/supply_chain/services/scm_service.dart';
 
@@ -28,7 +29,7 @@ const bpfTestTenantId = 'test-tenant';
 
 class MockCrmService extends Mock implements CrmService {}
 
-class MockPmoService extends Mock implements PmoService {}
+class MockProjectService extends Mock implements ProjectService {}
 
 class MockFinanceService extends Mock implements FinanceService {}
 
@@ -50,7 +51,7 @@ class BpfOrchestratorHarness {
   final ProviderContainer container;
   final FakeFirebaseFirestore db;
   final MockCrmService crm;
-  final MockPmoService pmo;
+  final MockProjectService projectService;
   final MockFinanceService finance;
   final MockScmService scm;
   final MockEquipmentService equipment;
@@ -62,7 +63,7 @@ class BpfOrchestratorHarness {
     required this.container,
     required this.db,
     required this.crm,
-    required this.pmo,
+    required this.projectService,
     required this.finance,
     required this.scm,
     required this.equipment,
@@ -88,7 +89,7 @@ class BpfOrchestratorHarness {
   static BpfOrchestratorHarness build() {
     final db = FakeFirebaseFirestore();
     final crm = MockCrmService();
-    final pmo = MockPmoService();
+    final projectService = MockProjectService();
     final finance = MockFinanceService();
     final scm = MockScmService();
     final equipment = MockEquipmentService();
@@ -100,7 +101,8 @@ class BpfOrchestratorHarness {
       bpfServiceProvider
           .overrideWithValue(BpfService(db, bpfTestTenantId)),
       crmServiceProvider.overrideWithValue(crm),
-      pmoServiceProvider.overrideWithValue(pmo),
+      projectServiceProvider.overrideWithValue(projectService),
+      currentTenantIdProvider.overrideWithValue(bpfTestTenantId),
       financeServiceProvider.overrideWithValue(finance),
       scmServiceProvider.overrideWithValue(scm),
       equipmentServiceProvider.overrideWithValue(equipment),
@@ -113,7 +115,7 @@ class BpfOrchestratorHarness {
       container: container,
       db: db,
       crm: crm,
-      pmo: pmo,
+      projectService: projectService,
       finance: finance,
       scm: scm,
       equipment: equipment,

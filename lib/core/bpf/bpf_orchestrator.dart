@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'bpf_service.dart';
+import '../providers/app_providers.dart';
 import '../../features/crm/models/crm_models.dart';
 import '../../features/crm/services/crm_service.dart';
-import '../../features/projects/models/pmo_models.dart';
-import '../../features/projects/services/pmo_service.dart';
+import '../../features/projects/models/project_models.dart';
+import '../../features/projects/providers/project_providers.dart';
 import '../../features/finance/models/finance_models.dart';
 import '../../features/finance/services/finance_service.dart';
 import '../../features/supply_chain/services/scm_service.dart';
@@ -18,37 +19,40 @@ final bpfOrchestratorProvider = Provider<BpfOrchestrator>((ref) {
   return BpfOrchestrator(
     ref.read(bpfServiceProvider),
     ref.read(crmServiceProvider),
-    ref.read(pmoServiceProvider),
+    ref.read(projectServiceProvider),
     ref.read(financeServiceProvider),
     ref.read(scmServiceProvider),
     ref.read(equipmentServiceProvider),
     ref.read(procureToPayAutomationProvider),
     ref.read(safetyServiceProvider),
     ref.read(hrServiceProvider),
+    ref.read(currentTenantIdProvider) ?? '',
   );
 });
 
 class BpfOrchestrator {
   final BpfService bpfService;
   final CrmService crmService;
-  final PmoService pmoService;
+  final ProjectService projectService;
   final FinanceService financeService;
   final ScmService scmService;
   final EquipmentService equipmentService;
   final ProcureToPayAutomation p2pAutomation;
   final SafetyService safetyService;
   final HRService hrService;
+  final String tenantId;
 
   BpfOrchestrator(
     this.bpfService,
     this.crmService,
-    this.pmoService,
+    this.projectService,
     this.financeService,
     this.scmService,
     this.equipmentService,
     this.p2pAutomation,
     this.safetyService,
     this.hrService,
+    this.tenantId,
   );
 
   /// Converts a Lead to an Opportunity and advances the BPF stage
@@ -130,23 +134,43 @@ class BpfOrchestrator {
     return quoteId;
   }
 
-  /// Converts a Quote to a Project and advances the BPF stage
+  /// Converts a Quote to a Project and advances the BPF stage. Builds a real
+  /// project_models.dart Project (with real stages, mirroring
+  /// new_project_dialog_content.dart's shape) and routes through
+  /// ProjectService.createProject — the same path a manually-created project uses — so the
+  /// result is structurally identical: a real sequential PRJ-xxx id, a populated stage list the
+  /// project detail screen can render, and (since stages is non-empty) a project_lifecycle BPF
+  /// instance auto-started for it. Previously routed through PmoService/pmo_models.dart's
+  /// unrelated Project class; see docs/testing/TEST_BACKLOG.md T2-BPFORCHESTRATOR for why that
+  /// was wrong and what else it touched (project_detail_screen.dart migrated to match).
   Future<String> createProjectFromQuote(Quote quote, String bpfId) async {
-    final projectId = 'PRJ-${DateTime.now().millisecondsSinceEpoch}';
     final project = Project(
-      projectId: projectId,
-      clientId: quote.accountId,
-      contractId: '',
+      id: '',
+      tenantId: tenantId,
+      propertyId: '',
+      accountId: quote.accountId,
       name: 'Project for ${quote.quoteNumber}',
       description: 'Auto-generated from quote',
-      status: 'Planning',
-      projectManagerId: quote.ownerId,
-      revenueRecognitionMethod: 'Milestone',
+      category: 'Maintenance',
+      startDate: DateTime.now(),
+      targetEndDate: DateTime.now().add(const Duration(days: 90)), // Placeholder — to be refined by the project manager
+      budget: 0, // To be filled by user
+      projectLead: quote.ownerId,
       allocatedEmployeeIds: [],
       allocatedContractorIds: [],
       allocatedAssetIds: [],
+      status: 'Draft',
+      stages: [
+        ProjectStage(id: 'stage_0', stageName: 'Starting Up a Project (SU)', order: 0),
+        ProjectStage(id: 'stage_1', stageName: 'Initiating a Project (IP)', order: 1, requiresSafetyClearance: true),
+        ProjectStage(id: 'stage_2', stageName: 'Controlling a Stage (CS)', order: 2),
+        ProjectStage(id: 'stage_3', stageName: 'Managing Stage Boundaries (SB)', order: 3),
+        ProjectStage(id: 'stage_4', stageName: 'Managing Product Delivery (MP)', order: 4, requiresSafetyClearance: true),
+        ProjectStage(id: 'stage_5', stageName: 'Closing a Project (CP)', order: 5),
+      ],
+      createdAt: DateTime.now(),
     );
-    await pmoService.createProject(project);
+    final projectId = await projectService.createProject(project);
 
     // Also mark quote as accepted
     final acceptedQuote = Quote(
@@ -183,7 +207,7 @@ class BpfOrchestrator {
     final invoice = Invoice(
       id: invoiceId,
       invoiceNumber: invoiceId,
-      customerId: project.clientId,
+      customerId: project.accountId ?? '',
       invoiceType: 'AR',
       grossAmount: 0, // To be filled by user
       taxAmount: 0,

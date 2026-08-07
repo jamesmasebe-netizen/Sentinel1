@@ -26,34 +26,6 @@ class AmountModel {
   }
 }
 
-class BudgetModel {
-  final double totalBudgetAmount;
-  final String currency;
-  final double consumedBudget;
-
-  BudgetModel({
-    required this.totalBudgetAmount,
-    required this.currency,
-    required this.consumedBudget,
-  });
-
-  factory BudgetModel.fromJson(Map<String, dynamic> json) {
-    return BudgetModel(
-      totalBudgetAmount: (json['totalBudgetAmount'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'USD',
-      consumedBudget: (json['consumedBudget'] ?? 0).toDouble(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'totalBudgetAmount': totalBudgetAmount,
-      'currency': currency,
-      'consumedBudget': consumedBudget,
-    };
-  }
-}
-
 class EffortModel {
   final double estimatedHours;
   final double actualHours;
@@ -78,90 +50,6 @@ class EffortModel {
       'estimatedHours': estimatedHours,
       'actualHours': actualHours,
       'remainingHours': remainingHours,
-    };
-  }
-}
-
-class Project {
-  final String projectId;
-  final String clientId;
-  final String contractId;
-  final String name;
-  final String description;
-  final String status;
-  final String projectManagerId;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final BudgetModel? budget;
-  final String revenueRecognitionMethod;
-  final List<String> allocatedEmployeeIds;
-  final List<String> allocatedContractorIds;
-  final List<String> allocatedAssetIds;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
-
-  Project({
-    required this.projectId,
-    required this.clientId,
-    required this.contractId,
-    required this.name,
-    required this.description,
-    required this.status,
-    required this.projectManagerId,
-    this.startDate,
-    this.endDate,
-    this.budget,
-    required this.revenueRecognitionMethod,
-    this.allocatedEmployeeIds = const [],
-    this.allocatedContractorIds = const [],
-    this.allocatedAssetIds = const [],
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory Project.fromJson(Map<String, dynamic> json, String id) {
-    return Project(
-      projectId: id,
-      clientId: json['clientId'] ?? '',
-      contractId: json['contractId'] ?? '',
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      status: json['status'] ?? 'Draft',
-      projectManagerId: json['projectManagerId'] ?? '',
-      startDate: _parseDate(json['startDate']),
-      endDate: _parseDate(json['endDate']),
-      budget:
-          json['budget'] != null
-              ? BudgetModel.fromJson(Map<String, dynamic>.from(json['budget']))
-              : null,
-      revenueRecognitionMethod: json['revenueRecognitionMethod'] ?? '',
-      allocatedEmployeeIds: List<String>.from(json['allocatedEmployeeIds'] ?? []),
-      allocatedContractorIds: List<String>.from(json['allocatedContractorIds'] ?? []),
-      allocatedAssetIds: List<String>.from(json['allocatedAssetIds'] ?? []),
-      createdAt: _parseDate(json['timestamps']?['createdAt']),
-      updatedAt: _parseDate(json['timestamps']?['updatedAt']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'clientId': clientId,
-      'contractId': contractId,
-      'name': name,
-      'description': description,
-      'status': status,
-      'projectManagerId': projectManagerId,
-      'startDate': startDate != null ? Timestamp.fromDate(startDate!) : null,
-      'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
-      'budget': budget?.toJson(),
-      'revenueRecognitionMethod': revenueRecognitionMethod,
-      'allocatedEmployeeIds': allocatedEmployeeIds,
-      'allocatedContractorIds': allocatedContractorIds,
-      'allocatedAssetIds': allocatedAssetIds,
-      'timestamps': {
-        'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
-        'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
-      },
     };
   }
 }

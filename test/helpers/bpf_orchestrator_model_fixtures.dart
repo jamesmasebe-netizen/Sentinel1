@@ -7,7 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:sentinel1/features/crm/models/crm_models.dart';
 import 'package:sentinel1/features/equipment/models/equipment_models.dart';
 import 'package:sentinel1/features/finance/models/finance_models.dart';
-import 'package:sentinel1/features/projects/models/pmo_models.dart';
+import 'package:sentinel1/features/projects/models/project_models.dart';
 import 'package:sentinel1/features/supply_chain/models/scm_models.dart';
 
 import 'bpf_orchestrator_fixtures.dart' show bpfTestTenantId;
@@ -82,19 +82,22 @@ Quote buildTestQuote({
 }
 
 Project buildTestProject({
-  String projectId = 'PRJ-1',
-  String clientId = 'ACC-1',
-  String projectManagerId = 'owner-1',
+  String id = 'PRJ-1',
+  String? accountId = 'ACC-1',
+  String projectLead = 'owner-1',
 }) {
   return Project(
-    projectId: projectId,
-    clientId: clientId,
-    contractId: '',
+    id: id,
+    tenantId: bpfTestTenantId,
+    propertyId: '',
+    accountId: accountId,
     name: 'Test Project',
     description: 'desc',
-    status: 'Planning',
-    projectManagerId: projectManagerId,
-    revenueRecognitionMethod: 'Milestone',
+    category: 'Maintenance',
+    startDate: DateTime.now(),
+    targetEndDate: DateTime.now().add(const Duration(days: 90)),
+    projectLead: projectLead,
+    status: 'Draft',
   );
 }
 

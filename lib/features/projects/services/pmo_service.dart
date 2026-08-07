@@ -17,53 +17,6 @@ class PmoService {
 
   PmoService(this._firestore, this._tenantId);
 
-  // --- Project CRUD ---
-  Future<void> createProject(Project project) async {
-    await _firestore
-        .tenantCollection(_tenantId, 'projects')
-        .doc(project.projectId)
-        .set(project.toJson());
-  }
-
-  Future<Project?> getProject(String projectId) async {
-    final doc = await _firestore.tenantCollection(_tenantId, 'projects').doc(projectId).get();
-    if (!doc.exists) return null;
-    return Project.fromJson(doc.data()!, doc.id);
-  }
-
-  Future<void> updateProject(Project project) async {
-    await _firestore
-        .tenantCollection(_tenantId, 'projects')
-        .doc(project.projectId)
-        .update(project.toJson());
-  }
-
-  Future<void> deleteProject(String projectId) async {
-    await _firestore.tenantCollection(_tenantId, 'projects').doc(projectId).delete();
-  }
-
-  Stream<List<Project>> streamProjects() {
-    return _firestore
-        .tenantCollection(_tenantId, 'projects')
-        .snapshots()
-        .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => Project.fromJson(doc.data(), doc.id))
-                  .toList(),
-        );
-  }
-
-  Stream<Project?> streamProject(String projectId) {
-    return _firestore
-        .tenantCollection(_tenantId, 'projects')
-        .doc(projectId)
-        .snapshots()
-        .map(
-          (doc) => doc.exists ? Project.fromJson(doc.data()!, doc.id) : null,
-        );
-  }
-
   // --- WbsTask CRUD ---
   Future<void> createWbsTask(String projectId, WbsTask task) async {
     await _firestore

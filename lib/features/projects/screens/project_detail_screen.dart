@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/pmo_providers.dart';
-import '../models/pmo_models.dart';
+import '../providers/project_providers.dart';
+import '../models/project_models.dart';
 import 'wbs_task_detail_screen.dart';
 import '../../finance/screens/invoice_detail_screen.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
@@ -17,7 +18,7 @@ class ProjectDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final projectAsync = ref.watch(pmoProjectStreamProvider(projectId));
+    final projectAsync = ref.watch(projectProvider(projectId));
 
     return projectAsync.when(
       data: (project) {
@@ -83,7 +84,7 @@ class ProjectDetailScreen extends ConsumerWidget {
         BpfRibbonWidget(
           bpfTypeId: 'lead_to_cash',
           recordType: 'projectId',
-          recordId: project.projectId,
+          recordId: project.id,
           definition: leadToCashDefinition,
         ),
         _buildHeaderCard(context, ref, project),
@@ -99,9 +100,8 @@ class ProjectDetailScreen extends ConsumerWidget {
                   ? project.description
                   : 'No description provided',
             ),
-            _buildDetailRow('Client ID', project.clientId),
-            _buildDetailRow('Contract ID', project.contractId),
-            _buildDetailRow('Project Manager', project.projectManagerId),
+            _buildDetailRow('Account ID', project.accountId ?? 'N/A'),
+            _buildDetailRow('Project Lead', project.projectLead),
           ],
         ),
         const SizedBox(height: 16),
@@ -111,26 +111,14 @@ class ProjectDetailScreen extends ConsumerWidget {
           icon: Icons.date_range_rounded,
           children: [
             _buildDetailRow('Start Date', _formatDate(project.startDate)),
-            _buildDetailRow('End Date', _formatDate(project.endDate)),
-            if (project.budget != null) ...[
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Divider(),
-              ),
-              _buildDetailRow(
-                'Total Budget',
-                '${project.budget!.currency} ${_formatNumber(project.budget!.totalBudgetAmount)}',
-              ),
-              _buildDetailRow(
-                'Consumed Budget',
-                '${project.budget!.currency} ${_formatNumber(project.budget!.consumedBudget)}',
-              ),
-              _buildProgressBar(
-                context,
-                project.budget!.consumedBudget,
-                project.budget!.totalBudgetAmount,
-              ),
-            ],
+            _buildDetailRow('End Date', _formatDate(project.targetEndDate)),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Divider(),
+            ),
+            _buildDetailRow('Total Budget', 'ZAR ${_formatNumber(project.budget)}'),
+            _buildDetailRow('Actual Spend', 'ZAR ${_formatNumber(project.actualSpend)}'),
+            _buildProgressBar(context, project.actualSpend, project.budget),
           ],
         ),
       ],
@@ -190,13 +178,6 @@ class ProjectDetailScreen extends ConsumerWidget {
                 color: colorScheme.onPrimaryContainer,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Rev Rec Method: ${project.revenueRecognitionMethod}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-              ),
-            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -207,11 +188,11 @@ class ProjectDetailScreen extends ConsumerWidget {
                       final orchestrator = ref.read(bpfOrchestratorProvider);
                       final bpfService = ref.read(bpfServiceProvider);
                       String? bpfId;
-                      final bpfs = await bpfService.streamBpfInstancesByRecord('projectId', project.projectId).first;
+                      final bpfs = await bpfService.streamBpfInstancesByRecord('projectId', project.id).first;
                       if (bpfs.isNotEmpty) {
                         bpfId = bpfs.first.id;
                       } else {
-                        bpfId = await bpfService.startBpf('lead_to_cash', 'project_execution', 'projectId', project.projectId);
+                        bpfId = await bpfService.startBpf('lead_to_cash', 'project_execution', 'projectId', project.id);
                       }
                       final invoiceId = await orchestrator.createInvoiceFromProject(project, bpfId);
                       if (context.mounted) {

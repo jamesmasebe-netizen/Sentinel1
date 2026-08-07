@@ -166,6 +166,7 @@ class Project {
   final String id; // Traceable ID like PRJ-2024-0001
   final String tenantId; // Organization Site ID
   final String propertyId; // Linked Property
+  final String? accountId; // Linked CRM Account, set when created from an accepted Quote
   final String name;
   final String description;
   final String category; // 'Maintenance', 'Opex', 'Renovation', 'Emergency'
@@ -204,6 +205,7 @@ class Project {
     required this.id,
     required this.tenantId,
     required this.propertyId,
+    this.accountId,
     required this.name,
     required this.description,
     required this.category,
@@ -233,6 +235,7 @@ class Project {
     String? id,
     String? siteId,
     String? propertyId,
+    String? accountId,
     String? name,
     String? description,
     String? category,
@@ -261,6 +264,7 @@ class Project {
       id: id ?? this.id,
       tenantId: siteId ?? tenantId,
       propertyId: propertyId ?? this.propertyId,
+      accountId: accountId ?? this.accountId,
       name: name ?? this.name,
       description: description ?? this.description,
       category: category ?? this.category,
@@ -316,6 +320,7 @@ class Project {
       id: doc.id,
       tenantId: data['siteId'] ?? '',
       propertyId: data['propertyId'] ?? '',
+      accountId: data['accountId'],
       name: data['name'] ?? '',
       description: data['description'] ?? '',
       category: data['category'] ?? 'Maintenance',
@@ -358,6 +363,7 @@ class Project {
       // tenant. Fixed 2026-08-07 — see docs/testing/TEST_BACKLOG.md.
       'siteId': tenantId,
       'propertyId': propertyId,
+      'accountId': accountId,
       'name': name,
       'description': description,
       'category': category,

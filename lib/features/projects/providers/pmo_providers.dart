@@ -2,13 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/pmo_models.dart';
 import '../services/pmo_service.dart';
 
-final pmoProjectStreamProvider = StreamProvider.family<Project?, String>((
-  ref,
-  projectId,
-) {
-  return ref.watch(pmoServiceProvider).streamProject(projectId);
-});
-
 final pmoWbsTasksStreamProvider = StreamProvider.family<List<WbsTask>, String>((
   ref,
   projectId,
