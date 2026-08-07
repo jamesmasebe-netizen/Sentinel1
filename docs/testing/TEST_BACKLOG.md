@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `property` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications`/`projects`/`environment`/`public`/`settings` done, `ai_tools` surveyed (no testable layer)).
+- All Tier 3 per-module passes are now done (`billing` moved to Tier 2 — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications`/`projects`/`environment`/`public`/`settings`/`property` all done, `ai_tools` surveyed (no testable layer)). What remains from the original Tier 3 scope: `copilotEngine`/`aiEngine`/`iotEngine`/`routingEngine` contract-shape tests, critical-screen widget tests, `integration_test` golden-path flows, CI coverage thresholds.
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -478,11 +478,6 @@ This is now the **third** file this session found with this identical anti-patte
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 283/283 (up from 281, +2).
 
-#### `property` module: no service/provider logic worth unit-testing, flagged for future extraction
-
-**File(s):** `lib/features/property/providers/property_providers.dart` (surveyed, not modified).
-`property_providers.dart` is pure declarative `StreamProvider` wiring — 6 providers, each a direct `.tenantCollection(...).where(...).snapshots().map(doc => Model.fromFirestore(doc))` with no transformation logic. All writes happen inline in form widgets (`property_form_sheet.dart`, `legal_appointment_form.dart`, etc.), not through any service class — same shape `environment` had before its T3-ENVIRONMENT extraction, and the same shape `public`/`settings` still have. Nothing here is meaningfully unit-testable beyond what a widget test would cover; needs the same proper service-layer extraction pass (Wave-2b-style) before it can get real test coverage, rather than attempting a shallow "test the provider wiring" pass here.
-
 #### [DONE] T3-DASHBOARD: `dashboard` module coverage — a significant, systemic finding (flagged, not fixed)
 
 **File(s):** `lib/features/dashboard/providers/dashboard_providers.dart` (surveyed, not modified) -> `test/features/dashboard/providers/dashboard_providers_test.dart` (new, 6 tests).
@@ -556,6 +551,20 @@ The only provider here is a one-line `Provider<GenerativeModel>` constructing a 
 **Testability note:** `connectivity_plus` (used internally by `initialize()`'s reconnect listener) has a documented platform-interface test seam (`ConnectivityPlatform.instance`, same shape as `url_launcher_platform_interface` used for `T2-BILLING`) — mocked here rather than skipped, added as a new `connectivity_plus_platform_interface` dev_dependency in `pubspec.yaml`. Hive is backed by a real temp-directory box via `Hive.init(path)` (pure `dart:io`, unlike `Hive.initFlutter()` which needs `path_provider`'s platform channel) rather than mocked. `queueOperation`/`retryOperation`'s internal sync attempts are fire-and-forget (not awaited by the public method), so the queue-lifecycle tests use short `Future.delayed` gaps to deterministically let each attempt resolve before asserting — documented inline in the test file since this timing dependency isn't obvious from the assertions alone.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 326/326 (up from 320, +6).
+
+#### [DONE] T3-PROPERTY: `property` module — full Wave-2b-style service-layer extraction, plus a live offline-safety gap found and fixed
+
+**File(s):** `lib/features/property/models/property_models.dart` (added `toFirestore()` to all 6 model classes), `lib/features/property/services/property_service.dart` (new) -> `test/features/property/services/property_service_test.dart` (new, 8 tests). All 6 write-side widgets (`property_form_sheet.dart`, `property_project_form.dart`, `property_utility_form.dart`, `legal_appointment_form.dart`, `property_lease_form.dart`, `property_asset_form.dart`) refactored onto the new service.
+
+**Resolved 2026-08-07:** unlike `environment`/`public`, `property` already had typed models and read-side `StreamProvider`s (`property_providers.dart`, unchanged — already the Wave-2b shape on the read side). The gap was entirely on the write side: all 6 forms wrote directly to Firestore (`firestore.tenantCollection(...).add(...)`), never through `FirestoreService`. **Real, live bug fixed:** this meant every create in this module bypassed the offline queue and audit log that every other business module in the app gets automatically — a property manager submitting an inspection, lease, or legal appointment while offline had no retry safety net and the submission was silently lost, with no audit trail either way. `PropertyService` now routes every write through `FirestoreService.createDocument`/`updateDocument` (the update path is new too — `property_form_sheet.dart`'s edit flow previously updated directly), mirroring `ComplianceService`. `saveProperty` handles both create (empty id) and update (existing id) in one method, matching the form's existing dual-purpose behavior.
+
+**Note, not fixed — pre-existing, minor, real UX gap, preserved as-is:** `LegalAppointment`'s on-disk field is literally named `personName` but has always stored the appointed person's employee id (from `EmployeeSelector`), not a display name — `property_facility_tab.dart` renders `appointment.personId` as raw text, so the UI shows a raw document id instead of a person's name. Write and read already agree with each other (self-consistent round-trip), so this isn't a data-corruption bug, just a misleading field name and a minor display gap. Fixing it means picking a design (denormalize the employee's name at write time vs. a live lookup at render time) — preserved exactly as encountered rather than fixed, and documented inline in both `property_models.dart` and the new test file so it isn't "fixed" into a silent behavior change later.
+
+**Out of scope, left as-is:** `property_operations_tab.dart`'s "Linked Incidents"/"Active Permits" section queries the generic `incidents`/`permits` collections by `location == property.name` via a raw `StreamBuilder<QuerySnapshot>` — a cross-module, polymorphic lookup rather than one of this module's own typed entities, so it wasn't folded into `PropertyService`.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 334/334 (up from 326, +8).
+
+This closes out Tier 3's per-module extraction+coverage pass — all modules originally scoped (`billing` through `property`) now have real service-layer test coverage or a documented reason why none was warranted (`ai_tools`).
 
 ---
 

@@ -55,6 +55,25 @@ class Property {
       complianceScore: (data['complianceScore'] as num?)?.toDouble() ?? 0.0,
     );
   }
+
+  Map<String, dynamic> toFirestore(String siteId) {
+    return {
+      'siteId': siteId,
+      'name': name,
+      'type': type,
+      'address': address,
+      'lat': lat,
+      'lng': lng,
+      'totalArea': totalArea,
+      'floors': floors,
+      'occupancy': occupancy,
+      'capacity': capacity,
+      'status': status,
+      'constructionDate': constructionDate.toIso8601String(),
+      'manager': managerId,
+      'complianceScore': complianceScore,
+    };
+  }
 }
 
 class PropertyProject {
@@ -96,6 +115,19 @@ class PropertyProject {
       progress: data['progress'] ?? 0,
     );
   }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'propertyId': propertyId,
+      'title': title,
+      'type': type,
+      'description': description,
+      'status': status,
+      'assignedTo': assigneeId,
+      'dueDate': dueDate.toIso8601String(),
+      'progress': progress,
+    };
+  }
 }
 
 class UtilityUsage {
@@ -129,6 +161,17 @@ class UtilityUsage {
       carbon: (data['carbon'] as num?)?.toDouble() ?? 0.0,
     );
   }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'propertyId': propertyId,
+      'month': month,
+      'electricity': electricity,
+      'water': water,
+      'waste': waste,
+      'carbon': carbon,
+    };
+  }
 }
 
 class LegalAppointment {
@@ -158,6 +201,22 @@ class LegalAppointment {
       status: data['status'] ?? '',
       expiry: data['expiry'] != null ? DateTime.parse(data['expiry']) : null,
     );
+  }
+
+  // NOTE: the on-disk field is named 'personName' but has always actually stored the appointed
+  // person's employee id (see property_facility_tab.dart, which renders `appointment.personId`
+  // as raw text — a real, minor, flagged-not-fixed UX gap: it shows an id, not a human-readable
+  // name. Preserved as-is here rather than "fixed", since resolving it means picking a design
+  // (denormalize the employee's name at write time vs. look it up at render time), not a
+  // mechanical rename — see docs/testing/TEST_BACKLOG.md T3-PROPERTY.
+  Map<String, dynamic> toFirestore() {
+    return {
+      'propertyId': propertyId,
+      'role': role,
+      'personName': personId,
+      'status': status,
+      'expiry': expiry?.toIso8601String(),
+    };
   }
 }
 
@@ -196,6 +255,17 @@ class LeaseInfo {
       status: data['status'] ?? 'Active',
     );
   }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'propertyId': propertyId,
+      'tenantName': tenantId,
+      'monthlyRent': monthlyRent,
+      'status': status,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate.toIso8601String(),
+    };
+  }
 }
 
 class AssetInfo {
@@ -227,5 +297,15 @@ class AssetInfo {
         data['lastInspected'] ?? DateTime.now().toIso8601String(),
       ),
     );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'propertyId': propertyId,
+      'name': name,
+      'category': category,
+      'condition': condition,
+      'lastInspected': lastInspected.toIso8601String(),
+    };
   }
 }

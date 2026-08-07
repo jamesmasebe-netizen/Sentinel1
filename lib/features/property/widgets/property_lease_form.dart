@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentinel1/core/providers/app_providers.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../models/property_models.dart';
+import '../services/property_service.dart';
 
 class PropertyLeaseForm extends ConsumerStatefulWidget {
   final String propertyId;
@@ -35,17 +35,15 @@ class _PropertyLeaseFormState extends ConsumerState<PropertyLeaseForm> {
     setState(() => _isLoading = true);
 
     try {
-      final tenantId = ref.read(currentTenantIdProvider);
-      final firestore = ref.read(firestoreProvider);
-
-      await firestore.tenantCollection(tenantId ?? '', 'property_leases').add({
-        'propertyId': widget.propertyId,
-        'tenantName': _tenantNameController.text, // LeaseInfo expects tenantName
-        'monthlyRent': double.tryParse(_monthlyRentController.text) ?? 0.0,
-        'status': _status,
-        'startDate': _startDate.toIso8601String(),
-        'endDate': _endDate.toIso8601String(),
-      });
+      await ref.read(propertyServiceProvider).createLease(LeaseInfo(
+            id: '',
+            propertyId: widget.propertyId,
+            tenantId: _tenantNameController.text, // LeaseInfo.tenantId actually stores the tenant *name*
+            monthlyRent: double.tryParse(_monthlyRentController.text) ?? 0.0,
+            status: _status,
+            startDate: _startDate,
+            endDate: _endDate,
+          ));
 
       if (mounted) {
         Navigator.pop(context);

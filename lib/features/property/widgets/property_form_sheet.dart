@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers/app_providers.dart';
-import '../../../core/utils/tenant_firestore_extension.dart';
 import '../models/property_models.dart';
+import '../services/property_service.dart';
 import '../../people/widgets/employee_selector.dart';
 
 class PropertyFormSheet extends ConsumerStatefulWidget {
@@ -70,33 +69,26 @@ class _PropertyFormSheetState extends ConsumerState<PropertyFormSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    final firestore = ref.read(firestoreProvider);
-    final tenantId = ref.read(currentTenantIdProvider) ?? '';
-    
-    final data = {
-      'siteId': tenantId,
-      'name': _nameController.text.trim(),
-      'type': _typeController.text.trim(),
-      'address': _addressController.text.trim(),
-      'lat': double.tryParse(_latController.text.trim()) ?? 0.0,
-      'lng': double.tryParse(_lngController.text.trim()) ?? 0.0,
-      'totalArea': _totalAreaController.text.trim(),
-      'floors': int.tryParse(_floorsController.text.trim()) ?? 0,
-      'occupancy': int.tryParse(_occupancyController.text.trim()) ?? 0,
-      'capacity': int.tryParse(_capacityController.text.trim()) ?? 0,
-      'status': _status,
-      'constructionDate': _constructionDate?.toIso8601String(),
-      'manager': _managerId ?? '',
-      'complianceScore': double.tryParse(_complianceScoreController.text.trim()) ?? 0.0,
-    };
 
-    if (widget.property == null) {
-      await firestore.tenantCollection(tenantId, 'properties').add(data);
-    } else {
-      await firestore.tenantCollection(tenantId, 'properties').doc(widget.property!.id).update(data);
-    }
-    
+    final property = Property(
+      id: widget.property?.id ?? '',
+      name: _nameController.text.trim(),
+      type: _typeController.text.trim(),
+      address: _addressController.text.trim(),
+      lat: double.tryParse(_latController.text.trim()) ?? 0.0,
+      lng: double.tryParse(_lngController.text.trim()) ?? 0.0,
+      totalArea: _totalAreaController.text.trim(),
+      floors: int.tryParse(_floorsController.text.trim()) ?? 0,
+      occupancy: int.tryParse(_occupancyController.text.trim()) ?? 0,
+      capacity: int.tryParse(_capacityController.text.trim()) ?? 0,
+      status: _status,
+      constructionDate: _constructionDate ?? DateTime.now(),
+      managerId: _managerId ?? '',
+      complianceScore: double.tryParse(_complianceScoreController.text.trim()) ?? 0.0,
+    );
+
+    await ref.read(propertyServiceProvider).saveProperty(property);
+
     if (mounted) Navigator.pop(context);
   }
 

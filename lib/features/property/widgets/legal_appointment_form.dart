@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentinel1/core/providers/app_providers.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'package:sentinel1/features/people/widgets/employee_selector.dart';
 import 'package:sentinel1/features/people/providers/hr_providers.dart';
 import 'package:sentinel1/features/people/services/hr_service.dart';
+import '../models/property_models.dart';
+import '../services/property_service.dart';
 
 class LegalAppointmentForm extends ConsumerStatefulWidget {
   final String propertyId;
@@ -52,16 +52,14 @@ class _LegalAppointmentFormState extends ConsumerState<LegalAppointmentForm> {
     setState(() => _isLoading = true);
 
     try {
-      final tenantId = ref.read(currentTenantIdProvider);
-      final firestore = ref.read(firestoreProvider);
-
-      await firestore.tenantCollection(tenantId ?? '', 'legal_appointments').add({
-        'propertyId': widget.propertyId,
-        'role': _roleTitle, // Store title since the UI depends on 'role' as a string
-        'personName': _personId, // Follows property_facility_tab.dart display logic
-        'status': _status,
-        'expiry': _expiry?.toIso8601String(),
-      });
+      await ref.read(propertyServiceProvider).createLegalAppointment(LegalAppointment(
+            id: '',
+            propertyId: widget.propertyId,
+            role: _roleTitle!, // Store title since the UI depends on 'role' as a string
+            personId: _personId!,
+            status: _status,
+            expiry: _expiry,
+          ));
 
       if (mounted) {
         Navigator.pop(context);

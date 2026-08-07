@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentinel1/core/providers/app_providers.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../models/property_models.dart';
+import '../services/property_service.dart';
 
 class PropertyUtilityForm extends ConsumerStatefulWidget {
   final String propertyId;
@@ -37,17 +37,15 @@ class _PropertyUtilityFormState extends ConsumerState<PropertyUtilityForm> {
     setState(() => _isLoading = true);
 
     try {
-      final tenantId = ref.read(currentTenantIdProvider);
-      final firestore = ref.read(firestoreProvider);
-
-      await firestore.tenantCollection(tenantId ?? '', 'property_utilities').add({
-        'propertyId': widget.propertyId,
-        'month': _monthController.text,
-        'electricity': double.tryParse(_electricityController.text) ?? 0.0,
-        'water': double.tryParse(_waterController.text) ?? 0.0,
-        'waste': double.tryParse(_wasteController.text) ?? 0.0,
-        'carbon': double.tryParse(_carbonController.text) ?? 0.0,
-      });
+      await ref.read(propertyServiceProvider).createUtilityUsage(UtilityUsage(
+            id: '',
+            propertyId: widget.propertyId,
+            month: _monthController.text,
+            electricity: double.tryParse(_electricityController.text) ?? 0.0,
+            water: double.tryParse(_waterController.text) ?? 0.0,
+            waste: double.tryParse(_wasteController.text) ?? 0.0,
+            carbon: double.tryParse(_carbonController.text) ?? 0.0,
+          ));
 
       if (mounted) {
         Navigator.pop(context);

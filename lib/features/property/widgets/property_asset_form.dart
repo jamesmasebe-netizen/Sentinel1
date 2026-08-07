@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentinel1/core/providers/app_providers.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../models/property_models.dart';
+import '../services/property_service.dart';
 
 class PropertyAssetForm extends ConsumerStatefulWidget {
   final String propertyId;
@@ -34,16 +34,14 @@ class _PropertyAssetFormState extends ConsumerState<PropertyAssetForm> {
     setState(() => _isLoading = true);
 
     try {
-      final tenantId = ref.read(currentTenantIdProvider);
-      final firestore = ref.read(firestoreProvider);
-
-      await firestore.tenantCollection(tenantId ?? '', 'property_assets').add({
-        'propertyId': widget.propertyId,
-        'name': _nameController.text,
-        'category': _categoryController.text,
-        'condition': _condition,
-        'lastInspected': _lastInspected.toIso8601String(),
-      });
+      await ref.read(propertyServiceProvider).createAsset(AssetInfo(
+            id: '',
+            propertyId: widget.propertyId,
+            name: _nameController.text,
+            category: _categoryController.text,
+            condition: _condition,
+            lastInspected: _lastInspected,
+          ));
 
       if (mounted) {
         Navigator.pop(context);

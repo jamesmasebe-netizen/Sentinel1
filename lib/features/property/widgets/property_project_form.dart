@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentinel1/core/providers/app_providers.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'package:sentinel1/features/people/widgets/employee_selector.dart';
+import '../models/property_models.dart';
+import '../services/property_service.dart';
 
 class PropertyProjectForm extends ConsumerStatefulWidget {
   final String propertyId;
@@ -44,19 +44,17 @@ class _PropertyProjectFormState extends ConsumerState<PropertyProjectForm> {
     setState(() => _isLoading = true);
 
     try {
-      final tenantId = ref.read(currentTenantIdProvider);
-      final firestore = ref.read(firestoreProvider);
-
-      await firestore.tenantCollection(tenantId ?? '', 'property_projects').add({
-        'propertyId': widget.propertyId,
-        'title': _titleController.text,
-        'type': _type,
-        'description': _descriptionController.text,
-        'status': _status,
-        'assignedTo': _assigneeId,
-        'dueDate': _dueDate.toIso8601String(),
-        'progress': _progress.toInt(),
-      });
+      await ref.read(propertyServiceProvider).createProject(PropertyProject(
+            id: '',
+            propertyId: widget.propertyId,
+            title: _titleController.text,
+            type: _type,
+            description: _descriptionController.text,
+            status: _status,
+            assigneeId: _assigneeId!,
+            dueDate: _dueDate,
+            progress: _progress.toInt(),
+          ));
 
       if (mounted) {
         Navigator.pop(context);
