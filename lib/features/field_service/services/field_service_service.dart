@@ -58,12 +58,16 @@ class FieldServiceService {
   // =====================
   // WORK ORDER TASKS
   // =====================
+  // All 4 methods below previously used `_tenantDoc.firestore.collection('work_orders')...`
+  // (the root-level collection) instead of `_tenantDoc.collection('work_orders')...`
+  // (tenant-scoped) — reachable via work_order_details_screen.dart, confirmed live. Fixed
+  // 2026-08-07, see docs/testing/TEST_BACKLOG.md T3-FIELDSERVICE.
 
   Future<void> createWorkOrderTask(
     String workOrderId,
     WorkOrderTask task,
   ) async {
-    final docRef = _tenantDoc.firestore
+    final docRef = _tenantDoc
         .collection('work_orders')
         .doc(workOrderId)
         .collection('tasks')
@@ -75,7 +79,7 @@ class FieldServiceService {
     String workOrderId,
     WorkOrderTask task,
   ) async {
-    final docRef = _tenantDoc.firestore
+    final docRef = _tenantDoc
         .collection('work_orders')
         .doc(workOrderId)
         .collection('tasks')
@@ -84,7 +88,7 @@ class FieldServiceService {
   }
 
   Future<void> deleteWorkOrderTask(String workOrderId, String taskId) async {
-    await _tenantDoc.firestore
+    await _tenantDoc
         .collection('work_orders')
         .doc(workOrderId)
         .collection('tasks')
@@ -93,7 +97,7 @@ class FieldServiceService {
   }
 
   Stream<List<WorkOrderTask>> streamWorkOrderTasks(String workOrderId) {
-    return _tenantDoc.firestore
+    return _tenantDoc
         .collection('work_orders')
         .doc(workOrderId)
         .collection('tasks')
@@ -132,6 +136,10 @@ class FieldServiceService {
     await _tenantDoc.collection('route_plans').doc(id).delete();
   }
 
+  // Same root-vs-tenant-collection bug as the WORK ORDER TASKS methods above
+  // (`_tenantDoc.firestore.collection` instead of `_tenantDoc.collection`), but NOT fixed: its
+  // only caller is HireToRetireAutomation.auditTechnicianRoutes, and that class itself has zero
+  // call sites anywhere in lib/ — confirmed dead code, so left as-is. See T3-FIELDSERVICE.
   Stream<List<DispatcherRoute>> streamRoutePlansForTechnician(
     String technicianId,
   ) {
@@ -181,6 +189,8 @@ class FieldServiceService {
     await _tenantDoc.collection('customer_assets').doc(id).delete();
   }
 
+  // Same root-vs-tenant-collection bug as above, also not fixed: zero callers found anywhere in
+  // lib/ — confirmed dead code. See T3-FIELDSERVICE.
   Stream<List<CustomerAsset>> streamCustomerAssets(String customerId) {
     return _tenantDoc.firestore
         .collection('customer_assets')
@@ -230,6 +240,8 @@ class FieldServiceService {
     await _tenantDoc.collection('iot_devices').doc(id).delete();
   }
 
+  // Same root-vs-tenant-collection bug as above, also not fixed: zero callers found anywhere in
+  // lib/ — confirmed dead code. See T3-FIELDSERVICE.
   Stream<List<IotDevice>> streamIotDevicesForCustomer(String customerId) {
     return _tenantDoc.firestore
         .collection('iot_devices')
