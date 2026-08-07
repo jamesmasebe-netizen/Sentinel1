@@ -146,7 +146,79 @@ service cloud.firestore {
         allow create, update: if belongsToTenant(tenantId) && isManager();
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
-      
+
+      // --- collections below were previously undeclared and silently relying on the catch-all's
+      // permissive read (and, since the catch-all's write was already `if false`, silently BROKEN
+      // on write — AuditLogService.logAction() in particular is called, unguarded, before every
+      // FirestoreService write in the app, so this meant every create/update/delete routed through
+      // FirestoreService threw PERMISSION_DENIED against real, rules-enforced Firestore). Found
+      // 2026-08-07 while writing the sensitive-data cluster's rules-matrix tests; see
+      // TEST_BACKLOG.md T2c-SENSITIVE for the full writeup. ---
+
+      // Audit log — written as a side effect of every FirestoreService write, by any tenant
+      // member regardless of role; immutable once created.
+      match /audit_logs/{logId} {
+        allow read: if belongsToTenant(tenantId) && isManager();
+        allow create: if belongsToTenant(tenantId);
+        allow update, delete: if false;
+      }
+
+      // PMO/Projects sub-data — self-logged by any project team member (mirrors incidents'
+      // "anyone can report" shape), manager approval for changes/removal.
+      match /counters/{counterId} {
+        allow read, write: if belongsToTenant(tenantId);
+      }
+      match /actuals/{actualId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId);
+        allow update, delete: if belongsToTenant(tenantId) && isManager();
+      }
+      match /expenses/{expenseId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId);
+        allow update, delete: if belongsToTenant(tenantId) && isManager();
+      }
+      // Both spellings declared — project_providers.dart writes 'timeEntries',
+      // pmo_service.dart's TimeEntry CRUD writes 'time_entries' (naming drift, not yet unified).
+      match /timeEntries/{entryId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId);
+        allow update, delete: if belongsToTenant(tenantId) && isManager();
+      }
+      match /time_entries/{entryId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId);
+        allow update, delete: if belongsToTenant(tenantId) && isManager();
+      }
+
+      // HR reference/lookup data — same shape as employees: open read, manager writes, admin delete.
+      match /departments/{deptId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /job_roles/{roleId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /ohs_roles/{roleId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
+      // HR self-service records — any employee logs their own, no role gate on write besides
+      // tenant membership (mirrors compliance_prescreens).
+      match /competency_passports/{passportId} {
+        allow read, create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+      match /skills_matrix/{entryId} {
+        allow read, create, update: if belongsToTenant(tenantId);
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
       // Finance collections
       match /fin_ap_invoices/{invoiceId} {
         allow read: if belongsToTenant(tenantId);
@@ -700,10 +772,17 @@ service cloud.firestore {
         allow write: if belongsToTenant(tenantId) && isAdmin();
       }
 
-      // Catch-all — read-only for tenant members, no writes allowed
+      // Catch-all — fully closed. Every real collection must have an explicit block above; this
+      // exists only to deny-by-default anything not yet declared. A permissive
+      // `read: if belongsToTenant(tenantId)` here (found 2026-08-07, see TEST_BACKLOG.md
+      // T2c-SENSITIVE) silently overrode every already-declared collection's own tighter read
+      // rule too, since Firestore grants a request if ANY matching `match` block allows it, not
+      // just the most specific one — this is what let any tenant member read medical_records,
+      // coida_claims, coida_compliance_checklist, job_applications, payroll_ledgers,
+      // compensation_plans, performance_reviews, disciplinary_records, benefit_enrollments,
+      // invites, and candidates regardless of their own role gates.
       match /{collection}/{docId} {
-        allow read: if belongsToTenant(tenantId);
-        allow write: if false;
+        allow read, write: if false;
       }
     }
 

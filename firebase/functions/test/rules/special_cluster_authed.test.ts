@@ -65,10 +65,16 @@ describe("firestore.rules — special cluster: authenticated-context cases (Wave
     // Confirmed by grepping the real firestore.rules file: no block anywhere declares this name.
     const undeclaredCollection = "some_totally_undeclared_collection_xyz";
 
-    it("allows a same-tenant member to read a doc under an undeclared collection name (falls through to the catch-all's read rule)", async () => {
+    // Changed 2026-08-07 (TEST_BACKLOG.md T2c-SENSITIVE): the catch-all's read used to be
+    // `if belongsToTenant(tenantId)`, which — because Firestore grants a request if ANY
+    // structurally-matching `match` block allows it — silently overrode every already-declared
+    // collection's own tighter read rule too (medical_records, payroll_ledgers, etc. were all
+    // readable by a plain employee despite their own isManager()/isSheqOfficer() gates). Fixed to
+    // `allow read, write: if false;`; this test now asserts denial instead of success.
+    it("denies a same-tenant member from reading a doc under an undeclared collection name — catch-all is fully closed", async () => {
       await seed(`tenants/${TENANT_A}/${undeclaredCollection}/doc-1`, { note: "seed" });
       const worker = authedContext(testEnv, "worker-catchall-1", TENANT_A, "employee");
-      await assertSucceeds(
+      await assertFails(
         getDoc(doc(worker.firestore(), `tenants/${TENANT_A}/${undeclaredCollection}/doc-1`))
       );
     });
