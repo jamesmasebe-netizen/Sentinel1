@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/widgets/ds_widgets.dart';
+import '../models/environment_models.dart';
 
 class WasteListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const WasteListItem({super.key, required this.data});
+  final WasteManifest manifest;
+  const WasteListItem({super.key, required this.manifest});
 
   @override
   Widget build(BuildContext context) {
     Color color = XMTheme.info;
-    if (data['wasteType'] == 'Hazardous' || data['wasteType'] == 'Medical') {
+    if (manifest.wasteType == 'Hazardous' || manifest.wasteType == 'Medical') {
       color = XMTheme.error;
     }
-    if (data['wasteType'] == 'Recyclable') color = XMTheme.success;
+    if (manifest.wasteType == 'Recyclable') color = XMTheme.success;
 
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
@@ -32,20 +33,20 @@ class WasteListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${data['wasteType']} • ${data['quantity']} ${data['unit']}',
+                  '${manifest.wasteType} • ${manifest.quantity} ${manifest.unit}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
                 ),
                 Text(
-                  '${data['transporterName'] ?? ""} → ${data['disposalFacility'] ?? ""}',
+                  '${manifest.transporterName} → ${manifest.disposalFacility}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          GStatusTag(label: data['status'] ?? 'Log', color: color),
+          GStatusTag(label: manifest.status, color: color),
         ],
       ),
     );

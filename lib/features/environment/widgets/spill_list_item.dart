@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/widgets/ds_widgets.dart';
+import '../models/environment_models.dart';
 
 class SpillListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const SpillListItem({super.key, required this.data});
+  final EnvironmentalSpill spill;
+  const SpillListItem({super.key, required this.spill});
 
   @override
   Widget build(BuildContext context) {
-    final contained = data['contained'] == true;
-    final color = contained ? XMTheme.success : XMTheme.error;
+    final color = spill.contained ? XMTheme.success : XMTheme.error;
     return GCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -28,17 +28,17 @@ class SpillListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data['substance'] ?? 'Unknown Substance',
+                  spill.substance.isNotEmpty ? spill.substance : 'Unknown Substance',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 Text(
-                  '${data['volume'] ?? ""} @ ${data['location'] ?? ""}',
+                  '${spill.volume} @ ${spill.location}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
-          GStatusTag(label: contained ? 'Contained' : 'Active', color: color),
+          GStatusTag(label: spill.contained ? 'Contained' : 'Active', color: color),
         ],
       ),
     );

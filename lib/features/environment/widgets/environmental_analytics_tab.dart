@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/environment_service.dart';
 
 class EnvironmentalAnalyticsTab extends ConsumerWidget {
   const EnvironmentalAnalyticsTab({super.key});
@@ -12,8 +11,11 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
     if (siteId == null) return const Center(child: Text('No site assigned'));
+
+    final spillsAsync = ref.watch(allEnvironmentalSpillsProvider);
+    final wasteAsync = ref.watch(allWasteManifestsProvider);
+    final esgAsync = ref.watch(allEsgMetricsProvider);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -43,26 +45,11 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           GSpacing.vMd,
-          StreamBuilder<QuerySnapshot>(
-            stream:
-                fs
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'environmental_spills',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              int total = docs.length, contained = 0, uncontained = 0;
-              for (final doc in docs) {
-                final d = doc.data() as Map<String, dynamic>;
-                if (d['contained'] == true) {
-                  contained++;
-                } else {
-                  uncontained++;
-                }
-              }
+          spillsAsync.when(
+            data: (spills) {
+              final total = spills.length;
+              final contained = spills.where((s) => s.contained).length;
+              final uncontained = total - contained;
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -101,6 +88,8 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                 ),
               );
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Text('Error: $e'),
           ),
           GSpacing.vLg,
 
@@ -112,21 +101,11 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           GSpacing.vMd,
-          StreamBuilder<QuerySnapshot>(
-            stream:
-                fs
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'waste_manifests',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
+          wasteAsync.when(
+            data: (manifests) {
               final byType = <String, int>{};
-              for (final doc in docs) {
-                final d = doc.data() as Map<String, dynamic>;
-                final t = (d['wasteType'] ?? 'Other').toString();
+              for (final m in manifests) {
+                final t = m.wasteType.isNotEmpty ? m.wasteType : 'Other';
                 byType[t] = (byType[t] ?? 0) + 1;
               }
               if (byType.isEmpty) {
@@ -189,6 +168,8 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                 ),
               );
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Text('Error: $e'),
           ),
           GSpacing.vLg,
 
@@ -200,18 +181,9 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           GSpacing.vMd,
-          StreamBuilder<QuerySnapshot>(
-            stream:
-                fs
-                    .tenantCollection(
-                      ref.watch(currentTenantIdProvider) ?? "",
-                      'esg_metrics',
-                    )
-                    .where('siteId', isEqualTo: siteId)
-                    .snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
+          esgAsync.when(
+            data: (metrics) {
+              if (metrics.isEmpty) {
                 return const GCard(
                   child: Center(child: Text('No ESG metrics available')),
                 );
@@ -225,9 +197,9 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.5,
                 ),
-                itemCount: docs.length,
+                itemCount: metrics.length,
                 itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
+                  final m = metrics[i];
                   return GCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -235,12 +207,12 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          d['category'] ?? 'Metric',
+                          m.category.isNotEmpty ? m.category : 'Metric',
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                         GSpacing.vSm,
                         Text(
-                          '${d['value']} ${d['unit']}',
+                          '${m.value} ${m.unit}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -252,6 +224,8 @@ class EnvironmentalAnalyticsTab extends ConsumerWidget {
                 },
               );
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Text('Error: $e'),
           ),
         ],
       ),

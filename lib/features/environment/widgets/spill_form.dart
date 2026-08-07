@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../models/environment_models.dart';
+import '../services/environment_service.dart';
 
 class SpillForm extends ConsumerStatefulWidget {
   const SpillForm({super.key});
@@ -40,23 +42,18 @@ class _SpillFormState extends ConsumerState<SpillForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'environmental_spills',
-            data: {
-              'substance': _substanceCtrl.text.trim(),
-              'volume': _volCtrl.text.trim(),
-              'location': _spillLocCtrl.text.trim(),
-              'contained': _contained,
-              'reportedToAuthorities': _reported,
-              'authorId': p.uid,
-              'siteId': ref.read(currentTenantIdProvider) ?? '',
-              'dateOfSpill': DateTime.now().toIso8601String(),
-              'createdAt': DateTime.now().toIso8601String(),
-            },
-          );
+      await ref.read(environmentServiceProvider).createSpill(EnvironmentalSpill(
+            id: '',
+            siteId: ref.read(currentTenantIdProvider) ?? '',
+            substance: _substanceCtrl.text.trim(),
+            volume: _volCtrl.text.trim(),
+            location: _spillLocCtrl.text.trim(),
+            contained: _contained,
+            reportedToAuthorities: _reported,
+            authorId: p.uid,
+            dateOfSpill: DateTime.now(),
+            createdAt: DateTime.now(),
+          ));
       if (mounted) {
         Navigator.pop(context);
         UIUtils.showToast(context, 'Environmental spill logged successfully');

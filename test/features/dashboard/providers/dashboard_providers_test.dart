@@ -77,16 +77,23 @@ void main() {
   });
 
   group('dashboardWasteProvider', () {
-    test('parses and buckets real waste_manifests entries by type, converting kg to tonnes', () async {
+    // FIXED 2026-08-07: this provider previously read data['type'] and parsed a unit-embedded
+    // quantity string, but the real writer (EnvironmentService.createWasteManifest, formerly
+    // waste_form.dart directly) has always written a separate 'wasteType' string field and a
+    // bare numeric 'quantity' field with its own 'unit' field — so the categorization loop never
+    // matched a real document and this provider always fell into its hardcoded fallback
+    // regardless of real data volume (see docs/testing/TEST_BACKLOG.md T3-ENVIRONMENT). This test
+    // now seeds the real write shape.
+    test('parses and buckets real waste_manifests entries by wasteType, converting kg to tonnes', () async {
       final col = firestore.tenantCollection(tenantId, 'waste_manifests');
-      await col.add({'siteId': tenantId, 'type': 'Recyclable', 'quantity': '2000 kg'});
-      await col.add({'siteId': tenantId, 'type': 'General Waste', 'quantity': '1.5 tonnes'});
-      await col.add({'siteId': tenantId, 'type': 'Hazardous', 'quantity': '500 kg'});
+      await col.add({'siteId': tenantId, 'wasteType': 'Recyclable', 'quantity': 2000, 'unit': 'kg'});
+      await col.add({'siteId': tenantId, 'wasteType': 'General Waste', 'quantity': 1.5, 'unit': 'tons'});
+      await col.add({'siteId': tenantId, 'wasteType': 'Hazardous', 'quantity': 500, 'unit': 'kg'});
 
       final result = await container.read(dashboardWasteProvider.future);
 
       expect(result['Recycle'], 2.0); // 2000kg -> 2.0 tonnes
-      expect(result['General'], 1.5); // no 'kg' in string, taken as-is
+      expect(result['General'], 1.5); // unit != 'kg', taken as-is
       expect(result['Haz'], 0.5); // 500kg -> 0.5 tonnes
     });
 

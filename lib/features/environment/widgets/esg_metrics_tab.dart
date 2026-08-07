@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../config/theme.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../models/environment_models.dart';
+import '../services/environment_service.dart';
 
 class EsgMetricsTab extends ConsumerStatefulWidget {
   const EsgMetricsTab({super.key});
@@ -38,21 +38,16 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'esg_metrics',
-            data: {
-              'category': _esgCategory,
-              'value': double.tryParse(_esgValueCtrl.text) ?? 0,
-              'unit': _esgUnit,
-              'period': _esgPeriod,
-              'authorId': p.uid,
-              'siteId': ref.read(currentTenantIdProvider) ?? '',
-              'createdAt': DateTime.now().toIso8601String(),
-            },
-          );
+      await ref.read(environmentServiceProvider).createEsgMetric(EsgMetric(
+            id: '',
+            siteId: ref.read(currentTenantIdProvider) ?? '',
+            category: _esgCategory,
+            value: double.tryParse(_esgValueCtrl.text) ?? 0,
+            unit: _esgUnit,
+            period: _esgPeriod,
+            authorId: p.uid,
+            createdAt: DateTime.now(),
+          ));
       if (mounted) {
         Navigator.pop(context);
         UIUtils.showToast(context, 'ESG metric added successfully');
@@ -137,8 +132,7 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final siteId = ref.watch(currentTenantIdProvider);
-    final fs = ref.watch(firestoreProvider);
+    final metricsAsync = ref.watch(esgMetricsProvider);
     return Column(
       children: [
         Padding(
@@ -164,33 +158,19 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
           ),
         ),
         Expanded(
-          child: StreamBuilder<QuerySnapshot>(
-            stream:
-                siteId == null
-                    ? null
-                    : fs
-                        .tenantCollection(
-                          ref.watch(currentTenantIdProvider) ?? "",
-                          'esg_metrics',
-                        )
-                        .where('siteId', isEqualTo: siteId)
-                        .orderBy('createdAt', descending: true)
-                        .limit(50)
-                        .snapshots(),
-            builder: (ctx, snap) {
-              final docs = snap.data?.docs ?? [];
-              if (docs.isEmpty) {
+          child: metricsAsync.when(
+            data: (metrics) {
+              if (metrics.isEmpty) {
                 return const Center(child: Text('No ESG metrics recorded'));
               }
               return ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: docs.length,
-                itemBuilder: (ctx, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  return _MetricListItem(data: d);
-                },
+                itemCount: metrics.length,
+                itemBuilder: (ctx, i) => _MetricListItem(metric: metrics[i]),
               );
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Center(child: Text('Error: $e')),
           ),
         ),
       ],
@@ -199,8 +179,8 @@ class _EsgMetricsTabState extends ConsumerState<EsgMetricsTab> {
 }
 
 class _MetricListItem extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _MetricListItem({required this.data});
+  final EsgMetric metric;
+  const _MetricListItem({required this.metric});
 
   @override
   Widget build(BuildContext context) {
@@ -208,15 +188,15 @@ class _MetricListItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          GStatusTag(label: data['category'] ?? 'ESG', color: XMTheme.primary),
+          GStatusTag(label: metric.category.isNotEmpty ? metric.category : 'ESG', color: XMTheme.primary),
           GSpacing.hLg,
           Text(
-            '${data['value']} ${data['unit']}',
+            '${metric.value} ${metric.unit}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
           ),
           const Spacer(),
           Text(
-            data['period'] ?? '2026',
+            metric.period.isNotEmpty ? metric.period : '2026',
             style: Theme.of(context).textTheme.labelSmall,
           ),
         ],

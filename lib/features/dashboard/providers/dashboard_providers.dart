@@ -238,15 +238,11 @@ final dashboardWasteProvider = StreamProvider<Map<String, double>>((ref) {
         double hazardous = 0.0;
         for (final doc in s.docs) {
           final data = doc.data();
-          final type = (data['type'] ?? '').toString().toLowerCase();
-          final qtyStr = (data['quantity'] ?? '').toString().toLowerCase();
-          double qty = 0.0;
-          final match = RegExp(r'([\d.]+)').firstMatch(qtyStr);
-          if (match != null) {
-            qty = double.tryParse(match.group(1)!) ?? 0.0;
-            if (qtyStr.contains('kg')) {
-              qty /= 1000.0;
-            }
+          final type = (data['wasteType'] ?? '').toString().toLowerCase();
+          final unit = (data['unit'] ?? '').toString().toLowerCase();
+          double qty = (data['quantity'] as num?)?.toDouble() ?? 0.0;
+          if (unit == 'kg') {
+            qty /= 1000.0;
           }
           if (type.contains('recycle') || type.contains('recyclable')) {
             recyclable += qty;

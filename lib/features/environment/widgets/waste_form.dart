@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/widgets/ds_widgets.dart';
 import '../../../../core/utils/ui_utils.dart';
+import '../models/environment_models.dart';
+import '../services/environment_service.dart';
 
 class WasteForm extends ConsumerStatefulWidget {
   const WasteForm({super.key});
@@ -38,23 +40,18 @@ class _WasteFormState extends ConsumerState<WasteForm> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
-      await ref
-          .read(firestoreServiceProvider)
-          .createDocument(
-            tenantId: ref.read(currentTenantIdProvider) ?? '',
-            collection: 'waste_manifests',
-            data: {
-              'wasteType': _wasteType,
-              'quantity': double.tryParse(_qtyCtrl.text) ?? 0,
-              'unit': _wasteUnit,
-              'transporterName': _transporterCtrl.text.trim(),
-              'disposalFacility': _facilityCtrl.text.trim(),
-              'status': _wasteStatus,
-              'authorId': p.uid,
-              'siteId': ref.read(currentTenantIdProvider) ?? '',
-              'createdAt': DateTime.now().toIso8601String(),
-            },
-          );
+      await ref.read(environmentServiceProvider).createWasteManifest(WasteManifest(
+            id: '',
+            siteId: ref.read(currentTenantIdProvider) ?? '',
+            wasteType: _wasteType,
+            quantity: double.tryParse(_qtyCtrl.text) ?? 0,
+            unit: _wasteUnit,
+            transporterName: _transporterCtrl.text.trim(),
+            disposalFacility: _facilityCtrl.text.trim(),
+            status: _wasteStatus,
+            authorId: p.uid,
+            createdAt: DateTime.now(),
+          ));
       if (mounted) {
         Navigator.pop(context);
         UIUtils.showToast(context, 'Waste manifest added successfully');
