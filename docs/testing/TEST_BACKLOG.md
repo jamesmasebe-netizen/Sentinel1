@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `environment`, `projects`, `public`, `settings` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications` done, `property` surveyed and grouped with `environment`/`public`/`settings` — see below).
+- Remaining modules: `environment`, `public`, `settings` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications`/`projects` done, `ai_tools` surveyed (no testable layer), `property` surveyed and grouped with `environment`/`public`/`settings` — see below).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -507,6 +507,20 @@ This is now the **third** file this session found with this identical anti-patte
 **Test-authoring pitfall hit and fixed before committing (not an app bug):** the first version of this test hung indefinitely — `notificationsStreamProvider` depends on `ref.watch(userProfileProvider)`, itself an async `StreamProvider`; reading `notificationsStreamProvider.future` immediately raced its first (pre-profile) build, which returns `Stream.empty()` and never emits, so `.future` bound to that build and hung forever even after the provider later rebuilt with the real query. Same root cause `safety_service_test.dart` already solved earlier this session (pre-warm the dependency via `await container.read(userProfileProvider.future)` before touching the dependent provider) — documented there but not applied here the first time; fixed the same way.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 298/298 (up from 296, +2).
+
+#### `ai_tools` module: no testable service layer
+
+**File(s):** `lib/features/ai_tools/providers/gemini_provider.dart` (surveyed, not modified).
+The only provider here is a one-line `Provider<GenerativeModel>` constructing a Gemini client from an env var — no logic beyond that to verify. All real AI interaction (chat, RCA assistant, hazard-photo analysis, safety-flash generation) is inline widget code calling the Gemini SDK directly, with no extractable service/contract layer. Matches `TEST_STRATEGY.md`'s own existing carve-out for nondeterministic AI modules ("scope to contract/shape tests... lower unit-test ROI") — there's no contract layer here to even shape-test. Nothing added.
+
+#### [DONE] T3-PROJECTS: `projects` module — `ProjectService` coverage
+
+**File(s):** `lib/features/projects/providers/project_providers.dart` -> `test/features/projects/providers/project_service_test.dart` (new, 8 tests). No bugs found (one latent design quirk noted, not fixed — see below).
+**Resolved 2026-08-07:** `createProject` (sequential `PRJ-001`/`PRJ-002` id generation via the counter transaction, correct `siteId` on the written doc — the direct regression check for `T2-BPFORCHESTRATOR`'s `siteId`/`tenantId` fix), `approveStage` (the safety-clearance compliance gate: blocks on `safetyFileScore < 75`, blocks on open NCRs, allows when both pass, and confirms a non-gated stage approves unconditionally), `addExpense`/`deleteExpense` (atomic `actualSpend` increment/decrement via `FieldValue.increment` inside a real transaction).
+
+**Test-authoring pitfall hit and fixed, which also surfaced a latent (non-live) design quirk worth documenting:** the first version of the `approveStage` tests used a single-element `stages` array with a stage `.id` that didn't match its own array index (e.g. `id: 'stage_1'` as the *only*, i.e. index-0, element) — every one of those 3 tests failed (no exception thrown, no status change), because `ProjectStage.toMap()` doesn't persist an `id` field at all; `Project.fromFirestore()` regenerates each stage's `id` as `'stage_${arrayIndex}'` on every read, discarding whatever literal id it was built with. A stage whose given id doesn't match its real array position is therefore unfindable by `approveStage`'s `indexWhere`, which just silently no-ops (`if (stageIndex == -1) return;`) rather than throwing. This is **not a live bug**: both real callers (`new_project_dialog_content.dart`'s `_defaultStages` and `BpfOrchestrator.createProjectFromQuote`, per `T2-BPFORCHESTRATOR`) always build strictly `stage_0..stage_5`-ordered arrays matching their real index, so the quirk never manifests in practice — but it's a real, undocumented constraint (reorder or delete a middle stage and ids silently shift) worth knowing about if anyone ever touches `stages` list-mutation logic. Fixed the tests to use realistic multi-stage arrays with the target stage at its matching index, documented inline.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 306/306 (up from 298, +8).
 
 ---
 
