@@ -80,6 +80,8 @@ dev_dependencies:
   mocktail: ^1.0.4
   fake_cloud_firestore: ^4.1.1
   firebase_auth_mocks: ^0.15.2
+  url_launcher_platform_interface: ^2.3.2
+  plugin_platform_interface: ^2.1.8
 
 flutter:
   uses-material-design: true

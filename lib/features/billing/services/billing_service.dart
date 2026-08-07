@@ -2,11 +2,15 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/providers/app_providers.dart';
+import '../../people/services/invite_service.dart' show firebaseFunctionsProvider;
 import '../models/subscription_models.dart';
 
 class BillingService {
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFunctions _functions;
+  final FirebaseFirestore _firestore;
+
+  BillingService(this._functions, this._firestore);
 
   Future<void> createStripeCheckoutSession(
     String tenantId, {
@@ -69,7 +73,10 @@ class BillingService {
 }
 
 final billingServiceProvider = Provider<BillingService>((ref) {
-  return BillingService();
+  return BillingService(
+    ref.watch(firebaseFunctionsProvider),
+    ref.watch(firestoreProvider),
+  );
 });
 
 final subscriptionStreamProvider =

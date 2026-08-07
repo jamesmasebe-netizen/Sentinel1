@@ -371,9 +371,22 @@ match /{collection}/{docId} {
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 205/205 passing (no net count change — this pass fixed existing tests rather than adding new ones, since orchestrator coverage already existed per the correction above).
 
+### T2-BILLING: `lib/features/billing` service-layer coverage (Cloud Functions side already covered by T2-003)
+
+**File(s):** `lib/features/billing/services/billing_service.dart` (fixed) -> `test/features/billing/services/billing_service_test.dart` (new, 11 tests).
+**Why:** last remaining Tier 2 item per the Module -> Tier cross-reference — the `firebase/functions/src/billing.ts` Cloud Functions themselves were fully covered by T2-003, but the Flutter-side `BillingService` that calls them had no tests.
+
+**Real testability bug found and fixed first:** unlike every other service in this codebase (`FinanceService`, `SafetyService`, `PmoService`, etc.), `BillingService` hardcoded `FirebaseFunctions.instance`/`FirebaseFirestore.instance` as field initializers instead of accepting them via constructor — meaning it couldn't be overridden with a fake/mock at all. Fixed by injecting both (`billingServiceProvider` now watches `firebaseFunctionsProvider` — reusing the one already defined in `invite_service.dart` rather than duplicating it — and `firestoreProvider`, matching the established pattern). Also confirmed, before assuming it was fine, that this fix doesn't paper over a region mismatch: `billing.ts`'s two `onCall` functions have no region override (so they deploy to the default `us-central1`), and `BillingService` calls them via the default `FirebaseFunctions.instance` (also `us-central1`) — consistent, unlike `LedgerPostingService`/several `index.ts` functions which correctly use `europe-west1`. No bug there, just verified rather than assumed.
+
+**Resolved 2026-08-07:** `getSubscriptionStream` tested against a real `fake_cloud_firestore` instance (5 tests: no-document-yet returns null, full round-trip of tier/status/stripeCustomerId/stripeSubscriptionId, an unrecognized tier string defaults to `free`, `currentPeriodEnd` parses correctly from a `Timestamp`, and a completely empty document still parses to `free`/`inactive` defaults without throwing). `createStripeCheckoutSession`/`openBillingPortal` tested with `FirebaseFunctions`/`HttpsCallable` mocked via mocktail (5 tests): the right callable name is invoked with the right payload shape (`tenantId`, optional `priceId`), a null-`url` response triggers no launch attempt, and a callable failure is wrapped in a friendlier exception rather than propagating raw — the real server-side logic these wrap is already fully emulator-tested by T2-003, so what's worth verifying client-side is that the right function gets called with the right arguments, the same "wrong name/wrong field" class of bug found repeatedly elsewhere this session. `url_launcher`'s platform channel is mocked via the package's own documented `UrlLauncherPlatform` test seam (`url_launcher_platform_interface`, added as a new dev_dependency along with `plugin_platform_interface` for `MockPlatformInterfaceMixin`) rather than skipped — confirmed the modern `launchUrl(Uri)` API calls `UrlLauncherPlatform.instance.launchUrl(String, LaunchOptions)`, not the legacy `.launch(...)` method most older examples show.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 216/216 passing (up from 205, +11).
+
+**Gaps:** no test coverage for `billing_portal_screen.dart` itself (widget test, Tier 3).
+
 ## Tier 3 — Medium (later phase)
 
-- Remaining 21 modules' service/provider layers: `ai_tools`, `auth` (beyond `authClaims`), `billing` UI, `contractors`, `crm`, `customer_service`, `dashboard`, `environment`, `equipment`, `field_service`, `notifications`, `operations`, `people`, `projects`, `property`, `public`, `settings`, `supply_chain`, `training`.
+- Remaining modules' service/provider layers: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `crm`, `customer_service`, `dashboard`, `environment`, `equipment`, `field_service`, `notifications`, `operations`, `people`, `projects`, `property`, `public`, `settings`, `supply_chain`, `training` (`billing`'s service layer moved to Tier 2, done — see T2-BILLING; only its widget/screen layer remains Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -393,5 +406,5 @@ match /{collection}/{docId} {
 | emergency | 2 (Wave 2b: T2b-EMERGENCY, done) | |
 | risk | 2 (Wave 2b: T2b-RISK, done) | |
 | compliance | 2 (Wave 2b: T2b-COMPLIANCE, done) | |
-| billing | 2 | |
+| billing | 2 (T2-BILLING, done) | Cloud Functions side was T2-003 |
 | ai_tools, auth, contractors, crm, customer_service, dashboard, environment, equipment, field_service, notifications, operations, people, projects, property, public, settings, supply_chain, training, copilot | 3 | |
