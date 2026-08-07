@@ -107,7 +107,7 @@ class CrmService {
   }
 
   Stream<List<Contact>> streamContacts(String accountId) {
-    return _tenantDoc.firestore
+    return _tenantDoc
         .collection('contacts')
         .where('accountId', isEqualTo: accountId)
         .snapshots()
@@ -231,7 +231,7 @@ class CrmService {
   }
 
   Stream<List<Quote>> streamQuotes(String opportunityId) {
-    return _tenantDoc.firestore
+    return _tenantDoc
         .collection('quotes')
         .where('opportunityId', isEqualTo: opportunityId)
         .snapshots()
