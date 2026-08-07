@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `equipment`, `notifications`, `operations`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain` done — see below; only their widget/screen layers remain Tier 3).
+- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `notifications`, `operations`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment` done — see below; only their widget/screen layers remain Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -444,6 +444,15 @@ This is now the **third** file this session found with this identical anti-patte
 **Resolved 2026-08-07:** covered `InventoryItem` CRUD+tenant-isolated streaming, `PurchaseOrder` + nested `PurchaseOrderLine`, `Asset`, `TransferOrder`, `WarehouseBinLocation`. `SalesOrder`/`so_lines` already had dedicated coverage from earlier this session's `mrpEngine` fix (`scm_service_so_lines_test.dart`); not duplicated here.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 261/261 (up from 255, +6).
+
+#### [DONE] T3-EQUIPMENT: `equipment` module coverage, plus `LotoAutomation` (`core/automation`)
+
+**File(s):** `lib/features/equipment/services/equipment_service.dart`, `lib/core/automation/loto_automation.dart` -> 2 new test files, 6 tests total. No bugs found.
+**Resolved 2026-08-07:** `EquipmentService.deployEquipment` (3 tests, same offline-queue/audit-log pattern as `safety_service_test.dart` — this method is also already exercised end-to-end via `bpf_orchestrator_other_flows_test.dart`'s Asset Lifecycle test, but a direct unit test adds its own value: the no-tenant guard, and the exact queued payload shape). While surveying `equipment`'s `providers/` directory (thin stream wrappers, nothing worth testing directly) found `LotoAutomation` (`lib/core/automation/loto_automation.dart`) — a real, safety-critical, reachable automation (confirmed via `asset_detail_screen.dart`, `maintenance_log_dialog.dart`, `loto_return_dialog.dart`) that isn't part of the `equipment` feature directory at all but is its main safety-workflow dependency, so covered here rather than skipped: `lockoutFailedEquipment` (equipment status + auto-generated HIGH-priority Work Order + logged event, all asserted together), `releaseLockout` (status restored, lockout fields cleared, and the mandatory 3-point verification checklist — F-215 in FIX_LIST.md — persisted exactly as given, including a deliberately-`false` value to prove it isn't silently coerced), `streamLockedOutEquipment`.
+
+**Note for whoever picks up the remaining `core/automation` files:** this session's investigation of `field_service`/`equipment` already established that 2 of the other 5 files there (`hire_to_retire_automation.dart`, and by extension its only caller `field_service_service.dart#streamRoutePlansForTechnician`) are fully dead code (zero call sites), while `procure_to_pay_automation.dart` is live and already tested (`bpf_orchestrator_other_flows_test.dart`). `field_to_inventory_automation.dart`, `issue_to_resolution_automation.dart`, and `support_to_field_automation.dart` haven't been checked yet — worth a reachability pass whenever `field_service`'s remaining widget layer or another adjacent module is picked up.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 267/267 (up from 261, +6).
 
 ---
 
