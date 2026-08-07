@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/ui_utils.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../services/public_careers_service.dart';
 
-class JobApplicationForm extends StatefulWidget {
+class JobApplicationForm extends ConsumerStatefulWidget {
   final String jobId;
   final String jobTitle;
   final String tenantId;
@@ -16,10 +16,10 @@ class JobApplicationForm extends StatefulWidget {
   });
 
   @override
-  State<JobApplicationForm> createState() => _JobApplicationFormState();
+  ConsumerState<JobApplicationForm> createState() => _JobApplicationFormState();
 }
 
-class _JobApplicationFormState extends State<JobApplicationForm> {
+class _JobApplicationFormState extends ConsumerState<JobApplicationForm> {
   final _formKey = GlobalKey<FormState>();
   String _name = '';
   String _email = '';
@@ -33,19 +33,15 @@ class _JobApplicationFormState extends State<JobApplicationForm> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance
-          .tenantCollection(widget.tenantId, 'job_applications')
-          .add({
-            'jobId': widget.jobId,
-            'jobTitle': widget.jobTitle,
-            'applicantName': _name,
-            'email': _email,
-            'phone': _phone,
-            'resumeLink': _resumeLink,
-            'status': 'New',
-            'appliedAt': FieldValue.serverTimestamp(),
-            'isExternal': true,
-          });
+      await ref.read(publicCareersServiceProvider).submitApplication(
+            tenantId: widget.tenantId,
+            jobId: widget.jobId,
+            jobTitle: widget.jobTitle,
+            applicantName: _name,
+            email: _email,
+            phone: _phone,
+            resumeLink: _resumeLink,
+          );
 
       if (mounted) {
         UIUtils.showToast(

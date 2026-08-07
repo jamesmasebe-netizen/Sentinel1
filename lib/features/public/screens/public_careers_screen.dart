@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../models/public_models.dart';
+import '../services/public_careers_service.dart';
 import '../widgets/job_application_form.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class PublicCareersScreen extends ConsumerStatefulWidget {
   final String tenantSlug;
@@ -16,7 +16,6 @@ class PublicCareersScreen extends ConsumerStatefulWidget {
 }
 
 class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
-  final _firestore = FirebaseFirestore.instance;
   String? _tenantId;
   bool _isLoadingTenant = true;
   String? _error;
@@ -29,10 +28,12 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
 
   Future<void> _resolveTenant() async {
     try {
-      final doc = await _firestore.collection('public_tenant_directory').doc(widget.tenantSlug).get();
-      if (doc.exists) {
+      final tenantId = await ref
+          .read(publicCareersServiceProvider)
+          .resolveTenantId(widget.tenantSlug);
+      if (tenantId != null) {
         setState(() {
-          _tenantId = doc.data()?['tenantId'] as String?;
+          _tenantId = tenantId;
           _isLoadingTenant = false;
         });
       } else {
@@ -71,11 +72,8 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .tenantCollection(_tenantId!, 'job_requisitions')
-            .where('status', isEqualTo: 'Published')
-            .snapshots(),
+      body: StreamBuilder<List<PublicJobPosting>>(
+        stream: ref.read(publicCareersServiceProvider).streamPublishedJobs(_tenantId!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -84,7 +82,7 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          final jobs = snapshot.data?.docs ?? [];
+          final jobs = snapshot.data ?? [];
 
           if (jobs.isEmpty) {
             return const Center(
@@ -123,7 +121,7 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
               ),
               SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final job = jobs[index].data() as Map<String, dynamic>;
+                  final job = jobs[index];
                   return Center(
                     child: Container(
                       constraints: const BoxConstraints(maxWidth: 800),
@@ -142,7 +140,7 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    job['jobTitle'] ?? 'Unknown',
+                                    job.jobTitle,
                                     style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -152,11 +150,11 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                                     onPressed: () {
                                       UIUtils.showSideSheet(
                                         context: context,
-                                        title: 'Apply: ${job['jobTitle']}',
+                                        title: 'Apply: ${job.jobTitle}',
                                         builder:
                                             (ctx) => JobApplicationForm(
-                                              jobId: jobs[index].id,
-                                              jobTitle: job['jobTitle'],
+                                              jobId: job.id,
+                                              jobTitle: job.jobTitle,
                                               tenantId: _tenantId!,
                                             ),
                                       );
@@ -167,14 +165,14 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '${job['department'] ?? ''} • ${job['location'] ?? ''} • ${job['employmentType'] ?? ''}',
+                                '${job.department} • ${job.location} • ${job.employmentType}',
                               ),
                               const SizedBox(height: 16),
                               const Text(
                                 'Requirements:',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
-                              Text(job['requirements'] ?? 'Not specified'),
+                              Text(job.requirements),
                             ],
                           ),
                         ),
