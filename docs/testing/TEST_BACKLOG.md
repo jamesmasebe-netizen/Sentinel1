@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `settings`, `property` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications`/`projects`/`environment`/`public` done, `ai_tools` surveyed (no testable layer)).
+- Remaining modules: `property` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications`/`projects`/`environment`/`public`/`settings` done, `ai_tools` surveyed (no testable layer)).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -546,6 +546,16 @@ The only provider here is a one-line `Provider<GenerativeModel>` constructing a 
 - Net effect: the public careers feature is non-functional end-to-end in its current state — no tenant has a resolvable slug, no job requisition can be created through any reachable screen even if one did, and any application that somehow got submitted would land somewhere no recruiter ever looks. `PublicJobPosting`'s model/service faithfully cover what the one live screen already does; reconciling the 3 schemas, deciding `candidates` vs `job_applications`, and rebuilding a reachable requisition-creation/approval flow are all separate, larger, product-decision-gated pieces of work, well beyond this module's own test-coverage pass.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 320/320 (up from 316, +4).
+
+#### [DONE] T3-SETTINGS: `settings` module coverage (`core/services/offline_sync_service.dart`)
+
+**File(s):** `lib/core/services/offline_sync_service.dart` (surveyed, not modified) -> `test/core/services/offline_sync_service_test.dart` (new, 6 tests). No bugs found.
+
+**Resolved 2026-08-07:** like `T3-AUTH`, the `settings` feature directory itself has no `services`/`providers` of its own — `settings_screen.dart` is a self-contained dark-mode toggle (`isDarkModeProvider`, a trivial `StateProvider<bool>` plus a `Hive.box('preferences')` write, nothing worth a dedicated test) and `offline_queue_screen.dart`/`offline_queue_widgets.dart` are thin display wrappers around `OfflineSyncService` (`core/services/`) — the offline-first write queue every `FirestoreService.createDocument`/`updateDocument`/`deleteDocument` call routes through, and this module's only real dependency. Covered: `QueuedOperation.toJson`/`fromJson`/`copyWith` round-tripping (the exact persistence contract `offline_queue_screen.dart`'s list items and `offline_queue_widgets.dart`'s status header render from), `cacheData`/`getCachedData`, and the full queue lifecycle — a successful sync removes the item from the queue and actually lands in Firestore; a create that keeps failing accumulates `retryCount` and flips to `failed` past the retry threshold; `retryOperation` resets it; `removeOperation` deletes it.
+
+**Testability note:** `connectivity_plus` (used internally by `initialize()`'s reconnect listener) has a documented platform-interface test seam (`ConnectivityPlatform.instance`, same shape as `url_launcher_platform_interface` used for `T2-BILLING`) — mocked here rather than skipped, added as a new `connectivity_plus_platform_interface` dev_dependency in `pubspec.yaml`. Hive is backed by a real temp-directory box via `Hive.init(path)` (pure `dart:io`, unlike `Hive.initFlutter()` which needs `path_provider`'s platform channel) rather than mocked. `queueOperation`/`retryOperation`'s internal sync attempts are fire-and-forget (not awaited by the public method), so the queue-lifecycle tests use short `Future.delayed` gaps to deterministically let each attempt resolve before asserting — documented inline in the test file since this timing dependency isn't obvious from the assertions alone.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 326/326 (up from 320, +6).
 
 ---
 
