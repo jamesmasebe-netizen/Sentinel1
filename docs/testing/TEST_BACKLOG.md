@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `environment`, `notifications`, `projects`, `public`, `settings` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth` done, `property` surveyed and grouped with `environment`/`public`/`settings` — see below).
+- Remaining modules: `ai_tools`, `environment`, `projects`, `public`, `settings` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations`/`contractors`/`training`/`dashboard`/`auth`/`notifications` done, `property` surveyed and grouped with `environment`/`public`/`settings` — see below).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -498,6 +498,15 @@ This is now the **third** file this session found with this identical anti-patte
 **Resolved 2026-08-07:** the `auth` feature directory itself has no `services`/`providers` — `AuthService` lives in `core/services/` and is already fully injectable (`FirebaseAuth`/`FirebaseFirestore`/`FlutterSecureStorage`/`LocalAuthentication`, all optional constructor params defaulting to the real instances). Covered via `firebase_auth_mocks`' `MockFirebaseAuth` + `fake_cloud_firestore` + a mocktail-mocked `FlutterSecureStorage`: `devBypassLogin`'s new-profile-creation path (default `role: 'employee'`, default tenant) and existing-profile `lastLogin`-update path (via `_getOrCreateProfile`, exercised indirectly since it's private), `currentProfile`/`profileStream` propagation, `updateProfile`, `signOut` (clears state, calls the real secure-storage delete), `hasPreviousSession`'s two branches. `authenticateWithBiometrics`/`isBiometricAvailable` (the `local_auth` plugin-dependent methods) are not covered — no equivalent official test double exists for that plugin, unlike `url_launcher`'s documented `UrlLauncherPlatform` seam used for `T2-BILLING`.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 296/296 (up from 289, +7).
+
+#### [DONE] T3-NOTIFICATIONS: `notifications` module coverage
+
+**File(s):** `lib/features/notifications/providers/notifications_provider.dart` -> `test/features/notifications/providers/notifications_provider_test.dart` (new, 2 tests). No bugs found.
+**Resolved 2026-08-07:** `notificationsStreamProvider` — confirmed it filters to the signed-in user's own notifications (newest first), and that it never emits at all (`Stream.empty()`, by design) when there's no signed-in profile.
+
+**Test-authoring pitfall hit and fixed before committing (not an app bug):** the first version of this test hung indefinitely — `notificationsStreamProvider` depends on `ref.watch(userProfileProvider)`, itself an async `StreamProvider`; reading `notificationsStreamProvider.future` immediately raced its first (pre-profile) build, which returns `Stream.empty()` and never emits, so `.future` bound to that build and hung forever even after the provider later rebuilt with the real query. Same root cause `safety_service_test.dart` already solved earlier this session (pre-warm the dependency via `await container.read(userProfileProvider.future)` before touching the dependent provider) — documented there but not applied here the first time; fixed the same way.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 298/298 (up from 296, +2).
 
 ---
 
