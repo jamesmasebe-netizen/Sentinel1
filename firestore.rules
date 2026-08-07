@@ -542,6 +542,21 @@ service cloud.firestore {
           allow create: if belongsToTenant(tenantId);
           allow update, delete: if belongsToTenant(tenantId) && isAdmin();
         }
+
+        // SLA/KPI tracking subcollection — CustomerServiceService.createSlaInstance/
+        // streamSlaInstances write here (tenants/{tenantId}/cs_tickets/{ticketId}/
+        // sla_kpi_instances/{id}), not at a top-level collection. Was previously declared as a
+        // top-level `match /sla_kpi_instances/{instanceId}` block, which doesn't match this
+        // nested path at all — Firestore rule matching is structural, so writes here fell
+        // through to the absolute top-level deny-all fallback and were always rejected against
+        // real, rules-enforced Firestore (this predates and is unrelated to the catch-all fix
+        // earlier this session — the deny-all fallback was always `if false`). Fixed 2026-08-07,
+        // see docs/testing/TEST_BACKLOG.md T3-CUSTOMERSERVICE.
+        match /sla_kpi_instances/{instanceId} {
+          allow read: if belongsToTenant(tenantId);
+          allow create, update: if belongsToTenant(tenantId); // System/Cloud Function-generated
+          allow delete: if belongsToTenant(tenantId) && isAdmin();
+        }
       }
       match /cs_assets/{assetId} {
         allow read: if belongsToTenant(tenantId);
@@ -551,11 +566,6 @@ service cloud.firestore {
       match /cs_knowledge_articles/{articleId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && isManager();
-        allow delete: if belongsToTenant(tenantId) && isAdmin();
-      }
-      match /sla_kpi_instances/{instanceId} {
-        allow read: if belongsToTenant(tenantId);
-        allow create, update: if belongsToTenant(tenantId); // System/Cloud Function-generated
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
 

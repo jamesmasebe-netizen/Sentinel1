@@ -36,6 +36,10 @@ describe("firestore.rules — CRM/Sales/CS/FieldService cluster: standard-shape 
   }
 
   // Shape A: create/update open to any tenant member (no role gate), delete gated to isAdmin().
+  // sla_kpi_instances used to be listed here too, but it's actually declared nested under
+  // cs_tickets/{ticketId} (matching where the app really writes it), not top-level — moved to
+  // crm_cs_fieldservice_cluster_distinctive.test.ts alongside cs_tickets/messages, see that
+  // file's header and TEST_BACKLOG.md T3-CUSTOMERSERVICE.
   const openWrite = [
     "leads",
     "opportunities",
@@ -44,7 +48,6 @@ describe("firestore.rules — CRM/Sales/CS/FieldService cluster: standard-shape 
     "customerJourneys",
     "activities",
     "deals",
-    "sla_kpi_instances", // "System/Cloud Function-generated" per the source comment, but same shape
   ];
 
   // Shape B: create/update gated to isManager(), delete to isAdmin() — same shape as the

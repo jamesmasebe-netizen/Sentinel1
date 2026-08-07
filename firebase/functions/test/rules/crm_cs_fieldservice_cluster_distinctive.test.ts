@@ -6,7 +6,11 @@
  *   most collections in this schema gate create and update together; this one splits them.
  *   Its messages subcollection is distinctive too: create is open, but update/delete are BOTH
  *   isAdmin()-gated with no manager tier at all (unlike the parent ticket's isAdmin()-only delete
- *   paired with isManager()-gated update).
+ *   paired with isManager()-gated update). Its sla_kpi_instances subcollection (moved here
+ *   2026-08-07 from the standard file's openWrite loop — it's nested under cs_tickets/{ticketId},
+ *   not top-level, matching CustomerServiceService.createSlaInstance's real write path; see
+ *   TEST_BACKLOG.md T3-CUSTOMERSERVICE for the bug this fixes) shares messages' open-create shape
+ *   but its own manager-gated update (not admin-only) and admin-gated delete.
  * - job_requisitions / job_applications: only the AUTHENTICATED-context cases live here.
  *   job_requisitions' `allow read: if true` and job_applications' `allow create: if true` are
  *   reachable pre-authentication (careers portal, per docs/fixes/FIX_LIST.md F-501) — those two
@@ -102,6 +106,36 @@ describe("firestore.rules — CRM/Sales/CS/FieldService cluster: distinctive-sha
       const ref = doc(admin.firestore(), `tenants/${TENANT_A}/cs_tickets/ticket-msg-3/messages/msg-3`);
       await assertSucceeds(updateDoc(ref, { note: "updated" }));
       await assertSucceeds(deleteDoc(ref));
+    });
+  });
+
+  describe("cs_tickets/{ticketId}/sla_kpi_instances — nested under the ticket, not top-level (regression guard, see file header)", () => {
+    it("allows any employee to create an instance", async () => {
+      await seed(`tenants/${TENANT_A}/cs_tickets/ticket-sla-1`, { note: "seed" });
+      const employee = authedContext(testEnv, "employee-sla-1", TENANT_A, "employee");
+      await assertSucceeds(
+        setDoc(doc(employee.firestore(), `tenants/${TENANT_A}/cs_tickets/ticket-sla-1/sla_kpi_instances/sla-1`), {
+          note: "seed",
+        })
+      );
+    });
+
+    it("denies a plain employee from deleting — delete needs isAdmin()", async () => {
+      await seed(`tenants/${TENANT_A}/cs_tickets/ticket-sla-2`, { note: "seed" });
+      await seed(`tenants/${TENANT_A}/cs_tickets/ticket-sla-2/sla_kpi_instances/sla-2`, { note: "seed" });
+      const employee = authedContext(testEnv, "employee-sla-2", TENANT_A, "employee");
+      await assertFails(
+        deleteDoc(doc(employee.firestore(), `tenants/${TENANT_A}/cs_tickets/ticket-sla-2/sla_kpi_instances/sla-2`))
+      );
+    });
+
+    it("allows an admin to delete", async () => {
+      await seed(`tenants/${TENANT_A}/cs_tickets/ticket-sla-3`, { note: "seed" });
+      await seed(`tenants/${TENANT_A}/cs_tickets/ticket-sla-3/sla_kpi_instances/sla-3`, { note: "seed" });
+      const admin = authedContext(testEnv, "admin-sla-1", TENANT_A, "admin");
+      await assertSucceeds(
+        deleteDoc(doc(admin.firestore(), `tenants/${TENANT_A}/cs_tickets/ticket-sla-3/sla_kpi_instances/sla-3`))
+      );
     });
   });
 
