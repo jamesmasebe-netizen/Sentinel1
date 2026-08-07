@@ -346,7 +346,17 @@ class Project {
 
   Map<String, dynamic> toFirestore() {
     return {
-      'tenantId': tenantId,
+      // Written as 'siteId', not 'tenantId' — matches fromFirestore()'s read (data['siteId'])
+      // and every query that filters this collection (projectsProvider, gantt_task_editor_sheet,
+      // assign_contractor_dialog, safety_compliance_data_fetcher), all of which use 'siteId', the
+      // convention every other tenant-scoped collection in this app follows. Previously wrote
+      // 'tenantId' here, which no query anywhere looked for — every project was invisible to
+      // projectsProvider (the Projects Hub, dashboard, schedule board, control tower, journal
+      // entry form, and contractor inductions tab all read through it) and project.tenantId
+      // always read back as '', so every downstream query keyed off it (safety compliance data,
+      // contractor assignment, expense logging) silently queried tenant '' instead of the real
+      // tenant. Fixed 2026-08-07 — see docs/testing/TEST_BACKLOG.md.
+      'siteId': tenantId,
       'propertyId': propertyId,
       'name': name,
       'description': description,
