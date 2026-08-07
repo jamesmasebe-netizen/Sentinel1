@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `equipment`, `notifications`, `operations`, `projects`, `property`, `public`, `settings`, `supply_chain`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service` done — see below; only their widget/screen layers remain Tier 3).
+- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `equipment`, `notifications`, `operations`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain` done — see below; only their widget/screen layers remain Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -434,9 +434,16 @@ Remaining modules' service/provider layers, worked through one at a time. Given 
 
 **3 more methods with the exact same bug found, NOT fixed — confirmed dead code:** `streamRoutePlansForTechnician`'s only caller is `HireToRetireAutomation.auditTechnicianRoutes`, and `HireToRetireAutomation` itself has zero call sites anywhere in `lib/` (never instantiated). `streamCustomerAssets`/`streamIotDevicesForCustomer` (the filtered-by-customerId variants — the singular `streamCustomerAsset`/unfiltered `streamAllCustomerAssets` are fine) have zero callers at all. Each left in place with an inline comment explaining why, rather than fixed — matching this session's established calibration for Tier 3 (fix live bugs, flag dead ones rather than mechanically "fixing" unreachable code).
 
-This is now the **third** file this session found with this identical anti-pattern (`_tenantDoc.firestore.collection(...)` instead of `_tenantDoc.collection(...)`) — `crm_service.dart` (T3-CRM), `hr_service.dart` (addendum above), and this file. All three look like the same mental slip repeated by whoever wrote the "filter/stream-by-parent-id" variant of an otherwise-correct CRUD block. Worth a deliberate `grep -rn "_tenantDoc.firestore.collection" lib/` sweep across the remaining untested modules as they're worked through, rather than waiting to trip over each one individually.
+This is now the **third** file this session found with this identical anti-pattern (`_tenantDoc.firestore.collection(...)` instead of `_tenantDoc.collection(...)`) — `crm_service.dart` (T3-CRM), `hr_service.dart` (addendum above), and this file. All three look like the same mental slip repeated by whoever wrote the "filter/stream-by-parent-id" variant of an otherwise-correct CRUD block. **Ran the deliberate sweep immediately after** (`grep -rln "_tenantDoc.firestore.collection" lib/features`): confirms only these 2 files had it — nothing left to find in the remaining untested modules. No further sweep needed as new modules are worked through.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 255/255 (up from 249, +6).
+
+#### [DONE] T3-SUPPLYCHAIN: `supply_chain` module service-layer coverage
+
+**File(s):** `lib/features/supply_chain/services/scm_service.dart` -> `test/features/supply_chain/services/scm_service_test.dart` (new, 6 tests). No bugs found — clean file, confirmed via the same `_tenantDoc.firestore` sweep before writing tests.
+**Resolved 2026-08-07:** covered `InventoryItem` CRUD+tenant-isolated streaming, `PurchaseOrder` + nested `PurchaseOrderLine`, `Asset`, `TransferOrder`, `WarehouseBinLocation`. `SalesOrder`/`so_lines` already had dedicated coverage from earlier this session's `mrpEngine` fix (`scm_service_so_lines_test.dart`); not duplicated here.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 261/261 (up from 255, +6).
 
 ---
 
