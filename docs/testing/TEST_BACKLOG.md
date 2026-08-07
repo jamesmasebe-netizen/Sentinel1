@@ -386,11 +386,22 @@ match /{collection}/{docId} {
 
 ## Tier 3 — Medium (later phase)
 
-- Remaining modules' service/provider layers: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `crm`, `customer_service`, `dashboard`, `environment`, `equipment`, `field_service`, `notifications`, `operations`, `people`, `projects`, `property`, `public`, `settings`, `supply_chain`, `training` (`billing`'s service layer moved to Tier 2, done — see T2-BILLING; only its widget/screen layer remains Tier 3).
+Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
+
+- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `crm`, `customer_service`, `dashboard`, `environment`, `equipment`, `field_service`, `notifications`, `operations`, `projects`, `property`, `public`, `settings`, `supply_chain`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people` done — T3-PEOPLE below; only their widget/screen layers remain Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
 - CI coverage thresholds enforced (Phase 1's CI runs tests but doesn't gate on a coverage %).
+
+#### [DONE] T3-PEOPLE: `people` module service-layer coverage
+
+**File(s):** `lib/features/people/services/hr_service.dart`, `lib/features/people/providers/employee_providers.dart`, `lib/features/people/services/invite_service.dart` -> 3 new test files, 16 tests total.
+**Resolved 2026-08-07:** covered the 3 real, reachable services — `HRService`'s Department/JobRole/OhsRole CRUD (7 tests), `EmployeeService`'s create/update/seed-if-empty (4 tests, including a real-generated-id round-trip check), `InviteService`'s pending-invites stream and its `createInvite` Cloud Function wrapper (5 tests, same mocktail-`FirebaseFunctions` pattern as T2-BILLING).
+
+**Real finding, not fixed (dead code, no active impact):** `lib/features/people/providers/hr_provider.dart` (singular, distinct from the real `hr_service.dart`) defines a **second, unrelated class also named `HRService`**, which queries root-level Firestore collections (`employees`, `leave_requests`, `performance_reviews`, `benefits`) instead of the tenant-scoped `tenants/{tenantId}/...` paths every real collection in this app uses — the same root-vs-tenant-collection bug class as `hrEngine.ts`'s `accrueLeave` no-op (fixed earlier this session). Its 5 providers back exactly 3 screens (`employee_profile_detail_screen.dart`, `leave_request_detail_screen.dart`, and — checked separately — `employee_360_profile_screen.dart`), and all 3 were confirmed to have **zero navigation call sites anywhere in the app** — fully unreachable, dead code, so this bug has no live production impact. Flagged rather than fixed/deleted: unlike the 3 orphaned PMO form widgets removed during the Project schema migration (which were blocking that migration's own correctness), this isn't blocking anything else — deleting or fixing 3 screens plus a provider file is separate-scope cleanup, not a Tier 3 test-writing task.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 232/232 (up from 216, +16).
 
 ---
 
