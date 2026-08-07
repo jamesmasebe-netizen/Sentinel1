@@ -388,7 +388,7 @@ match /{collection}/{docId} {
 
 Remaining modules' service/provider layers, worked through one at a time. Given Tier 3's own "Medium" priority (per this doc's own tiering — the pyramid position section in `TEST_STRATEGY.md` reserves the deepest scrutiny for Tier 1/2), coverage here is scoped to real service-layer CRUD/business logic with solid allow+deny-style assertions where relevant, not the same exhaustive bug-hunting depth Tier 1/2 items got — though genuine, significant findings (dead code, duplicate classes, root-vs-tenant-collection bugs) are still flagged when they turn up, per this project's established practice, without necessarily being fixed in the same pass unless low-risk.
 
-- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `notifications`, `operations`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment` done — see below; only their widget/screen layers remain Tier 3).
+- Remaining modules: `ai_tools`, `auth` (beyond `authClaims`), `contractors`, `dashboard`, `environment`, `notifications`, `projects`, `property`, `public`, `settings`, `training` (`billing` moved to Tier 2, done — T2-BILLING; `people`/`crm`/`customer_service`/`field_service`/`supply_chain`/`equipment`/`operations` done — see below; only their widget/screen layers remain Tier 3).
 - `copilotEngine.ts`, `aiEngine.ts`, `iotEngine.ts`, `routingEngine.ts` — nondeterministic AI/IoT output, lower unit-test ROI; scope to contract/shape tests (does it return the right structure), not output-correctness tests.
 - Widget tests for critical screens (incident report form, journal entry form, contractor safety-file review).
 - `integration_test` golden-path flows (incident reporting end-to-end, journal posting end-to-end).
@@ -453,6 +453,15 @@ This is now the **third** file this session found with this identical anti-patte
 **Note for whoever picks up the remaining `core/automation` files:** this session's investigation of `field_service`/`equipment` already established that 2 of the other 5 files there (`hire_to_retire_automation.dart`, and by extension its only caller `field_service_service.dart#streamRoutePlansForTechnician`) are fully dead code (zero call sites), while `procure_to_pay_automation.dart` is live and already tested (`bpf_orchestrator_other_flows_test.dart`). `field_to_inventory_automation.dart`, `issue_to_resolution_automation.dart`, and `support_to_field_automation.dart` haven't been checked yet — worth a reachability pass whenever `field_service`'s remaining widget layer or another adjacent module is picked up.
 
 `flutter analyze` 48/0 (unchanged baseline). `flutter test` 267/267 (up from 261, +6).
+
+#### [DONE] T3-OPERATIONS: `operations` module service-layer coverage
+
+**File(s):** `lib/features/operations/services/action_tracker_service.dart`, `lib/features/operations/services/inventory_service.dart` -> 2 new test files, 8 tests total. No bugs found.
+**Resolved 2026-08-07:** `ActionTrackerService` — full CRUD + status-filtered streaming (4 tests). `InventoryService` — `InventoryItem`/`Warehouse` CRUD (4 tests).
+
+**Worth noting, not a bug:** `InventoryService` reads/writes the exact same `inventory_items`/`warehouses` collections, via the exact same canonical models (`scm_models.dart`), as `ScmService` (`supply_chain` module, T3-SUPPLYCHAIN) — a second, distinct service class duplicating the same functionality. Confirmed both correctly use the tenant-scoped path with no divergence in field shape, so unlike the Project-schema split (T2-BPFORCHESTRATOR) or the Lead-conversion gap (T3-CRM), this is architectural redundancy rather than a functional bug — two UI contexts (`operations` vs `supply_chain`) apparently ended up with their own service class for the same data rather than sharing one. Not consolidated; flagged for whoever next touches either module's widget layer.
+
+`flutter analyze` 48/0 (unchanged baseline). `flutter test` 275/275 (up from 267, +8).
 
 ---
 
