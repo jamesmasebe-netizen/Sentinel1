@@ -32,7 +32,11 @@ class SafetyFileSubmissionView extends ConsumerStatefulWidget {
 
 class _SafetyFileSubmissionViewState
     extends ConsumerState<SafetyFileSubmissionView> {
-  final _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
+  // Lazy, not a field initializer — a field initializer runs the instant createState() builds
+  // the State object (i.e. on the very first pumpWidget() in a test), before any widget test can
+  // intercept it via a Riverpod override. As a getter it's only evaluated when _generateReport()
+  // actually runs (Download Report tapped), which widget tests can simply avoid tapping.
+  FirebaseFunctions get _functions => FirebaseFunctions.instanceFor(region: 'europe-west1');
   bool _isGeneratingPdf = false;
   final Set<String> _preScreeningIds = {};
 
