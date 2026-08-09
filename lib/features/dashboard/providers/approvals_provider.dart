@@ -29,12 +29,13 @@ final pendingApprovalsFutureProvider =
       if (userProfile == null) return [];
 
       final siteId = ref.watch(currentTenantIdProvider);
+      final firestore = ref.watch(firestoreProvider);
 
       List<ApprovalItem> items = [];
 
       // 1. Leave Requests
       final leaves =
-          await FirebaseFirestore.instance
+          await firestore
               .tenantCollection(
                 ref.watch(currentTenantIdProvider) ?? "",
                 'leave_requests',
@@ -61,8 +62,7 @@ final pendingApprovalsFutureProvider =
 
       // 2. Job Requisitions (if user is HR manager / approver)
       final reqs =
-          await ref
-              .watch(firestoreProvider)
+          await firestore
               .tenantCollection(
                 ref.watch(currentTenantIdProvider) ?? "",
                 'job_requisitions',
