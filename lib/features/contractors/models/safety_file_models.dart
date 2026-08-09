@@ -1,5 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+DateTime? _parseDate(dynamic value) {
+  if (value == null) return null;
+  if (value is Timestamp) return value.toDate();
+  if (value is String) return DateTime.tryParse(value);
+  return null;
+}
+
 enum FindingStatus { open, addressed, verifiedClosed, cancelled }
 
 enum FindingType { majorNc, minorNc, observation, commendation }
@@ -61,10 +68,9 @@ class Finding {
       contractorAction: data['contractorAction'] ?? '',
       reviewerUid: data['reviewerUid'] ?? '',
       reviewerName: data['reviewerName'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: _parseDate(data['createdAt']) ?? DateTime.now(),
       modifiedBy: data['modifiedBy'] ?? '',
-      modifiedAt:
-          (data['modifiedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      modifiedAt: _parseDate(data['modifiedAt']) ?? DateTime.now(),
       statusHistory: List<Map<String, dynamic>>.from(
         data['statusHistory'] ?? [],
       ),

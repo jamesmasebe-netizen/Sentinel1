@@ -12,6 +12,7 @@ import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'document_review_dialog.dart';
 import 'ai_prescreen_badge.dart';
 import '../services/ai_compliance_service.dart';
+import '../services/contractor_review_service.dart';
 import 'finding_list_item.dart';
 import 'finding_update_dialog.dart';
 
@@ -42,22 +43,13 @@ class _SafetyFileSubmissionViewState
 
   Future<void> _updateFindingStatus(Finding finding, FindingStatus newStatus, String comment) async {
     try {
-      final db = ref.read(firestoreProvider);
-      final tenantId = ref.read(currentTenantIdProvider) ?? '';
       final user = ref.read(userProfileProvider).valueOrNull;
-      await db.tenantCollection(tenantId, 'findings').doc(finding.findingId).update({
-        'status': newStatus.name,
-        'modifiedBy': user?.uid ?? '',
-        'modifiedAt': FieldValue.serverTimestamp(),
-        'statusHistory': FieldValue.arrayUnion([
-          {
-            'status': newStatus.name,
-            'timestamp': DateTime.now().toIso8601String(),
-            'comment': comment,
-            'userId': user?.uid ?? '',
-          }
-        ]),
-      });
+      await ref.read(contractorReviewServiceProvider).updateFindingStatus(
+            finding: finding,
+            newStatus: newStatus,
+            comment: comment,
+            userId: user?.uid ?? '',
+          );
       if (mounted) UIUtils.showToast(context, 'Finding updated', type: ToastType.success);
     } catch (e) {
       if (mounted) UIUtils.showToast(context, 'Error updating finding: $e', type: ToastType.error);

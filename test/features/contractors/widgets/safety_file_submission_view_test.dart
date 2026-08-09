@@ -1,11 +1,12 @@
 // Widget tests for SafetyFileSubmissionView (T3-WIDGETS) — lib/features/contractors/widgets/safety_file_submission_view.dart.
 // See docs/testing/TEST_STRATEGY.md §8.
 //
-// Real, pre-existing architectural deviation, flagged not fixed: this screen's entire data layer
+// Real, pre-existing architectural deviation, flagged not fixed: this screen's entire read layer
 // is raw nested StreamBuilder<QuerySnapshot> widgets reading Firestore directly, not the Riverpod
 // StreamProvider convention used everywhere else in the app — see T3-CONTRACTORS in
-// docs/testing/TEST_BACKLOG.md, which already flagged this module has no service/provider layer.
-// _updateFindingStatus (FindingUpdateDialog's callback) also bypasses FirestoreService entirely.
+// docs/testing/TEST_BACKLOG.md. _updateFindingStatus (FindingUpdateDialog's callback) was fixed in
+// a later pass: it now routes through ContractorReviewService -> FirestoreService instead of a
+// direct db.tenantCollection(...).update() call — see contractor_review_service_test.dart.
 //
 // Fixed 2026 (this pass), not just worked around: `_functions` was a class-FIELD initializer
 // (`FirebaseFunctions.instanceFor(...)`), which ran the instant createState() built the State

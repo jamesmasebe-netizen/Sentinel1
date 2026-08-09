@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/safety_file_models.dart';
+import '../services/contractor_review_service.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/widgets/ds_widgets.dart';
-import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class DocumentReviewDialog extends ConsumerStatefulWidget {
   final ContractorDocument document;
@@ -26,6 +26,7 @@ class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
   final _feedbackCtrl = TextEditingController();
   String _selectedStatus = 'Pending';
   FindingStatus _findingStatus = FindingStatus.open;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -41,61 +42,25 @@ class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
   }
 
   Future<void> _submitReview() async {
-    final db = ref.read(firestoreProvider);
-    final tenantId = ref.read(currentTenantIdProvider) ?? "";
     final user = ref.read(userProfileProvider).valueOrNull;
+    if (user == null) return;
 
-    final updates = <String, dynamic>{
-      'status': _selectedStatus,
-      'feedback': _feedbackCtrl.text,
-    };
-
-    if (user != null && _feedbackCtrl.text.isNotEmpty) {
-      final newFinding = {
-        'description': _feedbackCtrl.text,
-        'status': _findingStatus.name,
-        'reportedBy': user.displayName.isNotEmpty ? user.displayName : user.email,
-        'createdAt': DateTime.now().toIso8601String(),
-      };
-      updates['findings'] = FieldValue.arrayUnion([newFinding]);
-    }
-
-    // Update document
-    await db.tenantCollection(tenantId, 'contractor_documents').doc(widget.document.id).update(updates);
-
-    // Generate finding in findings collection
-    if (user != null && _feedbackCtrl.text.isNotEmpty) {
-      await db.tenantCollection(tenantId, 'findings').add({
-        'submissionId': widget.document.submissionId,
-        'documentId': widget.document.id,
-        // requirementId intentionally omitted: no requirement-reference field
-        // exists anywhere on ContractorDocument/SafetyFileSubmission to source
-        // it from — flagged as an Open Question per F-222 in FIX_LIST.md
-        // rather than inventing a value. Defaults to 0 via Finding.fromFirestore.
-        'siteId': tenantId,
-        'status': _findingStatus.name,
-        'type': FindingType.observation.name,
-        'description': _feedbackCtrl.text,
-        'contractorAction': '',
-        'reportedBy': user.displayName.isNotEmpty ? user.displayName : user.email,
-        'reviewerUid': user.uid,
-        'reviewerName': user.displayName.isNotEmpty ? user.displayName : user.email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'modifiedBy': user.uid,
-        'modifiedAt': FieldValue.serverTimestamp(),
-        'statusHistory': [
-          {
-            'status': _findingStatus.name,
-            'timestamp': DateTime.now().toIso8601String(),
-            'comment': 'Initial review finding',
-            'userId': user.uid,
-          }
-        ],
-      });
-    }
-
-    if (mounted) {
-      Navigator.pop(context);
+    setState(() => _isSubmitting = true);
+    try {
+      final reviewerName = user.displayName.isNotEmpty ? user.displayName : user.email;
+      await ref.read(contractorReviewServiceProvider).submitDocumentReview(
+            document: widget.document,
+            status: _selectedStatus,
+            feedback: _feedbackCtrl.text,
+            findingStatus: _findingStatus,
+            reviewerUid: user.uid,
+            reviewerName: reviewerName,
+          );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) UIUtils.showToast(context, 'Error submitting review: $e', type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -133,12 +98,18 @@ class _DocumentReviewDialogState extends ConsumerState<DocumentReviewDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isSubmitting ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _submitReview,
-          child: const Text('Submit Review'),
+          onPressed: _isSubmitting ? null : _submitReview,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Submit Review'),
         ),
       ],
     );
