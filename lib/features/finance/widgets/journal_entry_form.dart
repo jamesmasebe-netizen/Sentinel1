@@ -9,6 +9,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../projects/providers/project_providers.dart';
 import '../../projects/models/project_models.dart';
 import '../../../core/widgets/entity_selector.dart';
+import '../../../core/utils/ui_utils.dart';
 class JournalEntryForm extends ConsumerStatefulWidget {
   final JournalEntry? initialEntry;
   final List<JournalLine>? initialLines;
@@ -155,9 +156,7 @@ class _JournalEntryFormState extends ConsumerState<JournalEntryForm> {
     _formKey.currentState!.save();
 
     if (_totalDebit != _totalCredit) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Total Debit must equal Total Credit.')),
-      );
+      UIUtils.showToast(context, 'Total Debit must equal Total Credit.', type: ToastType.error);
       return;
     }
 
@@ -223,11 +222,11 @@ class _JournalEntryFormState extends ConsumerState<JournalEntryForm> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Journal Entry Saved!')));
+      UIUtils.showToast(context, 'Journal Entry Saved!', type: ToastType.success);
 
       widget.onSaved?.call();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) UIUtils.showToast(context, 'Error: $e', type: ToastType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

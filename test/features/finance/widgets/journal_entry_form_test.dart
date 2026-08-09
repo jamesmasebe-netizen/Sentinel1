@@ -2,9 +2,11 @@
 // NOT lib/features/finance/screens/journal_entry_form.dart (a 14-line Scaffold+AppBar pass-through
 // with no logic, not worth a dedicated test). See docs/testing/TEST_STRATEGY.md §8.
 //
-// Real, pre-existing convention deviation, flagged not fixed: this screen bypasses UIUtils.showToast
-// for a raw ScaffoldMessenger.showSnackBar (both the balance-mismatch guard and the save
-// success/error paths) — every other target screen in this pass uses UIUtils.showToast.
+// FIXED 2026 (this pass): this screen previously bypassed UIUtils.showToast for a raw
+// ScaffoldMessenger.showSnackBar (both the balance-mismatch guard and the save success/error
+// paths). Now uses UIUtils.showToast like every other target screen in this pass — the message
+// text itself is unchanged (UIUtils.showToast still renders it as a Text widget), so the
+// find.text/find.textContaining assertions below needed no changes.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -135,7 +137,7 @@ void main() {
     expect(headers.docs, isEmpty);
   });
 
-  testWidgets('balance-mismatch guard: blocks save, never calls the callable, shows the raw SnackBar', (
+  testWidgets('balance-mismatch guard: blocks save, never calls the callable, shows the error toast', (
     tester,
   ) async {
     await useTallSurface(tester);
