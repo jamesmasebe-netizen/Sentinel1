@@ -17,7 +17,14 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test
+      - run: flutter test --coverage
+      # T3-CI-COVERAGE: floor set a few points below the measured baseline (~58.6% lines as of
+      # 2026-08-09) as a regression gate, not an aspirational target — ratchet up as more
+      # coverage is added, don't lower it to pass a failing PR.
+      - uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: coverage/lcov.info
+          min_coverage: 55
 
   functions-checks:
     name: Cloud Functions (tsc + jest + rules)
@@ -36,5 +43,6 @@ jobs:
           java-version: '21'
       - run: npm ci
       - run: npx tsc --noEmit
-      - run: npm test
+      # --coverage enforces jest.config.js's coverageThreshold (T3-CI-COVERAGE) as a gate.
+      - run: npm test -- --coverage
       - run: npm run test:rules

@@ -600,6 +600,16 @@ This closes out Tier 3's per-module extraction+coverage pass — all modules ori
 
 `flutter analyze` 0/0 (unchanged). `flutter test` 347/347 (up from 334, +13).
 
+#### [DONE] T3-CI-COVERAGE: CI coverage thresholds enforced (not just run-and-report)
+
+**File(s):** `.github/workflows/test.yml`, `firebase/functions/jest.config.js`.
+
+**Resolved 2026-08-09:** `flutter-checks` now runs `flutter test --coverage` and gates on `VeryGoodOpenSource/very_good_coverage@v3` against `coverage/lcov.info` with `min_coverage: 55`, a few points below the measured baseline (58.6% lines) at the time this was added. `functions-checks` now runs `npm test -- --coverage`, which enforces a new `coverageThreshold` block in `jest.config.js` (`statements: 35, branches: 25, functions: 30, lines: 35` — a few points below the measured ~41%/31%/36%/42% baseline). Both are deliberately calibrated as **regression gates against the measured baseline, not aspirational targets** — ratchet up as real coverage grows, never lower a threshold just to get a failing PR green. Verified locally before wiring into CI: `flutter test --coverage` + a manual lcov summary, and `npm test -- --coverage` (exit code 0 against the new threshold).
+
+**Scoping note:** the functions-side threshold only covers the fast, non-emulator `npm test` run (the same split `TEST_STRATEGY.md` §2 already documents) — it does not reflect the fuller coverage the emulator-backed `test:rules` suite provides for the real write-path logic, and merging Jest coverage across the two separate configs (each with its own `maxWorkers`/environment needs) wasn't attempted here.
+
+`flutter analyze` 0/0 (unchanged). `flutter test` 347/347 (unchanged — CI/config only, no test logic touched).
+
 ---
 
 ## Module -> Tier cross-reference

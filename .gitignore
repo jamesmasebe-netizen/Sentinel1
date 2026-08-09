@@ -46,6 +46,10 @@ app.*.map.json
 node_modules/
 firebase/functions/lib/
 
+# Test coverage output (flutter test --coverage, jest --coverage)
+coverage/
+firebase/functions/coverage/
+
 # Firebase emulator
 firebase-export/
 .firebase/
