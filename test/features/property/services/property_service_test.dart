@@ -159,12 +159,13 @@ void main() {
   });
 
   group('createLegalAppointment', () {
-    test('queues the create, storing personId under the on-disk personName field', () async {
+    test('queues the create with personId and a denormalized personDisplayName', () async {
       await service.createLegalAppointment(LegalAppointment(
         id: '',
         propertyId: 'prop-1',
         role: 'Fire Marshal',
         personId: 'emp-42',
+        personName: 'Charlie Davis',
         status: 'Appointed',
         expiry: DateTime(2027, 1, 1),
       ));
@@ -173,9 +174,10 @@ void main() {
       expect(args[1], 'tenants/$_tenantId/legal_appointments');
       final data = args[2] as Map<String, dynamic>;
       expect(data['role'], 'Fire Marshal');
-      // Preserves the pre-existing (flagged, not fixed) on-disk shape: 'personName' actually
-      // holds the employee id, not a display name — see property_facility_tab.dart / T3-PROPERTY.
-      expect(data['personName'], 'emp-42');
+      // FIXED: previously wrote the id under the misleadingly-named 'personName' field with no
+      // real display name anywhere — see property_models.dart's LegalAppointment doc comment.
+      expect(data['personId'], 'emp-42');
+      expect(data['personDisplayName'], 'Charlie Davis');
     });
   });
 

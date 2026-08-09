@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentinel1/features/people/widgets/employee_selector.dart';
+import 'package:sentinel1/features/people/providers/employee_providers.dart';
 import 'package:sentinel1/features/people/providers/hr_providers.dart';
 import 'package:sentinel1/features/people/services/hr_service.dart';
 import '../models/property_models.dart';
@@ -21,6 +22,7 @@ class _LegalAppointmentFormState extends ConsumerState<LegalAppointmentForm> {
   String? _roleId;
   String? _roleTitle;
   String? _personId;
+  String? _personName;
   String _status = 'Appointed';
   DateTime? _expiry = DateTime.now().add(const Duration(days: 365));
 
@@ -56,6 +58,7 @@ class _LegalAppointmentFormState extends ConsumerState<LegalAppointmentForm> {
             propertyId: widget.propertyId,
             role: _roleTitle!, // Store title since the UI depends on 'role' as a string
             personId: _personId!,
+            personName: _personName ?? '',
             status: _status,
             expiry: _expiry,
           ));
@@ -142,7 +145,20 @@ class _LegalAppointmentFormState extends ConsumerState<LegalAppointmentForm> {
             EmployeeSelector(
               label: 'Appointed Person',
               value: _personId,
-              onChanged: (id) => setState(() => _personId = id),
+              onChanged: (id) {
+                final employees = ref.read(employeesProvider).valueOrNull ?? [];
+                String? name;
+                for (final e in employees) {
+                  if (e.id == id) {
+                    name = e.fullName;
+                    break;
+                  }
+                }
+                setState(() {
+                  _personId = id;
+                  _personName = name;
+                });
+              },
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(

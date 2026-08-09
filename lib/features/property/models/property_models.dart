@@ -179,6 +179,7 @@ class LegalAppointment {
   final String propertyId;
   final String role;
   final String personId;
+  final String personName;
   final String status;
   final DateTime? expiry;
 
@@ -187,33 +188,38 @@ class LegalAppointment {
     required this.propertyId,
     required this.role,
     required this.personId,
+    this.personName = '',
     required this.status,
     this.expiry,
   });
 
+  // FIXED 2026 (this pass): the on-disk field named 'personName' had always actually stored the
+  // appointed person's employee id, not a display name (see property_facility_tab.dart, which
+  // rendered `appointment.personId` as raw text — a real UX gap tracked in T3-PROPERTY). Going
+  // forward the id and a denormalized display name (resolved from employeesProvider at save time,
+  // see legal_appointment_form.dart) are stored under separate keys. `data['personName']` is kept
+  // as a fallback source for `personId` so appointments written before this fix still parse; those
+  // records simply have no `personDisplayName` yet, so the UI falls back to showing the id for
+  // them exactly as it did before (see property_facility_tab.dart) rather than blanking out.
   factory LegalAppointment.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return LegalAppointment(
       id: doc.id,
       propertyId: data['propertyId'] ?? '',
       role: data['role'] ?? '',
-      personId: data['personName'] ?? '',
+      personId: data['personId'] ?? data['personName'] ?? '',
+      personName: data['personDisplayName'] ?? '',
       status: data['status'] ?? '',
       expiry: data['expiry'] != null ? DateTime.parse(data['expiry']) : null,
     );
   }
 
-  // NOTE: the on-disk field is named 'personName' but has always actually stored the appointed
-  // person's employee id (see property_facility_tab.dart, which renders `appointment.personId`
-  // as raw text — a real, minor, flagged-not-fixed UX gap: it shows an id, not a human-readable
-  // name. Preserved as-is here rather than "fixed", since resolving it means picking a design
-  // (denormalize the employee's name at write time vs. look it up at render time), not a
-  // mechanical rename — see docs/testing/TEST_BACKLOG.md T3-PROPERTY.
   Map<String, dynamic> toFirestore() {
     return {
       'propertyId': propertyId,
       'role': role,
-      'personName': personId,
+      'personId': personId,
+      'personDisplayName': personName,
       'status': status,
       'expiry': expiry?.toIso8601String(),
     };

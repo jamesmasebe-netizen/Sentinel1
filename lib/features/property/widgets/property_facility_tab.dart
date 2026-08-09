@@ -138,7 +138,9 @@ class PropertyFacilityTab extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    appointment.personId,
+                    // personName is only populated for appointments created after the
+                    // display-name fix; older records fall back to the raw employee id.
+                    appointment.personName.isNotEmpty ? appointment.personName : appointment.personId,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
