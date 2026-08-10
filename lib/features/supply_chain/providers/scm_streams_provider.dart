@@ -66,6 +66,11 @@ final transferOrderStreamProvider =
           );
     });
 
+final inventoryTransactionsStreamProvider =
+    StreamProvider.family<List<InventoryTransaction>, String>((ref, itemId) {
+      return ref.watch(scmServiceProvider).streamInventoryTransactions(itemId);
+    });
+
 final mrpSuggestionsStreamProvider = StreamProvider<List<MrpSuggestion>>((ref) {
   final tenantDoc = ref.watch(tenantDocProvider);
   return tenantDoc

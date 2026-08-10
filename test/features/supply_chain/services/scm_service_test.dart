@@ -154,8 +154,9 @@ void main() {
       expect(result.single.targetQuantity, 10);
     });
 
-    test('completeProductionOrder marks it Completed AND increments the linked item\'s stock level, '
-        'unlike the old mock action which claimed "Inventory updated" without touching any data', () async {
+    test('completeProductionOrder marks it Completed, increments the linked item\'s stock level, AND '
+        'writes an InventoryTransaction — unlike the old mock action, which claimed '
+        '"Inventory updated" without touching any real data', () async {
       await service.createInventoryItem(InventoryItem(
         id: 'item-drone-kit',
         sku: 'SKU-DRONE',
@@ -184,6 +185,13 @@ void main() {
 
       final updatedItem = await service.getInventoryItem('item-drone-kit');
       expect(updatedItem!.stockLevel, 15); // 5 existing + 10 completed
+
+      final transactions = await service.streamInventoryTransactions('item-drone-kit').first;
+      expect(transactions, hasLength(1));
+      expect(transactions.single.type, 'PRODUCTION');
+      expect(transactions.single.quantity, 10);
+      expect(transactions.single.resultingStockLevel, 15);
+      expect(transactions.single.referenceId, 'prodo-2');
     });
 
     test('completeProductionOrder with no linked itemId still marks the order Completed', () async {
@@ -199,6 +207,33 @@ void main() {
 
       final updatedOrder = await service.getProductionOrder('prodo-3');
       expect(updatedOrder!.status, 'COMPLETED');
+    });
+  });
+
+  group('InventoryTransaction', () {
+    test('createInventoryTransaction then streamInventoryTransactions returns newest first', () async {
+      await service.createInventoryTransaction('item-1', InventoryTransaction(
+        id: 'txn-1',
+        type: 'RECEIPT',
+        quantity: 20,
+        resultingStockLevel: 20,
+        referenceId: 'po-1',
+        createdAt: DateTime(2026, 1, 1),
+      ));
+      await service.createInventoryTransaction('item-1', InventoryTransaction(
+        id: 'txn-2',
+        type: 'PRODUCTION',
+        quantity: -5,
+        resultingStockLevel: 15,
+        referenceId: 'prodo-1',
+        createdAt: DateTime(2026, 1, 2),
+      ));
+
+      final result = await service.streamInventoryTransactions('item-1').first;
+
+      expect(result, hasLength(2));
+      expect(result.first.id, 'txn-2'); // newest first
+      expect(result.last.id, 'txn-1');
     });
   });
 

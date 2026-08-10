@@ -44,6 +44,27 @@ class ScmService {
   }
 
   // ==========================================
+  // INVENTORY TRANSACTIONS (Sub-collection: inventory_items/{itemId}/transactions)
+  // ==========================================
+  CollectionReference<Map<String, dynamic>> _transactionsRef(String itemId) =>
+      _inventoryRef.doc(itemId).collection('transactions');
+
+  Future<void> createInventoryTransaction(String itemId, InventoryTransaction txn) async {
+    await _transactionsRef(itemId).doc(txn.id).set(txn.toJson());
+  }
+
+  Stream<List<InventoryTransaction>> streamInventoryTransactions(String itemId) {
+    return _transactionsRef(itemId)
+        .orderBy('created_at', descending: true)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => InventoryTransaction.fromJson(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  // ==========================================
   // WAREHOUSES (Collection: warehouses)
   // ==========================================
   CollectionReference<Map<String, dynamic>> get _warehousesRef =>
@@ -339,14 +360,15 @@ class ScmService {
 
   /// Marks a production order Completed and — unlike the screen's old mock "Complete Order" action,
   /// which claimed "Inventory updated" without touching any real data — actually increments the
-  /// produced item's stock level by the completed quantity, in a single transaction so the two
-  /// writes can't partially apply.
+  /// produced item's stock level by the completed quantity AND writes a matching
+  /// InventoryTransaction, all in a single transaction so the writes can't partially apply.
   Future<void> completeProductionOrder(
     ProductionOrder order, {
     required double completedQuantity,
   }) async {
     final orderRef = _productionOrdersRef.doc(order.id);
     final itemRef = order.itemId != null ? _inventoryRef.doc(order.itemId) : null;
+    final txnRef = order.itemId != null ? _transactionsRef(order.itemId!).doc() : null;
 
     await _tenantDoc.firestore.runTransaction((txn) async {
       // All reads must happen before any writes in a Firestore transaction.
@@ -361,7 +383,23 @@ class ScmService {
 
       if (itemRef != null && itemSnap != null && itemSnap.exists) {
         final currentStock = (itemSnap.data()?['stock_level'] as num?)?.toDouble() ?? 0.0;
-        txn.update(itemRef, {'stock_level': currentStock + completedQuantity});
+        final newStock = currentStock + completedQuantity;
+        txn.update(itemRef, {'stock_level': newStock});
+
+        if (txnRef != null) {
+          txn.set(
+            txnRef,
+            InventoryTransaction(
+              id: txnRef.id,
+              type: 'PRODUCTION',
+              quantity: completedQuantity,
+              resultingStockLevel: newStock,
+              referenceId: order.id,
+              note: 'Production order ${order.orderNumber} completed',
+              createdAt: DateTime.now(),
+            ).toJson(),
+          );
+        }
       }
     });
   }

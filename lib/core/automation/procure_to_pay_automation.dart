@@ -55,7 +55,7 @@ class ProcureToPayAutomation {
 
     await _financeService.createInvoice(invoice);
 
-    // 3. Increment the corresponding InventoryItem stock level
+    // 3. Increment the corresponding InventoryItem stock level, and log the movement
     final lines = await _scmService.getPurchaseOrderLines(po.id);
     for (final line in lines) {
       if (line.itemId != null) {
@@ -65,6 +65,7 @@ class ProcureToPayAutomation {
               line.quantityReceived > 0
                   ? line.quantityReceived
                   : line.quantityOrdered;
+          final newStockLevel = item.stockLevel + incrementAmount;
 
           final updatedItem = InventoryItem(
             id: item.id,
@@ -85,9 +86,22 @@ class ProcureToPayAutomation {
             lifecycleStatus: item.lifecycleStatus,
             createdAt: item.createdAt,
             updatedAt: DateTime.now(),
-            stockLevel: item.stockLevel + incrementAmount,
+            stockLevel: newStockLevel,
           );
           await _scmService.updateInventoryItem(updatedItem);
+
+          await _scmService.createInventoryTransaction(
+            item.id,
+            InventoryTransaction(
+              id: _uuid.v4(),
+              type: 'RECEIPT',
+              quantity: incrementAmount,
+              resultingStockLevel: newStockLevel,
+              referenceId: po.id,
+              note: 'Purchase order ${po.poNumber} goods received',
+              createdAt: DateTime.now(),
+            ),
+          );
         }
       }
     }

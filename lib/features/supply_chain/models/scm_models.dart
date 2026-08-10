@@ -659,3 +659,52 @@ class ProductionOrder {
     };
   }
 }
+
+/// A single stock-affecting movement for one InventoryItem, stored under
+/// `inventory_items/{itemId}/transactions` — the real ledger backing
+/// InventoryItemDetailScreen's "Transactions" tab. Written by every real stock-affecting action in
+/// this module: ProcureToPayAutomation.triggerPoReceived (a purchase order's goods received) and
+/// ScmService.completeProductionOrder (a production run completed) both write one alongside the
+/// stock_level update they were already making, rather than adjusting stock silently.
+class InventoryTransaction {
+  final String id;
+  final String type;
+  final double quantity;
+  final double resultingStockLevel;
+  final String? referenceId;
+  final String? note;
+  final DateTime? createdAt;
+
+  InventoryTransaction({
+    required this.id,
+    required this.type,
+    required this.quantity,
+    required this.resultingStockLevel,
+    this.referenceId,
+    this.note,
+    this.createdAt,
+  });
+
+  factory InventoryTransaction.fromJson(Map<String, dynamic> json, String id) {
+    return InventoryTransaction(
+      id: id,
+      type: json['type'] ?? '',
+      quantity: (json['quantity'] ?? 0).toDouble(),
+      resultingStockLevel: (json['resulting_stock_level'] ?? 0).toDouble(),
+      referenceId: json['reference_id'],
+      note: json['note'],
+      createdAt: _parseDate(json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'quantity': quantity,
+      'resulting_stock_level': resultingStockLevel,
+      if (referenceId != null) 'reference_id': referenceId,
+      if (note != null) 'note': note,
+      'created_at': _formatDate(createdAt) ?? Timestamp.now(),
+    };
+  }
+}

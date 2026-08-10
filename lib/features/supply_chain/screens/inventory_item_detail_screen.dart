@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../supply_chain/models/scm_models.dart';
 import '../providers/scm_streams_provider.dart';
+import '../../../core/widgets/ds_widgets.dart';
 
 class InventoryItemDetailScreen extends ConsumerWidget {
   final String itemId;
@@ -45,9 +47,7 @@ class InventoryItemDetailScreen extends ConsumerWidget {
                   child: TabBarView(
                     children: [
                       _buildDetailsTab(context, item),
-                      const Center(
-                        child: Text('Transactions History (Coming soon)'),
-                      ),
+                      _buildTransactionsTab(context, ref),
                     ],
                   ),
                 ),
@@ -165,6 +165,58 @@ class InventoryItemDetailScreen extends ConsumerWidget {
             ],
           ),
       ],
+    );
+  }
+
+  Widget _buildTransactionsTab(BuildContext context, WidgetRef ref) {
+    final transactionsAsync = ref.watch(inventoryTransactionsStreamProvider(itemId));
+
+    return transactionsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err')),
+      data: (transactions) {
+        if (transactions.isEmpty) {
+          return const GEmptyChartState(
+            icon: Icons.history,
+            message: 'No stock movements recorded yet',
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: transactions.length,
+          itemBuilder: (context, index) {
+            final txn = transactions[index];
+            final isIncrease = txn.quantity >= 0;
+            return Card(
+              elevation: 0,
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: (isIncrease ? Colors.green : Colors.red).withValues(alpha: 0.1),
+                  child: Icon(
+                    isIncrease ? Icons.arrow_upward : Icons.arrow_downward,
+                    color: isIncrease ? Colors.green : Colors.red,
+                  ),
+                ),
+                title: Text(
+                  '${isIncrease ? '+' : ''}${txn.quantity.toStringAsFixed(0)} (${txn.type})',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  '${txn.note ?? txn.referenceId ?? 'Manual'}\n'
+                  '${txn.createdAt != null ? DateFormat.yMMMd().add_jm().format(txn.createdAt!) : 'Unknown date'}',
+                ),
+                isThreeLine: true,
+                trailing: Text('= ${txn.resultingStockLevel.toStringAsFixed(0)}'),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
