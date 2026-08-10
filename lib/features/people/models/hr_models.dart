@@ -609,6 +609,58 @@ class JobRequisition {
   }
 }
 
+/// A raw external application, written by the unauthenticated public careers page
+/// (`PublicCareersService.submitApplication`) into `tenants/{tenantId}/job_applications` — the
+/// `isExternal` flag distinguishes these from any future internal-referral path. Deliberately a
+/// separate collection/model from `Candidate`, not just a read of the same data: an applicant here
+/// hasn't been reviewed by anyone yet. `HRService.convertApplicationToCandidate` is what promotes
+/// one into the real ATS pipeline (mirrors BpfOrchestrator.convertLeadToOpportunity's shape for the
+/// same "raw inbound record -> reviewed pipeline entity" pattern, elsewhere in this app).
+class JobApplication {
+  final String id;
+  final String jobId;
+  final String jobTitle;
+  final String applicantName;
+  final String email;
+  final String phone;
+  final String resumeLink;
+  final String status;
+  final DateTime appliedAt;
+  final bool isExternal;
+
+  JobApplication({
+    this.id = '',
+    this.jobId = '',
+    this.jobTitle = '',
+    this.applicantName = '',
+    this.email = '',
+    this.phone = '',
+    this.resumeLink = '',
+    this.status = 'New',
+    DateTime? appliedAt,
+    this.isExternal = true,
+  }) : appliedAt = appliedAt ?? DateTime.now();
+
+  factory JobApplication.fromJson(Map<String, dynamic> json, String id) {
+    return JobApplication(
+      id: id,
+      jobId: json['jobId'] ?? '',
+      jobTitle: json['jobTitle'] ?? '',
+      applicantName: json['applicantName'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      resumeLink: json['resumeLink'] ?? '',
+      status: json['status'] ?? 'New',
+      appliedAt: _timestampToDateTime(json['appliedAt']) ?? DateTime.now(),
+      isExternal: json['isExternal'] ?? true,
+    );
+  }
+
+  factory JobApplication.fromFirestore(DocumentSnapshot doc) {
+    return JobApplication.fromJson(doc.data() as Map<String, dynamic>, doc.id);
+  }
+}
+
 class PayrollLedger {
   final String id;
   final String employeeId;

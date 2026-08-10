@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../models/hr_models.dart';
+import '../services/hr_service.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 final ohsRolesProvider = StreamProvider.autoDispose<List<OhsRole>>((ref) {
@@ -86,6 +87,14 @@ final candidatesProvider = StreamProvider.autoDispose.family<
       .snapshots()
       .map((snap) => snap.docs.map((d) => Candidate.fromFirestore(d)).toList());
 });
+
+/// Raw external applications for one requisition, not yet reviewed/converted — see
+/// HRService.streamJobApplications and RecruitmentDashboardScreen's Applications Inbox tab.
+final jobApplicationsProvider =
+    StreamProvider.autoDispose.family<List<JobApplication>, String>((ref, requisitionId) {
+      if (requisitionId.isEmpty) return Stream.value([]);
+      return ref.watch(hrServiceProvider).streamJobApplications(requisitionId);
+    });
 
 final performanceReviewsProvider =
     StreamProvider.autoDispose<List<PerformanceReview>>((ref) {

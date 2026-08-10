@@ -31,8 +31,18 @@ service cloud.firestore {
       return getUserRole() in ['admin', 'sheq_officer', 'safety_manager'];
     }
     
+    // Maps a public careers URL slug (e.g. /careers/acme-corp) to a tenantId. Read is fully open
+    // (the public careers page needs to resolve a slug before any auth exists). Write is scoped so
+    // an admin can only ever claim a slug for THEIR OWN tenant, and can never edit/delete a slug
+    // that already belongs to a different tenant: `create` only ever applies to a not-yet-existing
+    // doc, so a slug someone else already claimed falls to the `update`/`delete` rules instead,
+    // which check the EXISTING document's tenantId, not the requester's claimed one.
     match /public_tenant_directory/{slug} {
       allow read: if true;
+      allow create: if isAuthenticated() && isAdmin()
+        && request.resource.data.tenantId == getUserTenantId();
+      allow update, delete: if isAuthenticated() && isAdmin()
+        && resource.data.tenantId == getUserTenantId();
     }
     
     // Tenant root — only admins can read/write the tenant document itself
@@ -624,8 +634,9 @@ service cloud.firestore {
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
 
-      // Public careers portal — reachable pre-authentication (see docs/fixes/FIX_LIST.md F-501 for the
-      // routing/tenant-resolution half of this fix; these overrides make the rule itself permissive)
+      // Public careers portal — reachable pre-authentication (the F-501 citation previously here was
+      // wrong: F-501 is the unrelated "Bypass Login (Dev)" fix — corrected during the recruitment
+      // pipeline redesign, see docs/testing/TEST_BACKLOG.md T3-PUBLIC)
       match /job_requisitions/{reqId} {
         allow read: if true;
         allow create, update: if belongsToTenant(tenantId) && isManager();

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../models/hr_models.dart';
 import '../providers/hr_providers.dart';
+import '../services/hr_service.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'job_requisitions_screen.dart';
 
@@ -17,6 +19,7 @@ class RecruitmentDashboardScreen extends ConsumerStatefulWidget {
 class _RecruitmentDashboardScreenState
     extends ConsumerState<RecruitmentDashboardScreen> {
   String? _selectedRequisitionId;
+  JobRequisition? _selectedRequisition;
 
   final List<String> _stages = [
     'Applied',
@@ -43,70 +46,113 @@ class _RecruitmentDashboardScreenState
         .update({'stage': newStage});
   }
 
+  Future<void> _convertApplication(JobApplication application) async {
+    final requisition = _selectedRequisition;
+    if (requisition == null) return;
+    try {
+      await ref.read(hrServiceProvider).convertApplicationToCandidate(
+            application,
+            requisitionId: requisition.id,
+            department: requisition.department,
+          );
+      if (mounted) {
+        UIUtils.showToast(context, 'Converted to candidate', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        UIUtils.showToast(context, 'Error converting application: $e', type: ToastType.error);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final requisitionsAsync = ref.watch(jobRequisitionsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recruitment Dashboard'),
-        actions: [
-          TextButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const JobRequisitionsScreen()),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Recruitment Dashboard'),
+          actions: [
+            TextButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const JobRequisitionsScreen()),
+              ),
+              icon: const Icon(Icons.list_alt, color: Colors.white),
+              label: const Text('Requisitions', style: TextStyle(color: Colors.white)),
             ),
-            icon: const Icon(Icons.list_alt, color: Colors.white),
-            label: const Text('Requisitions', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: requisitionsAsync.when(
-              data: (requisitions) {
-                if (requisitions.isEmpty) {
-                  return const Text('No open requisitions.');
-                }
-                // Auto-select first if none selected
-                if (_selectedRequisitionId == null && requisitions.isNotEmpty) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    setState(() {
-                      _selectedRequisitionId = requisitions.first.id;
+          ],
+          bottom: _selectedRequisitionId == null
+              ? null
+              : const TabBar(
+                  tabs: [
+                    Tab(text: 'Pipeline'),
+                    Tab(text: 'Applications Inbox'),
+                  ],
+                ),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: requisitionsAsync.when(
+                data: (requisitions) {
+                  if (requisitions.isEmpty) {
+                    return const Text('No open requisitions.');
+                  }
+                  // Auto-select first if none selected
+                  if (_selectedRequisitionId == null && requisitions.isNotEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      setState(() {
+                        _selectedRequisitionId = requisitions.first.id;
+                        _selectedRequisition = requisitions.first;
+                      });
                     });
-                  });
-                }
-                return DropdownButton<String>(
-                  isExpanded: true,
-                  hint: const Text('Select Job Requisition'),
-                  value: _selectedRequisitionId,
-                  items:
-                      requisitions.map((req) {
-                        return DropdownMenuItem(
-                          value: req.id,
-                          child: Text('${req.title} (${req.department})'),
-                        );
-                      }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedRequisitionId = val;
-                    });
-                  },
-                );
-              },
-              loading: () => const CircularProgressIndicator(),
-              error: (err, _) => Text('Error: $err'),
+                  }
+                  return DropdownButton<String>(
+                    isExpanded: true,
+                    hint: const Text('Select Job Requisition'),
+                    value: _selectedRequisitionId,
+                    items:
+                        requisitions.map((req) {
+                          return DropdownMenuItem(
+                            value: req.id,
+                            child: Text('${req.title} (${req.department})'),
+                          );
+                        }).toList(),
+                    onChanged: (val) {
+                      JobRequisition? matched;
+                      for (final r in requisitions) {
+                        if (r.id == val) {
+                          matched = r;
+                          break;
+                        }
+                      }
+                      setState(() {
+                        _selectedRequisitionId = val;
+                        _selectedRequisition = matched;
+                      });
+                    },
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (err, _) => Text('Error: $err'),
+              ),
             ),
-          ),
-          Expanded(
-            child:
-                _selectedRequisitionId == null
-                    ? const Center(child: Text('Please select a requisition.'))
-                    : _buildKanbanBoard(),
-          ),
-        ],
+            Expanded(
+              child: _selectedRequisitionId == null
+                  ? const Center(child: Text('Please select a requisition.'))
+                  : TabBarView(
+                      children: [
+                        _buildKanbanBoard(),
+                        _buildApplicationsInbox(),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -229,6 +275,46 @@ class _RecruitmentDashboardScreenState
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildApplicationsInbox() {
+    final applicationsAsync = ref.watch(
+      jobApplicationsProvider(_selectedRequisitionId!),
+    );
+
+    return applicationsAsync.when(
+      data: (applications) {
+        final pending = applications.where((a) => a.status != 'Converted').toList();
+        if (pending.isEmpty) {
+          return const Center(child: Text('No pending applications for this requisition.'));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: pending.length,
+          itemBuilder: (context, index) {
+            final application = pending[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12.0),
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                title: Text(application.applicantName),
+                subtitle: Text(
+                  '${application.email}${application.phone.isNotEmpty ? ' • ${application.phone}' : ''}\n'
+                  'Applied: ${application.appliedAt.toLocal().toString().split(' ')[0]}',
+                ),
+                isThreeLine: true,
+                trailing: FilledButton(
+                  onPressed: () => _convertApplication(application),
+                  child: const Text('Convert to Candidate'),
+                ),
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Error: $err')),
     );
   }
 }

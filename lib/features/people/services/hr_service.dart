@@ -283,4 +283,74 @@ class HRService {
         .doc(reviewId)
         .delete();
   }
+
+  // --- Recruitment: job_applications -> candidates bridge ---
+
+  /// Streams the raw external applications for one requisition (`job_applications.jobId ==
+  /// requisitionId`) — the "inbox" a recruiter reviews before deciding to convert someone into the
+  /// tracked ATS pipeline. See RecruitmentDashboardScreen's Applications Inbox tab.
+  Stream<List<JobApplication>> streamJobApplications(String requisitionId) {
+    return _tenantDoc
+        .collection('job_applications')
+        .where('jobId', isEqualTo: requisitionId)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => JobApplication.fromFirestore(d)).toList());
+  }
+
+  /// Promotes a raw application into a real Candidate in the ATS pipeline, and marks the source
+  /// application Converted so it stops showing as an open inbox item (mirrors
+  /// ScmService.markMrpSuggestionConverted's "mark it acted-on" shape from the supply_chain
+  /// module). Deliberately two separate writes, not a transaction: job_applications and candidates
+  /// are independent collections with no shared document a transaction would need to guard, and a
+  /// recruiter re-clicking Convert on an already-converted application is a harmless duplicate
+  /// candidate, not a correctness bug worth the extra complexity to prevent server-side.
+  Future<void> convertApplicationToCandidate(
+    JobApplication application, {
+    required String requisitionId,
+    required String department,
+  }) async {
+    final candidate = Candidate(
+      id: '',
+      requisitionId: requisitionId,
+      name: application.applicantName,
+      title: application.jobTitle,
+      email: application.email,
+      department: department,
+      stage: 'Applied',
+      resumeUrl: application.resumeLink,
+      appliedDate: application.appliedAt,
+    );
+    await _tenantDoc.collection('candidates').add(candidate.toFirestore());
+    await _tenantDoc.collection('job_applications').doc(application.id).update({
+      'status': 'Converted',
+    });
+  }
+
+  // --- Public careers page setup ---
+
+  /// Claims a public URL slug (`/careers/{slug}`) for this tenant, so the public careers page can
+  /// resolve it — see PublicCareersService.resolveTenantId. A direct write to the root
+  /// `public_tenant_directory` collection, not routed through FirestoreService: that collection is
+  /// outside any tenant subcollection, matching PublicCareersService's own established precedent
+  /// for this exact collection (it also writes/reads it directly). firestore.rules only allows
+  /// `create` on a not-yet-existing slug and `update`/`delete` on one this tenant already owns, so
+  /// this can't accidentally hijack a different tenant's claimed slug.
+  Future<void> claimTenantSlug(String slug) async {
+    await _tenantDoc.firestore.collection('public_tenant_directory').doc(slug).set({
+      'tenantId': _tenantDoc.id,
+    });
+  }
+
+  /// The slug currently claimed for this tenant, if any — a reverse lookup since
+  /// `public_tenant_directory` is keyed by slug, not tenantId. Used by the Settings screen to show
+  /// what's already claimed. `limit(1)` since exactly one slug should ever map to a tenant in
+  /// practice, though rules don't strictly enforce that.
+  Future<String?> getClaimedSlugForTenant() async {
+    final snap = await _tenantDoc.firestore
+        .collection('public_tenant_directory')
+        .where('tenantId', isEqualTo: _tenantDoc.id)
+        .limit(1)
+        .get();
+    return snap.docs.isEmpty ? null : snap.docs.first.id;
+  }
 }
