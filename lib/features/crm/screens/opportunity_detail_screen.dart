@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/crm_models.dart';
 import '../providers/crm_providers.dart';
+import '../widgets/opportunity_form.dart';
 import 'quote_detail_screen.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
 import '../../../core/bpf/lead_to_cash_bpf.dart';
@@ -33,7 +34,12 @@ class OpportunityDetailScreen extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
-                      // TODO: Implement edit
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (ctx) => OpportunityForm(opportunity: opportunity),
+                        ),
+                      );
                     },
                   ),
                 ],

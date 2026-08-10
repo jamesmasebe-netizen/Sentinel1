@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/crm_models.dart';
 import '../providers/crm_providers.dart';
+import '../widgets/quote_form.dart';
 import 'opportunity_detail_screen.dart';
 import '../../projects/screens/project_detail_screen.dart';
 import '../../../core/bpf/bpf_ribbon_widget.dart';
@@ -46,7 +47,10 @@ class QuoteDetailScreen extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
-                      // TODO: Implement edit
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (ctx) => QuoteForm(quote: quote)),
+                      );
                     },
                   ),
                 ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/inventory_service.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../../supply_chain/widgets/inventory_item_form.dart';
 
 class InventoryDashboardScreen extends ConsumerWidget {
   const InventoryDashboardScreen({super.key});
@@ -109,9 +111,12 @@ class InventoryDashboardScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement add functionality
-        },
+        tooltip: 'New Inventory Item',
+        onPressed: () => UIUtils.showSideSheet(
+          context: context,
+          title: 'New Item',
+          builder: (_) => const InventoryItemForm(),
+        ),
         child: const Icon(Icons.add),
       ),
     );

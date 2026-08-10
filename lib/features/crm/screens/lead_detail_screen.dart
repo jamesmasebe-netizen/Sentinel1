@@ -8,6 +8,7 @@ import '../../../core/bpf/lead_to_cash_bpf.dart';
 import '../../../core/bpf/bpf_orchestrator.dart';
 import '../../../core/bpf/bpf_service.dart';
 import '../../../core/utils/ui_utils.dart';
+import '../widgets/lead_form.dart';
 import 'opportunity_detail_screen.dart';
 
 class LeadDetailScreen extends ConsumerWidget {
@@ -37,7 +38,10 @@ class LeadDetailScreen extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
-                      // TODO: Implement edit
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (ctx) => LeadForm(lead: lead)),
+                      );
                     },
                   ),
                 ],
