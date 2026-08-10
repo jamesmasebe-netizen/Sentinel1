@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../people/models/hr_models.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
 class ApprovalItem {
@@ -60,7 +61,7 @@ final pendingApprovalsFutureProvider =
         );
       }
 
-      // 2. Job Requisitions (if user is HR manager / approver)
+      // 2. Job Requisitions (if user is the requisition's own hiring manager)
       final reqs =
           await firestore
               .tenantCollection(
@@ -69,23 +70,20 @@ final pendingApprovalsFutureProvider =
               )
               .where('siteId', isEqualTo: siteId)
               .where('hiringManagerId', isEqualTo: userProfile.uid)
-              .where(
-                'status',
-                isEqualTo: 'Draft',
-              ) // Using Draft as pending approval
+              .where('status', isEqualTo: 'Draft') // Draft = pending approval
               .get();
 
       for (var doc in reqs.docs) {
-        final data = doc.data();
+        final req = JobRequisition.fromFirestore(doc);
         items.add(
           ApprovalItem(
             id: doc.id,
             type: 'Job Requisition',
-            title: data['jobTitle'] ?? 'Unknown Role',
-            subtitle: data['department'] ?? 'Unknown Dept',
-            date: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+            title: req.title.isNotEmpty ? req.title : 'Unknown Role',
+            subtitle: req.department.isNotEmpty ? req.department : 'Unknown Dept',
+            date: req.createdAt,
             collectionPath: 'job_requisitions',
-            rawData: data,
+            rawData: doc.data(),
           ),
         );
       }

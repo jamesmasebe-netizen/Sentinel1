@@ -534,13 +534,26 @@ class Candidate {
   }
 }
 
+// FIXED (recruitment pipeline redesign — see docs/testing/TEST_BACKLOG.md): this is now the one
+// canonical shape for a job requisition. It previously only carried title/department/description/
+// status/postedDate/siteId, while lib/features/public/models/public_models.dart's now-deleted
+// PublicJobPosting (jobTitle/department/location/employmentType/requirements/status) and
+// dashboard/providers/approvals_provider.dart's raw-map read (hiringManagerId/jobTitle/status/
+// createdAt) each independently invented their own incompatible shape for the same collection, and
+// only this one had a real writer. status is now exactly 3 values matching what the app actually
+// writes: 'Draft' (on creation) -> 'Published' (approved, sets publishedAt) or 'Rejected'.
 class JobRequisition {
   final String id;
   final String title;
   final String department;
   final String description;
+  final String location;
+  final String employmentType;
+  final String requirements;
+  final String hiringManagerId;
   final String status;
-  final DateTime postedDate;
+  final DateTime createdAt;
+  final DateTime? publishedAt;
   final String siteId;
 
   JobRequisition({
@@ -548,10 +561,15 @@ class JobRequisition {
     this.title = '',
     this.department = '',
     this.description = '',
-    this.status = '',
-    DateTime? postedDate,
+    this.location = '',
+    this.employmentType = '',
+    this.requirements = '',
+    this.hiringManagerId = '',
+    this.status = 'Draft',
+    DateTime? createdAt,
+    this.publishedAt,
     this.siteId = '',
-  }) : postedDate = postedDate ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 
   factory JobRequisition.fromJson(Map<String, dynamic> json, String id) {
     return JobRequisition(
@@ -559,8 +577,13 @@ class JobRequisition {
       title: json['title'] ?? '',
       department: json['department'] ?? '',
       description: json['description'] ?? '',
-      status: json['status'] ?? '',
-      postedDate: _timestampToDateTime(json['postedDate']),
+      location: json['location'] ?? '',
+      employmentType: json['employmentType'] ?? '',
+      requirements: json['requirements'] ?? '',
+      hiringManagerId: json['hiringManagerId'] ?? '',
+      status: json['status'] ?? 'Draft',
+      createdAt: _timestampToDateTime(json['createdAt']),
+      publishedAt: json['publishedAt'] != null ? _timestampToDateTime(json['publishedAt']) : null,
       siteId: json['siteId'] ?? '',
     );
   }
@@ -574,8 +597,13 @@ class JobRequisition {
       'title': title,
       'department': department,
       'description': description,
+      'location': location,
+      'employmentType': employmentType,
+      'requirements': requirements,
+      'hiringManagerId': hiringManagerId,
       'status': status,
-      'postedDate': _dateTimeToTimestamp(postedDate),
+      'createdAt': _dateTimeToTimestamp(createdAt),
+      if (publishedAt != null) 'publishedAt': _dateTimeToTimestamp(publishedAt!),
       'siteId': siteId,
     };
   }

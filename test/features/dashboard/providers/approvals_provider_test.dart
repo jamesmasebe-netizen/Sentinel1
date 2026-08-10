@@ -6,6 +6,13 @@
 // with a FakeFirebaseFirestore (the standard convention throughout this suite) would previously see
 // leave requests silently vanish, since the hardcoded FirebaseFirestore.instance never touches the
 // fake. Both queries now share one `firestore = ref.watch(firestoreProvider)` local.
+//
+// FIXED (recruitment pipeline redesign): the job-requisition test below originally seeded a
+// `jobTitle` field — at the time, that accidentally matched the provider's own (buggy) raw-map
+// read, but didn't match what anything else in the app actually wrote to job_requisitions
+// (JobRequisition.toFirestore() has always written `title`). Now that the provider reads through
+// JobRequisition.fromFirestore like everything else, the seed data below matches the real,
+// singular schema instead of the query's old bespoke shape.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,7 +66,7 @@ void main() {
       'siteId': _tenantId,
       'hiringManagerId': 'mgr-1',
       'status': 'Draft',
-      'jobTitle': 'Site Engineer',
+      'title': 'Site Engineer',
       'department': 'Operations',
       'createdAt': DateTime(2026, 2, 1),
     });

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/utils/ui_utils.dart';
-import '../models/public_models.dart';
+import '../../people/models/hr_models.dart';
 import '../services/public_careers_service.dart';
 import '../widgets/job_application_form.dart';
 
@@ -72,7 +72,7 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
           ),
         ],
       ),
-      body: StreamBuilder<List<PublicJobPosting>>(
+      body: StreamBuilder<List<JobRequisition>>(
         stream: ref.read(publicCareersServiceProvider).streamPublishedJobs(_tenantId!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -140,7 +140,7 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    job.jobTitle,
+                                    job.title,
                                     style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -150,11 +150,11 @@ class _PublicCareersScreenState extends ConsumerState<PublicCareersScreen> {
                                     onPressed: () {
                                       UIUtils.showSideSheet(
                                         context: context,
-                                        title: 'Apply: ${job.jobTitle}',
+                                        title: 'Apply: ${job.title}',
                                         builder:
                                             (ctx) => JobApplicationForm(
                                               jobId: job.id,
-                                              jobTitle: job.jobTitle,
+                                              jobTitle: job.title,
                                               tenantId: _tenantId!,
                                             ),
                                       );

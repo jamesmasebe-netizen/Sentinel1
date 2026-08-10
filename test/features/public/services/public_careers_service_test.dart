@@ -60,24 +60,24 @@ void main() {
           .doc(tenantId)
           .collection('job_requisitions');
       await col.add({
-        'jobTitle': 'Site Safety Officer',
+        'title': 'Site Safety Officer',
         'department': 'SHEQ',
         'location': 'Johannesburg',
         'employmentType': 'Full-time',
         'requirements': '5+ years experience',
         'status': 'Published',
       });
-      await col.add({'jobTitle': 'Draft Role', 'status': 'Draft'});
+      await col.add({'title': 'Draft Role', 'status': 'Draft'});
       await firestore
           .collection('tenants')
           .doc('other-tenant')
           .collection('job_requisitions')
-          .add({'jobTitle': 'Other Tenant Role', 'status': 'Published'});
+          .add({'title': 'Other Tenant Role', 'status': 'Published'});
 
       final result = await service.streamPublishedJobs(tenantId).first;
 
       expect(result, hasLength(1));
-      expect(result.single.jobTitle, 'Site Safety Officer');
+      expect(result.single.title, 'Site Safety Officer');
       expect(result.single.department, 'SHEQ');
       expect(result.single.location, 'Johannesburg');
       expect(result.single.employmentType, 'Full-time');

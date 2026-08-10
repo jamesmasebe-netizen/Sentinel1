@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/tenant_firestore_extension.dart';
-import '../models/public_models.dart';
+import '../../people/models/hr_models.dart';
 
 final publicCareersServiceProvider = Provider<PublicCareersService>((ref) {
   return PublicCareersService(ref.watch(firestoreProvider));
@@ -22,21 +22,22 @@ class PublicCareersService {
 
   PublicCareersService(this._db);
 
-  /// Resolves a public URL slug (e.g. `/careers/acme-corp`) to its real tenantId. Only readable,
-  /// never writable, from client code — see firestore.rules `public_tenant_directory` (`allow
-  /// read: if true`, no write rule at all, so entries can only be seeded via the Admin SDK).
+  /// Resolves a public URL slug (e.g. `/careers/acme-corp`) to its real tenantId. Only readable
+  /// from client code — writing an entry (an admin "claiming" their tenant's slug) goes through
+  /// `HRService.claimTenantSlug`, not this service, since it needs an authenticated admin context
+  /// this unauthenticated-portal service deliberately doesn't have.
   Future<String?> resolveTenantId(String tenantSlug) async {
     final doc = await _db.collection('public_tenant_directory').doc(tenantSlug).get();
     if (!doc.exists) return null;
     return doc.data()?['tenantId'] as String?;
   }
 
-  Stream<List<PublicJobPosting>> streamPublishedJobs(String tenantId) {
+  Stream<List<JobRequisition>> streamPublishedJobs(String tenantId) {
     return _db
         .tenantCollection(tenantId, 'job_requisitions')
         .where('status', isEqualTo: 'Published')
         .snapshots()
-        .map((snap) => snap.docs.map((d) => PublicJobPosting.fromFirestore(d)).toList());
+        .map((snap) => snap.docs.map((d) => JobRequisition.fromFirestore(d)).toList());
   }
 
   Future<void> submitApplication({

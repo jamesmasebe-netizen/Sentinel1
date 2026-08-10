@@ -4,6 +4,7 @@ import '../../../core/providers/app_providers.dart';
 import '../models/hr_models.dart';
 import '../providers/hr_providers.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
+import 'job_requisitions_screen.dart';
 
 class RecruitmentDashboardScreen extends ConsumerStatefulWidget {
   const RecruitmentDashboardScreen({super.key});
@@ -47,7 +48,19 @@ class _RecruitmentDashboardScreenState
     final requisitionsAsync = ref.watch(jobRequisitionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Recruitment Dashboard')),
+      appBar: AppBar(
+        title: const Text('Recruitment Dashboard'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const JobRequisitionsScreen()),
+            ),
+            icon: const Icon(Icons.list_alt, color: Colors.white),
+            label: const Text('Requisitions', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
