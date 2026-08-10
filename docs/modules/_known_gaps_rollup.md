@@ -2,6 +2,8 @@
 
 Single index of every finding logged in each module doc's §7 Known Gaps, compiled 2026-07-28. Read this first to triage; follow the links into the per-module docs for full detail (code paths, exact line-level evidence, DB-to-UI audit tables).
 
+**RE-VERIFIED 2026-08-10** (see `docs/testing/TEST_BACKLOG.md`'s "Flagged-not-fixed follow-up pass" and its own dated entries): this doc predates `docs/fixes/FIX_LIST.md`'s 109-item remediation (finished 2026-07-31) and the whole subsequent testing/extraction effort — a huge amount of fixing happened after this doc was written, without this doc being updated. A spot-check pass re-verified every row in §2's Critical table and the first 5 rows of the High table (24 rows total) against current code. Result: **23 of 24 are now `[FIXED]`**, confirmed via direct file:line citations, not assumption; 1 is `[PARTIAL]`. Each re-verified row below is tagged inline. **Rows without a tag were NOT re-checked in this pass** — treat those as still-uncertain, not still-true; verify before acting on them. The remaining, not-yet-picked-up items (`public`'s recruitment-pipeline disconnect, most of the High-severity table past row 5, all of the Medium table, §1's cross-cutting patterns as a whole) still need their own re-audit before being trusted as current.
+
 Two ways to read this doc: **§1** groups findings by *pattern* — several of the most consequential bugs were written independently, by different people/passes, in different modules, without knowing about each other, which is itself informative (it means these are systemic habits, not one-off mistakes, and fixing the pattern once — e.g. in a shared lint rule or code-review checklist — is worth more than fixing each instance). **§2** groups the same findings by *severity* for a flat triage list.
 
 ---
@@ -47,45 +49,45 @@ This is the most important single synthesis in this rollup, only visible by cros
 ### Critical — silent data loss, security exposure, or a core flow that cannot work as built
 | Module | Finding |
 |---|---|
-| `auth` | `setCustomUserClaims` called nowhere in either Functions codebase — the mechanism `firestore.rules` depends on for tenant/role scoping has no producer |
-| `auth` | Live, unguarded "Bypass Login (Dev)" button on the production login screen sets a mock-auth flag without calling Firebase Auth |
-| `people`, `projects`, `public` | Hardcoded empty-string tenant ID (pattern §1.2) |
-| `finance` | `bpfOrchestratorProvider` has zero call sites — no BPF actually executes (pattern §1.9) |
-| `finance` | `FinanceService`'s real write targets (`fin_*` collections) are undeclared in rules while the rules protect collections nothing writes to |
-| `finance` | Immutability principle from `docs/schema_finance.md` unenforced — `updateJournalEntry()`/`deleteJournalEntry()` act unconditionally regardless of posted status |
-| `risk` | `dra_form.dart` writes `activity`/`area`; every reader expects `taskDescription`/`location` — DRA cards permanently show "Untitled Assessment," 2 KPI dashboards show wrong/zero values |
-| `contractors` | camelCase/snake_case collection typo (`safetyFileSubmissions` vs `safety_file_submissions`) hides real safety-file approvals one screen away |
-| `compliance` | Fully unreachable module (no route) whose own form also writes to a different collection name than both its read tabs query |
-| `equipment` | `/equipment` has no route anywhere in `router.dart` — the app's best-built screen (real form, real BPF ribbon) is disconnected from the launchpad tile that's supposed to open it |
-| `operations` | Action Tracker's create form and its own read-side model disagree with each other (`assignee` vs `assigneeId`, missing `collectionName`), independent of the rules-blocking issue |
-| `supply_chain` | MRP engine has 3 different field names for the same stock quantity across schema doc / Dart model / deployed Cloud Function |
-| `billing` | Only real user action calls `createStripeCheckoutSession`, a Cloud Function that exists in neither Functions codebase |
-| `billing` | 3-way path mismatch: app reads `tenants/{t}/subscription/status`, legacy webhook writes `tenants/{t}/billing/subscription` |
-| `settings` | `OfflineSyncService.initialize()` never called — the write queue 27+ files depend on throws `LateInitializationError` on first real offline write |
-| `training` | 3 mutually-unaware "enrollment" collections (`enrollments`/`training_enrollments`/`training_records`) with no cross-reference |
-| `training` | `allocate_course_form.dart` never sets `assignedAt`; the Manager Hub's `orderBy('assignedAt')` silently excludes every allocation made through the form |
-| `customer_service` | Two complete parallel implementations exist; only the 100%-mocked one is reachable from navigation |
-| `field_service` | 3-way `WorkOrder` shape collision (pattern §1.10); the one reachable detail screen is fed a hardcoded fake ID so it can only show "not found" |
-| `projects` | PMO island's root collections aren't reachable by any rule, including the catch-all — stricter failure than the usual pattern |
-| `property` | All 6 of its collections undeclared in rules, and unlike most instances of §1.1, this one blocks a real, reachable, correctly-built form |
-| `public` | Nothing in this module is reachable, pre-auth or otherwise, by a confirmed 5-layer blocked chain — and the one write path that exists is unconditionally denied for every caller |
+| `auth` | **[PARTIAL 2026-08-10]** `setCustomUserClaims` called nowhere in either Functions codebase — the mechanism `firestore.rules` depends on for tenant/role scoping has no producer. **Correction:** the code exists and is correct (`authClaims.ts`'s `syncUserClaims`, a Firestore trigger that calls `admin.auth().setCustomUserClaims()` for real) and is exported from `index.ts` — it would deploy today. The real, still-live blocker is that it's never been deployed: the Firebase project is on the Spark billing plan, which blocks all Cloud Functions deploys. Not a code gap; a billing/deploy handoff. |
+| `auth` | **[FIXED]** Live, unguarded "Bypass Login (Dev)" button on the production login screen sets a mock-auth flag without calling Firebase Auth — fixed under `F-501`: the button is now `kDebugMode`-gated (`login_card.dart:100`) and calls the real `AuthService.devBypassLogin()` -> `signInAnonymously()`. |
+| `people`, `projects`, `public` | **[FIXED 2026-08-10]** Hardcoded empty-string tenant ID (pattern §1.2) — confirmed via grep, no literal `tenantCollection("")` hits anywhere in `lib/`; `training_providers.dart`, `safety_compliance_data_fetcher.dart`, and `public`'s form-submission code all thread a real resolved tenantId now. |
+| `finance` | **[FIXED]** `bpfOrchestratorProvider` has zero call sites — no BPF actually executes (pattern §1.9). Confirmed reachable from `lead_detail_screen.dart` ("Convert Lead"), `opportunity_detail_screen.dart` ("Generate Quote"), and `quote_detail_screen.dart` ("Accept Quote & Create Project") — all 3 call `ref.read(bpfOrchestratorProvider)` directly. |
+| `finance` | **[FIXED 2026-08-10]** `FinanceService`'s real write targets (`fin_*` collections) undeclared in rules — all 7 `fin_*` collections `FinanceService` writes to are now declared in `firestore.rules` (lines 223-259, duplicated 489-526), matching what the service actually writes. |
+| `finance` | **[FIXED 2026-08-10]** Immutability principle unenforced — `finance_service.dart:85-108` now has `_assertMutable()`, blocking `updateJournalEntry()`/`deleteJournalEntry()` on `POSTED`/`REVERSED` entries (cites `F-311`). |
+| `risk` | **[FIXED 2026-08-10]** `dra_form.dart` writes `activity`/`area`; every reader expects `taskDescription`/`location` — `dra_form.dart:97` now writes `taskDescription` for real, matching every reader (`dra_card.dart`, `safety_compliance_data_fetcher.dart`). |
+| `contractors` | **[FIXED 2026-08-10]** camelCase/snake_case collection typo — all 3 contractors files now consistently use `'safety_file_submissions'`; no camelCase spelling found anywhere in the module. |
+| `compliance` | **[FIXED 2026-08-10]** Fully unreachable module — `/compliance` route exists (`router.dart:162-165`) and is wired to the launchpad; write and read paths agree on `compliance_docs`. |
+| `equipment` | **[FIXED 2026-08-10]** `/equipment` had no route — it's now declared (twice, harmlessly) in `router.dart` and wired to the launchpad tile. |
+| `operations` | **[FIXED 2026-08-10]** Action Tracker's create form and read-side model disagreed — both now consistently use `assignee`/`collectionName`. |
+| `supply_chain` | **[FIXED 2026-08-10]** MRP engine's 3 different stock-quantity field names — `mrpEngine.ts` now reads `stock_level`, matching what `InventoryItem`/`ScmService` actually persist (cites `F-201`). Note: `docs/modules/supply_chain.md:73` itself is now stale documentation describing the old mismatch. |
+| `billing` | **[FIXED 2026-08-10]** `createStripeCheckoutSession` "exists in neither Functions codebase" — it exists (`billing.ts:11`), is exported, and is called from `billing_service.dart`/`billing_portal_screen.dart`. |
+| `billing` | **[FIXED 2026-08-10]** 3-way path mismatch — app and webhook now agree on `tenants/{t}/subscription/status`; the old `tenants/{t}/billing/subscription` path doesn't exist anywhere. |
+| `settings` | **[FIXED 2026-08-10]** `OfflineSyncService.initialize()` never called — `main.dart:123` now calls it during app boot, before the queue is used. |
+| `training` | **[FIXED/NUANCED 2026-08-10]** 3 mutually-unaware "enrollment" collections — `TrainingService.getComprehensiveEmployeeRecord()` now queries all 3 and combines them; no longer mutually unaware at the service layer. Individual UI tabs still each surface only one collection's slice — an open design question per the module's own docs, not a bug. |
+| `training` | **[FIXED 2026-08-10]** `allocate_course_form.dart` never sets `assignedAt` — it does now (cites `F-009`), matching the Manager Hub's `orderBy('assignedAt')`. |
+| `customer_service` | **[FIXED 2026-08-10]** Two complete parallel implementations — only one exists now; the real, Firestore-backed one, reachable from the router. |
+| `field_service` | **[FIXED 2026-08-10]** 3-way `WorkOrder` shape collision — model, Cloud Function, and automation script now agree on snake_case keys; the detail screen navigates with a real order id, not a hardcoded fake one. |
+| `projects` | **[FIXED 2026-08-10]** PMO island's root collections unreachable by any rule — now explicitly declared in `firestore.rules` (dated comment citing `TEST_BACKLOG.md T2c-SENSITIVE`). |
+| `property` | **[FIXED 2026-08-10]** All 6 collections undeclared in rules — all 6 now declared (this session's T3-PROPERTY work). |
+| `public` | **[FIXED 2026-08-10]** Nothing reachable by a 5-layer blocked chain — `public_tenant_directory`/`job_requisitions`/`job_applications` are now permissively declared for anonymous access (cites `F-501`), and `/careers/:tenantSlug` is a real, reachable route. **Still open, separately** (see `docs/testing/TEST_BACKLOG.md` T3-PUBLIC, not re-verified as part of this row): the *disconnected recruitment pipeline* — real applications land in a collection nothing reads, the recruiter Kanban reads a different, unpopulated one. That's a distinct, still-unresolved finding from this specific "is it reachable at all" one. |
 
 ### High — real functional or security gaps, not immediately catastrophic
 | Module | Finding |
 |---|---|
-| `auth` | Hardcoded Firebase + Gemini API keys still committed in `firebase_config.dart` (currently unused at init, but the credentials remain in source control) |
-| `auth` | No form/UI exists to set `UserProfile.department`/`jobTitle`/`phone`/`preferences` anywhere — "Edit Profile" is a stub toast |
-| `notifications` | `NotificationService` is fully, correctly implemented with zero callers anywhere — no user can receive a real push or in-app notification |
-| `ai_tools` | All 4 AI-chat tabs generate content (hazard report, RCA, safety flash) that is never saved anywhere — no "Save to Incident" action exists |
-| `ai_tools` | `GEMINI_API_KEY` likely resolves empty as committed — no `--dart-define` evidence anywhere in the repo |
-| `executive` | All KPI/alert data hardcoded; zero drill-down navigation despite the Executive persona's own defining "drill down via deep links" journey text |
-| `safety` | `Incident` model exists but nothing actually parses documents through it — the form's field names/types (capitalized enums, ISO date strings) would throw if anything ever did |
-| `safety` | `reporterName` hardcoded to the literal string `'Selected Employee'` regardless of who was actually picked |
-| `field_service` | 4 structured `Map` fields (`address`, `scheduling`, `safetyRequirements`, `iotContext`, `financials`) rendered as raw hand-typed JSON text fields; malformed input throws an uncaught `FormatException` |
-| `projects` | `timesheet_entry_screen.dart` has no Firestore call at all — own comment reads "Simulate timesheet submission" |
-| `projects` | `revenue_recognition_screen.dart` is entirely fabricated data, not a partially-wired integration |
-| `supply_chain` | Hub screen (`InventoryDashboard`, `WarehouseManagementScreen`, `AssetManagementScreen`) is hardcoded `ListTile`s with no `onTap` handlers — the first screens reached from the Supply Chain tile |
-| `supply_chain` | 2 literal "Coming Soon" stub cards sit next to fully-written, unused `ScmService` CRUD for the same features |
+| `auth` | **[FIXED 2026-08-10]** Hardcoded Firebase + Gemini API keys committed in `firebase_config.dart` — removed (cites `F-502`); real init now reads `.env`/`--dart-define`. |
+| `auth` | *(not re-verified this pass)* No form/UI exists to set `UserProfile.department`/`jobTitle`/`phone`/`preferences` anywhere — "Edit Profile" is a stub toast. |
+| `notifications` | **[FIXED 2026-08-10]** `NotificationService` had zero callers — `app_providers.dart` now calls `.init()` on profile-ready, and `emergency_broadcast_tab.dart` calls `.sendEmergencyBroadcast()`. |
+| `ai_tools` | *(not re-verified this pass)* All 4 AI-chat tabs generate content that is never saved anywhere — no "Save to Incident" action exists. |
+| `ai_tools` | *(not re-verified this pass)* `GEMINI_API_KEY` likely resolves empty as committed. |
+| `executive` | *(not re-verified this pass)* All KPI/alert data hardcoded; zero drill-down navigation. |
+| `safety` | *(not re-verified this pass)* `Incident` model exists but nothing actually parses documents through it. |
+| `safety` | **[FIXED 2026-08-10]** `reporterName` hardcoded to `'Selected Employee'` — `incident_report_form.dart` now derives it from the selected employee's real name; no hardcoded literal remains anywhere in `lib/`. |
+| `field_service` | *(not re-verified this pass)* 4 structured `Map` fields rendered as raw hand-typed JSON text fields. |
+| `projects` | *(not re-verified this pass)* `timesheet_entry_screen.dart` has no Firestore call at all. |
+| `projects` | *(not re-verified this pass)* `revenue_recognition_screen.dart` is entirely fabricated data. |
+| `supply_chain` | **[PARTIAL 2026-08-10]** Hub screen hardcoded `ListTile`s with no `onTap` handlers — `InventoryDashboard` and `WarehouseManagementScreen` are fully fixed (real streams, real `onTap`). `AssetManagementScreen` is half-fixed: "Property Management"/"Equipment Tracking" tiles work now, but "Preventative Maintenance"/"Asset Lifecycle" remain unwired `const ListTile`s. |
+| `supply_chain` | **[STILL TRUE, in progress 2026-08-10]** 2 literal "Coming Soon" stub cards next to unused `ScmService` CRUD — this is exactly the banned-stub item currently being fixed (production orders + inventory transaction history) as part of this same follow-up pass; see `docs/testing/TEST_BACKLOG.md`. |
 | Pattern §1.3 | FK-as-textfield across 7 modules |
 | Pattern §1.5 / §1.6 | Navigation and toast rule violations across 9 files |
 | Pattern §1.7 | 10+ fully-built, unreachable features |
