@@ -675,6 +675,11 @@ service cloud.firestore {
         allow create, update: if belongsToTenant(tenantId) && isManager();
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
+      match /production_orders/{orderId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
       match /warehouseBinLocations/{binId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && isManager();

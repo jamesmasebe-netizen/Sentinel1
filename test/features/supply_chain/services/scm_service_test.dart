@@ -132,4 +132,73 @@ void main() {
       expect(result!.binCode, 'A-01-01');
     });
   });
+
+  group('ProductionOrder', () {
+    // production_order_screen.dart's stub replacement (see docs/testing/TEST_BACKLOG.md's
+    // "Flagged-not-fixed follow-up pass") — the screen used to be backed by a hardcoded mock list;
+    // this is its real CRUD, now streamed via streamProductionOrders().
+    test('createProductionOrder then streamProductionOrders finds it', () async {
+      await service.createProductionOrder(ProductionOrder(
+        id: 'prodo-1',
+        orderNumber: 'MO-001',
+        itemId: 'item-1',
+        bomRef: 'BOM-DRONE-A',
+        targetQuantity: 10,
+        status: 'PLANNED',
+      ));
+
+      final result = await service.streamProductionOrders().first;
+
+      expect(result, hasLength(1));
+      expect(result.single.orderNumber, 'MO-001');
+      expect(result.single.targetQuantity, 10);
+    });
+
+    test('completeProductionOrder marks it Completed AND increments the linked item\'s stock level, '
+        'unlike the old mock action which claimed "Inventory updated" without touching any data', () async {
+      await service.createInventoryItem(InventoryItem(
+        id: 'item-drone-kit',
+        sku: 'SKU-DRONE',
+        name: 'Drone Assembly Kit A',
+        itemType: 'FINISHED_GOOD',
+        unitOfMeasure: 'each',
+        valuationMethod: 'FIFO',
+        lifecycleStatus: 'Active',
+        stockLevel: 5,
+      ));
+      final order = ProductionOrder(
+        id: 'prodo-2',
+        orderNumber: 'MO-002',
+        itemId: 'item-drone-kit',
+        targetQuantity: 10,
+        status: 'IN_PROGRESS',
+      );
+      await service.createProductionOrder(order);
+
+      await service.completeProductionOrder(order, completedQuantity: 10);
+
+      final updatedOrder = await service.getProductionOrder('prodo-2');
+      expect(updatedOrder!.status, 'COMPLETED');
+      expect(updatedOrder.completedQuantity, 10);
+      expect(updatedOrder.completedAt, isNotNull);
+
+      final updatedItem = await service.getInventoryItem('item-drone-kit');
+      expect(updatedItem!.stockLevel, 15); // 5 existing + 10 completed
+    });
+
+    test('completeProductionOrder with no linked itemId still marks the order Completed', () async {
+      final order = ProductionOrder(
+        id: 'prodo-3',
+        orderNumber: 'MO-003',
+        targetQuantity: 5,
+        status: 'IN_PROGRESS',
+      );
+      await service.createProductionOrder(order);
+
+      await service.completeProductionOrder(order, completedQuantity: 5);
+
+      final updatedOrder = await service.getProductionOrder('prodo-3');
+      expect(updatedOrder!.status, 'COMPLETED');
+    });
+  });
 }

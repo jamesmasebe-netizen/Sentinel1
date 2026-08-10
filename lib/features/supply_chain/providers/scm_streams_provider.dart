@@ -108,3 +108,7 @@ final purchaseOrdersListStreamProvider = StreamProvider<List<PurchaseOrder>>((re
 final transferOrdersListStreamProvider = StreamProvider<List<TransferOrder>>((ref) {
   return ref.watch(scmServiceProvider).streamTransferOrders();
 });
+
+final productionOrdersListStreamProvider = StreamProvider<List<ProductionOrder>>((ref) {
+  return ref.watch(scmServiceProvider).streamProductionOrders();
+});

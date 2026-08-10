@@ -596,3 +596,66 @@ class MrpSuggestion {
     );
   }
 }
+
+class ProductionOrder {
+  final String id;
+  final String orderNumber;
+  final String? itemId;
+  final String? bomRef;
+  final double targetQuantity;
+  final double completedQuantity;
+  final String status;
+  final String? warehouseId;
+  final DateTime? plannedStartDate;
+  final DateTime? completedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  ProductionOrder({
+    required this.id,
+    required this.orderNumber,
+    this.itemId,
+    this.bomRef,
+    this.targetQuantity = 0.0,
+    this.completedQuantity = 0.0,
+    required this.status,
+    this.warehouseId,
+    this.plannedStartDate,
+    this.completedAt,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory ProductionOrder.fromJson(Map<String, dynamic> json, String id) {
+    return ProductionOrder(
+      id: id,
+      orderNumber: json['order_number'] ?? '',
+      itemId: json['item_id'],
+      bomRef: json['bom_ref'],
+      targetQuantity: (json['target_quantity'] ?? 0).toDouble(),
+      completedQuantity: (json['completed_quantity'] ?? 0).toDouble(),
+      status: json['status'] ?? '',
+      warehouseId: json['warehouse_id'],
+      plannedStartDate: _parseDate(json['planned_start_date']),
+      completedAt: _parseDate(json['completed_at']),
+      createdAt: _parseDate(json['created_at']),
+      updatedAt: _parseDate(json['updated_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'order_number': orderNumber,
+      if (itemId != null) 'item_id': itemId,
+      if (bomRef != null) 'bom_ref': bomRef,
+      'target_quantity': targetQuantity,
+      'completed_quantity': completedQuantity,
+      'status': status,
+      if (warehouseId != null) 'warehouse_id': warehouseId,
+      'planned_start_date': _formatDate(plannedStartDate),
+      'completed_at': _formatDate(completedAt),
+      'created_at': _formatDate(createdAt),
+      'updated_at': _formatDate(updatedAt),
+    };
+  }
+}
