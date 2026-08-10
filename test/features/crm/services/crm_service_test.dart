@@ -304,4 +304,61 @@ void main() {
       expect(result.single.firstName, 'Jane');
     });
   });
+
+  group('Campaign', () {
+    // CampaignForm's create path (campaign_list_screen.dart's FAB) — see
+    // docs/testing/TEST_BACKLOG.md's "Flagged-not-fixed follow-up pass" for the banned-stub cleanup
+    // this was part of. createCampaign already existed but had zero call sites before that.
+    Campaign buildCampaign({String id = ''}) {
+      return Campaign(
+        id: id,
+        name: 'Q1 Product Launch',
+        type: 'Email',
+        status: 'Planning',
+        startDate: DateTime(2026, 1, 1),
+        endDate: DateTime(2026, 3, 31),
+        budget: 5000,
+        actualSpend: 0,
+        targetAudience: 'Existing customers',
+        expectedRevenue: 20000,
+        actualRevenue: 0,
+        ownerId: 'owner-1',
+      );
+    }
+
+    test('createCampaign persists the full record, findable via streamCampaigns', () async {
+      await service.createCampaign(buildCampaign());
+
+      final result = await service.streamCampaigns().first;
+
+      expect(result, hasLength(1));
+      expect(result.single.name, 'Q1 Product Launch');
+      expect(result.single.budget, 5000);
+      expect(result.single.startDate, DateTime(2026, 1, 1));
+    });
+
+    test('updateCampaign persists changed fields on the existing document', () async {
+      await service.createCampaign(buildCampaign());
+      final created = (await service.streamCampaigns().first).single;
+
+      await service.updateCampaign(Campaign(
+        id: created.id,
+        name: created.name,
+        type: created.type,
+        status: 'Active',
+        startDate: created.startDate,
+        endDate: created.endDate,
+        budget: created.budget,
+        actualSpend: 1200,
+        targetAudience: created.targetAudience,
+        expectedRevenue: created.expectedRevenue,
+        actualRevenue: created.actualRevenue,
+        ownerId: created.ownerId,
+      ));
+
+      final result = await service.streamCampaigns().first;
+      expect(result.single.status, 'Active');
+      expect(result.single.actualSpend, 1200);
+    });
+  });
 }

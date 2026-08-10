@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/crm_models.dart';
 import '../services/crm_service.dart';
+import '../widgets/campaign_form.dart';
 import 'campaign_detail_screen.dart';
 
 class CampaignListScreen extends ConsumerWidget {
@@ -50,7 +51,10 @@ class CampaignListScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Implement Create Campaign
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CampaignForm()),
+          );
         },
         child: const Icon(Icons.add),
       ),
