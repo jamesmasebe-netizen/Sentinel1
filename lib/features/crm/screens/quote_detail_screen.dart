@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import '../models/crm_models.dart';
 import '../providers/crm_providers.dart';
 import '../widgets/quote_form.dart';
@@ -40,9 +43,7 @@ class QuoteDetailScreen extends ConsumerWidget {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.picture_as_pdf),
-                    onPressed: () {
-                      // TODO: Generate PDF
-                    },
+                    onPressed: () => _generatePdf(context, quote, formatCurrency),
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit),
@@ -136,6 +137,88 @@ class QuoteDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Error: $error')),
       ),
+    );
+  }
+
+  // Real PDF generation from the already-loaded Quote — no Cloud Function round-trip needed since
+  // every field rendered here is already on the Quote object this screen streams. Quote has no
+  // line-item model (see crm_models.dart), so this mirrors exactly what the on-screen cards already
+  // show (status/financial summary/terms) rather than fabricating an itemized breakdown that
+  // doesn't exist in the data. The other "Generate PDF" button in this module
+  // (quote_generation_screen.dart) is a pre-existing stub (just a snackbar, no real PDF) — not
+  // touched here, since fixing it is a separate item.
+  Future<void> _generatePdf(BuildContext context, Quote quote, NumberFormat format) async {
+    try {
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.Page(
+          build: (pwContext) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Header(
+                level: 0,
+                child: pw.Text(
+                  quote.quoteNumber.isNotEmpty ? quote.quoteNumber : 'Quote Details',
+                ),
+              ),
+              pw.Text('Status: ${quote.status}'),
+              pw.Text(
+                'Expiration Date: ${quote.expirationDate != null ? DateFormat.yMMMd().format(quote.expirationDate!) : 'Not set'}',
+              ),
+              pw.Text('Owner ID: ${quote.ownerId.isNotEmpty ? quote.ownerId : 'N/A'}'),
+              if (quote.opportunityId.isNotEmpty)
+                pw.Text('Opportunity ID: ${quote.opportunityId}'),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'Financial Summary',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                children: [
+                  _pdfSummaryRow('Subtotal', format.format(quote.subtotal)),
+                  _pdfSummaryRow('Discount', format.format(quote.discount)),
+                  _pdfSummaryRow('Tax', format.format(quote.tax)),
+                  _pdfSummaryRow('Grand Total', format.format(quote.grandTotal), isBold: true),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'Terms & Conditions',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                quote.termsAndConditions.isNotEmpty ? quote.termsAndConditions : 'No terms specified.',
+              ),
+            ],
+          ),
+        ),
+      );
+
+      await Printing.layoutPdf(onLayout: (PdfPageFormat pageFormat) async => pdf.save());
+    } catch (e) {
+      if (context.mounted) {
+        UIUtils.showToast(context, 'Error generating PDF: $e', type: ToastType.error);
+      }
+    }
+  }
+
+  pw.TableRow _pdfSummaryRow(String label, String value, {bool isBold = false}) {
+    final style = isBold ? pw.TextStyle(fontWeight: pw.FontWeight.bold) : null;
+    return pw.TableRow(
+      children: [
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(6),
+          child: pw.Text(label, style: style),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.all(6),
+          child: pw.Text(value, style: style),
+        ),
+      ],
     );
   }
 
