@@ -1,22 +1,20 @@
 // Tests for CrmService (lib/features/crm/services/crm_service.dart) —
 // Lead/Opportunity/Quote/Account CRUD, the core Lead-to-Cash data layer.
 //
-// REAL BUG FOUND, NOT FIXED (needs a design decision, see
-// docs/testing/TEST_BACKLOG.md T3-CRM): CrmService.convertLeadToOpportunity
-// (tested below) is the ONLY code in this app that creates a real Account +
-// Contact when a Lead converts, and the only thing that ever sets
-// Lead.convertedAccountId/convertedContactId. But the real "Convert Lead"
-// button (lead_detail_screen.dart) calls BpfOrchestrator.convertLeadToOpportunity
-// instead, which does NOT call this method — confirmed via grep that this
-// method has zero call sites anywhere in lib/. BpfOrchestrator's version
-// builds the new Opportunity from lead.convertedAccountId/convertedContactId
-// directly, which are therefore always null for a real lead, so every real
-// conversion creates an Opportunity with a blank account/contact link — and
-// that propagates through every downstream Lead-to-Cash document (Quote,
-// Project, Invoice). Flagged, not fixed: resolving it means picking one of
-// two different Opportunity-creation shapes (different stage/probability/
-// forecastCategory defaults between the two implementations), a genuine
-// design decision, not a mechanical bug fix.
+// FIXED (see docs/testing/TEST_BACKLOG.md's "Flagged-not-fixed follow-up pass" for T3-CRM):
+// CrmService used to have its own full convertLeadToOpportunity (Account + Contact + Opportunity +
+// Lead update) that nothing ever called — the real "Convert Lead" button
+// (lead_detail_screen.dart) always called BpfOrchestrator.convertLeadToOpportunity instead, which
+// built its Opportunity from Lead.convertedAccountId/convertedContactId directly (always null on a
+// real, not-yet-converted lead), so every real conversion produced an Opportunity with a blank
+// account/contact link. Rather than keep two divergent implementations in sync, CrmService now
+// exposes just the account/contact half as createAccountAndContactForLead (tested below);
+// BpfOrchestrator calls it and keeps doing the Opportunity/Lead/BPF-stage wiring it already had —
+// see bpf_orchestrator_test.dart for that side. The dead version's own Opportunity defaults
+// (lowercase 'qualification'/'pipeline', probability as a 0-1 fraction) were themselves latent bugs
+// — crm_models.dart/opportunity_form.dart use capitalized stage/forecastCategory strings and store
+// probability as a 0-100 number (opportunity_detail_screen.dart renders `probability.toInt()}%`) —
+// so BpfOrchestrator's existing values were kept, not the removed method's.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentinel1/features/crm/models/crm_models.dart';
@@ -110,22 +108,14 @@ void main() {
     });
   });
 
-  group('convertLeadToOpportunity — real, correct behavior, but dead code (see file header)', () {
-    test('creates a real Account, Contact, and Opportunity, and marks the Lead converted, atomically',
-        () async {
-      await firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('leads')
-          .doc('lead-1')
-          .set(buildLead().toJson());
+  group('createAccountAndContactForLead', () {
+    test('creates a real Account and Contact for the lead, atomically', () async {
       final lead = buildLead();
 
-      final ids = await service.convertLeadToOpportunity(lead);
+      final ids = await service.createAccountAndContactForLead(lead);
 
       expect(ids['accountId'], isNotEmpty);
       expect(ids['contactId'], isNotEmpty);
-      expect(ids['opportunityId'], isNotEmpty);
 
       final accountDoc = await firestore
           .collection('tenants')
@@ -135,24 +125,15 @@ void main() {
           .get();
       expect(accountDoc.data()!['name'], 'Acme Corp');
 
-      final oppDoc = await firestore
+      final contactDoc = await firestore
           .collection('tenants')
           .doc(tenantId)
-          .collection('opportunities')
-          .doc(ids['opportunityId'])
+          .collection('contacts')
+          .doc(ids['contactId'])
           .get();
-      expect(oppDoc.data()!['accountId'], ids['accountId']);
-      expect(oppDoc.data()!['primaryContactId'], ids['contactId']);
-
-      final leadDoc = await firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('leads')
-          .doc('lead-1')
-          .get();
-      expect(leadDoc.data()!['isConverted'], isTrue);
-      expect(leadDoc.data()!['convertedAccountId'], ids['accountId']);
-      expect(leadDoc.data()!['convertedContactId'], ids['contactId']);
+      expect(contactDoc.data()!['accountId'], ids['accountId']);
+      expect(contactDoc.data()!['firstName'], 'Jane');
+      expect(contactDoc.data()!['email'], 'jane@acme.test');
     });
   });
 

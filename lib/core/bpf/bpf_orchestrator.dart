@@ -55,13 +55,30 @@ class BpfOrchestrator {
     this.tenantId,
   );
 
-  /// Converts a Lead to an Opportunity and advances the BPF stage
+  /// Converts a Lead to an Opportunity and advances the BPF stage.
+  ///
+  /// FIXED (see CrmService.createAccountAndContactForLead's doc comment): this used to build the
+  /// Opportunity from lead.convertedAccountId/convertedContactId directly, which are only ever set
+  /// BY conversion — so on a real (not-yet-converted) Lead they were always null, and every real
+  /// "Convert Lead" click produced an Opportunity with no account/contact link. Now creates the
+  /// Account + Contact first via CrmService, then links the new Opportunity (and the Lead's own
+  /// converted* fields) to them for real. Opportunity defaults (stage 'Prospecting', probability as
+  /// a 0-100 number, forecastCategory 'Pipeline') are kept as this method already had them —
+  /// confirmed against crm_models.dart's own defaults and opportunity_form.dart's dropdown options,
+  /// which use this exact casing/vocabulary; a second, dead implementation that briefly existed in
+  /// CrmService used lowercase 'qualification'/'pipeline' and a 0-1 fraction for probability, which
+  /// would have matched neither the sales-pipeline Kanban's stage filter nor
+  /// opportunity_detail_screen.dart's `probability.toInt()}%` rendering.
   Future<String> convertLeadToOpportunity(Lead lead, String bpfId) async {
+    final links = await crmService.createAccountAndContactForLead(lead);
+    final accountId = links['accountId']!;
+    final contactId = links['contactId']!;
+
     final opp = Opportunity(
       id: '',
       name: '${lead.company} Opportunity',
-      accountId: lead.convertedAccountId ?? '',
-      primaryContactId: lead.convertedContactId ?? '',
+      accountId: accountId,
+      primaryContactId: contactId,
       stage: 'Prospecting',
       amount: 0,
       probability: 20,
@@ -88,8 +105,8 @@ class BpfOrchestrator {
       sequenceId: lead.sequenceId,
       ownerId: lead.ownerId,
       isConverted: true,
-      convertedAccountId: lead.convertedAccountId,
-      convertedContactId: lead.convertedContactId,
+      convertedAccountId: accountId,
+      convertedContactId: contactId,
       convertedOpportunityId: oppId,
       createdAt: lead.createdAt,
       updatedAt: DateTime.now(),

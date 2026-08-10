@@ -372,10 +372,21 @@ class CrmService {
 
   // ---------- LEAD CONVERSION ----------
 
-  Future<Map<String, String>> convertLeadToOpportunity(Lead lead) async {
+  /// Creates a new Account + Contact for a converting Lead, atomically. This is the account/contact
+  /// half of lead conversion; the Opportunity itself and the Lead's own converted* fields are the
+  /// caller's responsibility (see BpfOrchestrator.convertLeadToOpportunity, the only real caller —
+  /// it also needs to advance the BPF stage, which this service has no notion of). Previously this
+  /// method did all four steps (Account, Contact, Opportunity, Lead update) itself, but nothing
+  /// ever called it — the live "Convert Lead" button always called BpfOrchestrator's separate,
+  /// incomplete implementation instead, which built the Opportunity from Lead.convertedAccountId/
+  /// convertedContactId directly. Those are only ever set by conversion itself, so every real
+  /// conversion produced an Opportunity with a blank account/contact link. Split out just the
+  /// account/contact creation so BpfOrchestrator can use it while keeping the Opportunity defaults
+  /// and BPF wiring it already had right (see its own doc comment for why its stage/probability/
+  /// forecastCategory values are the ones that survived, not this method's former ones).
+  Future<Map<String, String>> createAccountAndContactForLead(Lead lead) async {
     final batch = _tenantDoc.firestore.batch();
 
-    // 1. Create Account
     final accountRef = _tenantDoc.collection('accounts').doc();
     final accountData =
         Account(
@@ -393,7 +404,6 @@ class CrmService {
     accountData['updatedAt'] = FieldValue.serverTimestamp();
     batch.set(accountRef, accountData);
 
-    // 2. Create Contact
     final contactRef = _tenantDoc.collection('contacts').doc();
     final contactData =
         Contact(
@@ -414,42 +424,8 @@ class CrmService {
     contactData['updatedAt'] = FieldValue.serverTimestamp();
     batch.set(contactRef, contactData);
 
-    // 3. Create Opportunity
-    final oppRef = _tenantDoc.collection('opportunities').doc();
-    final oppData =
-        Opportunity(
-          id: '',
-          name: '${lead.company} - Opportunity',
-          accountId: accountRef.id,
-          primaryContactId: contactRef.id,
-          stage: 'qualification',
-          amount: 0.0,
-          probability: 0.1,
-          forecastCategory: 'pipeline',
-          leadSource: lead.leadSource,
-          nextStep: 'Initial Meeting',
-          ownerId: lead.ownerId,
-        ).toJson();
-    oppData['createdAt'] = FieldValue.serverTimestamp();
-    oppData['updatedAt'] = FieldValue.serverTimestamp();
-    batch.set(oppRef, oppData);
-
-    // 4. Update Lead
-    final leadRef = _tenantDoc.collection('leads').doc(lead.id);
-    batch.update(leadRef, {
-      'isConverted': true,
-      'convertedAccountId': accountRef.id,
-      'convertedContactId': contactRef.id,
-      'convertedOpportunityId': oppRef.id,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-
     await batch.commit();
 
-    return {
-      'accountId': accountRef.id,
-      'contactId': contactRef.id,
-      'opportunityId': oppRef.id,
-    };
+    return {'accountId': accountRef.id, 'contactId': contactRef.id};
   }
 }

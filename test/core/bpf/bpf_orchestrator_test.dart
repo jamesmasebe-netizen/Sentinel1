@@ -50,16 +50,19 @@ void main() {
   });
 
   group('convertLeadToOpportunity', () {
-    test('creates the opportunity, converts the lead, and advances to '
-        'opportunity with the new opportunityId linked', () async {
-      final lead = buildTestLead(
-        id: 'LEAD-1',
-        convertedAccountId: 'ACC-1',
-        convertedContactId: 'CON-1',
-      );
+    test('creates a real Account/Contact first, links the opportunity and lead to them, and '
+        'advances to opportunity with the new opportunityId linked', () async {
+      // A real, not-yet-converted Lead has no convertedAccountId/convertedContactId — those are
+      // only ever set BY conversion. Pre-populating them here (as this test used to) would mask
+      // the exact bug this test now guards against: the orchestrator used to build the
+      // Opportunity straight from these (always-null, on a real lead) fields instead of actually
+      // creating an Account/Contact — see bpf_orchestrator.dart's doc comment on this method.
+      final lead = buildTestLead(id: 'LEAD-1');
       final bpfId = await seedBpfInstance(h.db,
           bpfTypeId: 'lead_to_cash', currentStageId: 'lead');
 
+      when(() => h.crm.createAccountAndContactForLead(any()))
+          .thenAnswer((_) async => {'accountId': 'ACC-NEW', 'contactId': 'CON-NEW'});
       when(() => h.crm.createOpportunity(any()))
           .thenAnswer((_) async => 'OPP-NEW');
       when(() => h.crm.updateLead(any())).thenAnswer((_) async {});
@@ -68,18 +71,24 @@ void main() {
 
       expect(oppId, 'OPP-NEW');
 
+      verify(() => h.crm.createAccountAndContactForLead(lead)).called(1);
+
       final createdOpp =
           verify(() => h.crm.createOpportunity(captureAny())).captured.single
               as Opportunity;
-      expect(createdOpp.accountId, 'ACC-1');
-      expect(createdOpp.primaryContactId, 'CON-1');
+      expect(createdOpp.accountId, 'ACC-NEW');
+      expect(createdOpp.primaryContactId, 'CON-NEW');
       expect(createdOpp.stage, 'Prospecting');
+      expect(createdOpp.probability, 20);
+      expect(createdOpp.forecastCategory, 'Pipeline');
 
       final updatedLead =
           verify(() => h.crm.updateLead(captureAny())).captured.single
               as Lead;
       expect(updatedLead.status, 'Converted');
       expect(updatedLead.isConverted, isTrue);
+      expect(updatedLead.convertedAccountId, 'ACC-NEW');
+      expect(updatedLead.convertedContactId, 'CON-NEW');
       expect(updatedLead.convertedOpportunityId, 'OPP-NEW');
 
       final instance = await h.readInstance(bpfId);
