@@ -1,0 +1,120 @@
+name: Deploy
+
+# Manual trigger only (workflow_dispatch) — no auto-deploy on push. There's no staging environment
+# yet (.firebaserc has a single "default" project alias), so every deploy should have a human
+# deliberately click "Run workflow", not fire automatically off a merge to main.
+#
+# One-time setup required before this can run (documented here since there's nowhere else a
+# GitHub Actions secret's existence would be visible): generate a Firebase service account key
+# (Firebase Console -> Project Settings -> Service Accounts -> Generate new private key) with
+# deploy permissions for this project, then add its full JSON contents as a repository secret
+# named FIREBASE_SERVICE_ACCOUNT (Settings -> Secrets and variables -> Actions -> New repository
+# secret). Generate a fresh key for this specifically — do not reuse a key that has ever been
+# pasted into a chat transcript or committed anywhere.
+on:
+  workflow_dispatch:
+
+jobs:
+  # Duplicated from test.yml's two jobs rather than converting that workflow to a reusable
+  # (workflow_call) one, to avoid touching its existing push/pull_request behavior. Deploy gates on
+  # these passing fresh for this exact commit, not on a cached prior run of the other workflow.
+  flutter-checks:
+    name: Flutter (analyze + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  functions-checks:
+    name: Cloud Functions (tsc + jest + rules)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firebase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run test:rules
+
+  guard-production-rules:
+    name: Guard against firestore.dev.rules ever deploying
+    runs-on: ubuntu-latest
+    needs: [flutter-checks, functions-checks]
+    steps:
+      - uses: actions/checkout@v4
+      # firestore.dev.rules is a deliberately fully-open ruleset, explicitly commented "TEMPORARY
+      # DEV RULES... MUST BE REVERTED BEFORE PRODUCTION" (see docs/modules/_known_gaps_rollup.md's
+      # re-verification pass). firebase.json already only ever points at the real firestore.rules
+      # today — this step exists so a future accidental edit to that pointer fails the deploy loudly
+      # instead of silently opening every collection in production.
+      - name: Confirm firebase.json's rules target is firestore.rules, not firestore.dev.rules
+        run: |
+          rules_file=$(jq -r '.firestore[0].rules' firebase.json)
+          if [ "$rules_file" != "firestore.rules" ]; then
+            echo "::error::firebase.json's firestore rules target is '$rules_file', not 'firestore.rules'. Refusing to deploy — firestore.dev.rules must never reach production."
+            exit 1
+          fi
+          echo "OK: firebase.json deploys $rules_file"
+
+  deploy-hosting-and-rules:
+    name: Deploy Hosting + Firestore rules
+    runs-on: ubuntu-latest
+    needs: guard-production-rules
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build web
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g firebase-tools
+      - name: Deploy Hosting + Firestore rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-service-account.json
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$GOOGLE_APPLICATION_CREDENTIALS"
+          firebase deploy --only hosting,firestore:rules --non-interactive
+          rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
+
+  deploy-functions:
+    name: Deploy Cloud Functions (expected to fail until the Blaze plan is enabled)
+    runs-on: ubuntu-latest
+    needs: guard-production-rules
+    # Functions deploy is blocked on the Spark (free) billing plan — see
+    # docs/modules/_known_gaps_rollup.md's auth-claims row. Once Blaze is enabled this job should
+    # start passing with no other change needed; until then, a red X here is expected and does not
+    # block deploy-hosting-and-rules (a separate job with the same "needs", not a dependency of
+    # this one).
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g firebase-tools
+      - name: Deploy Cloud Functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-service-account.json
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$GOOGLE_APPLICATION_CREDENTIALS"
+          firebase deploy --only functions --non-interactive
+          rm -f "$GOOGLE_APPLICATION_CREDENTIALS"
