@@ -11,8 +11,20 @@ import '../../../core/widgets/entity_selector.dart';
 class PurchaseOrderForm extends ConsumerStatefulWidget {
   final PurchaseOrder? initialData;
   final VoidCallback? onSuccess;
+  // Set when opened from an MRP shortage suggestion (mrp_dashboard_screen.dart) — on a
+  // successful create, a matching PurchaseOrderLine is created for this item/quantity so the new
+  // PO isn't just an empty header. There's no PO-line editing UI anywhere in the app yet (a
+  // separate, larger gap — see mrpEngine's rules tests), so this is create-only.
+  final String? initialItemId;
+  final double? initialQuantity;
 
-  const PurchaseOrderForm({super.key, this.initialData, this.onSuccess});
+  const PurchaseOrderForm({
+    super.key,
+    this.initialData,
+    this.onSuccess,
+    this.initialItemId,
+    this.initialQuantity,
+  });
 
   @override
   ConsumerState<PurchaseOrderForm> createState() => _PurchaseOrderFormState();
@@ -90,9 +102,19 @@ class _PurchaseOrderFormState extends ConsumerState<PurchaseOrderForm> {
 
       final service = ref.read(scmServiceProvider);
       final orchestrator = ref.read(bpfOrchestratorProvider);
-      
+
       if (widget.initialData == null) {
         await orchestrator.createPurchaseOrder(po);
+        if (widget.initialItemId != null && widget.initialQuantity != null) {
+          await service.createPurchaseOrderLine(
+            po.id,
+            PurchaseOrderLine(
+              id: const Uuid().v4(),
+              itemId: widget.initialItemId,
+              quantityOrdered: widget.initialQuantity!,
+            ),
+          );
+        }
       } else {
         if (po.status == 'Received' && widget.initialData!.status != 'Received') {
           await orchestrator.receivePurchaseOrderGoods(po);
@@ -127,6 +149,20 @@ class _PurchaseOrderFormState extends ConsumerState<PurchaseOrderForm> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (widget.initialItemId != null && widget.initialQuantity != null) ...[
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'From MRP suggestion: ${widget.initialQuantity!.toStringAsFixed(0)} x '
+                  '${widget.initialItemId} will be added as a line item once saved.',
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           TextFormField(
             controller: _poNumberController,
             decoration: const InputDecoration(

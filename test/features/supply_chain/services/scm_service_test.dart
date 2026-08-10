@@ -201,4 +201,52 @@ void main() {
       expect(updatedOrder!.status, 'COMPLETED');
     });
   });
+
+  group('MRP suggestion conversion', () {
+    // mrp_dashboard_screen.dart's "Create ${sug.type}" button — see docs/testing/TEST_BACKLOG.md's
+    // "Flagged-not-fixed follow-up pass". PurchaseOrderForm's initialItemId/initialQuantity params
+    // (set when opened from a suggestion) create a matching PurchaseOrderLine on a successful
+    // create, tested here directly at the service layer since that's where the line actually gets
+    // written.
+    test('a PO line can be created for an item/quantity, matching what PurchaseOrderForm does on '
+        'an MRP-suggestion-prefilled create', () async {
+      await service.createPurchaseOrder(PurchaseOrder(id: 'po-mrp-1', poNumber: 'PO-MRP-1', status: 'Draft'));
+
+      await service.createPurchaseOrderLine('po-mrp-1', PurchaseOrderLine(
+        id: 'line-mrp-1',
+        itemId: 'item-bolt',
+        quantityOrdered: 20,
+      ));
+
+      final lines = await service.getPurchaseOrderLines('po-mrp-1');
+      expect(lines.single.itemId, 'item-bolt');
+      expect(lines.single.quantityOrdered, 20);
+    });
+
+    test('markMrpSuggestionConverted flips status to CONVERTED so the suggestion stops reappearing '
+        'as open in mrpSuggestionsStreamProvider', () async {
+      await firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('mrp_suggestions')
+          .doc('sug-1')
+          .set({
+        'itemId': 'item-bolt',
+        'suggestedQuantity': 20,
+        'type': 'PURCHASE',
+        'status': 'DRAFT',
+        'reason': 'Sales Order Demand Exceeds Supply',
+      });
+
+      await service.markMrpSuggestionConverted('sug-1');
+
+      final doc = await firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('mrp_suggestions')
+          .doc('sug-1')
+          .get();
+      expect(doc.data()!['status'], 'CONVERTED');
+    });
+  });
 }

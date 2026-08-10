@@ -4,7 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../../core/providers/app_providers.dart';
+import '../models/scm_models.dart';
+import '../services/scm_service.dart';
 import '../providers/scm_streams_provider.dart';
+import '../widgets/purchase_order_form.dart';
+import '../widgets/production_order_form.dart';
 
 class MrpDashboardScreen extends ConsumerStatefulWidget {
   const MrpDashboardScreen({super.key});
@@ -15,6 +19,41 @@ class MrpDashboardScreen extends ConsumerStatefulWidget {
 
 class _MrpDashboardScreenState extends ConsumerState<MrpDashboardScreen> {
   bool _isRunningMrp = false;
+
+  void _convertSuggestion(MrpSuggestion sug) {
+    Future<void> onSuccess() async {
+      if (mounted) Navigator.of(context).pop();
+      try {
+        await ref.read(scmServiceProvider).markMrpSuggestionConverted(sug.id);
+      } catch (e) {
+        if (mounted) {
+          UIUtils.showToast(context, 'Order created, but failed to update suggestion status: $e', type: ToastType.error);
+        }
+      }
+    }
+
+    if (sug.type == 'PRODUCTION') {
+      UIUtils.showSideSheet(
+        context: context,
+        title: 'New Production Order',
+        builder: (_) => ProductionOrderForm(
+          initialItemId: sug.itemId,
+          initialTargetQuantity: sug.suggestedQuantity.toDouble(),
+          onSuccess: onSuccess,
+        ),
+      );
+    } else {
+      UIUtils.showSideSheet(
+        context: context,
+        title: 'New Purchase Order',
+        builder: (_) => PurchaseOrderForm(
+          initialItemId: sug.itemId,
+          initialQuantity: sug.suggestedQuantity.toDouble(),
+          onSuccess: onSuccess,
+        ),
+      );
+    }
+  }
 
   Future<void> _runMrp() async {
     setState(() => _isRunningMrp = true);
@@ -84,10 +123,7 @@ class _MrpDashboardScreenState extends ConsumerState<MrpDashboardScreen> {
                           ],
                         ),
                         trailing: ElevatedButton(
-                          onPressed: () {
-                            // TODO: Convert to Purchase Order / Prod Order
-                            UIUtils.showToast(context, 'Conversion to PO coming soon...');
-                          },
+                          onPressed: () => _convertSuggestion(sug),
                           child: Text('Create ${sug.type}'),
                         ),
                       ),

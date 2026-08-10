@@ -286,6 +286,19 @@ class ScmService {
   }
 
   // ==========================================
+  // MRP SUGGESTIONS (Collection: mrp_suggestions)
+  // ==========================================
+  CollectionReference<Map<String, dynamic>> get _mrpSuggestionsRef =>
+      _tenantDoc.collection('mrp_suggestions');
+
+  /// Marks a suggestion as acted on, once a Purchase/Production Order has been created from it
+  /// (mrp_dashboard_screen.dart) — mrpSuggestionsStreamProvider shows every suggestion regardless
+  /// of status, so without this a converted suggestion would keep reappearing as if still open.
+  Future<void> markMrpSuggestionConverted(String id) async {
+    await _mrpSuggestionsRef.doc(id).update({'status': 'CONVERTED'});
+  }
+
+  // ==========================================
   // PRODUCTION ORDERS (Collection: production_orders)
   // ==========================================
   CollectionReference<Map<String, dynamic>> get _productionOrdersRef =>
