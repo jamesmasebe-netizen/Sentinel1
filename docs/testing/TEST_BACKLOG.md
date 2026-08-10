@@ -674,7 +674,9 @@ Once the whole testing/bug-fixing effort above was in a strong, stable state, th
 
 `flutter analyze` 0/0 (unchanged). `flutter test` 374/374 (up from 360, +14 across the CRM Campaign/Production Order/MRP-conversion/InventoryTransaction/ProcureToPayAutomation test additions). Functions: `npx tsc --noEmit` clean, `npm test` 48/48, `npm run test:rules` (emulator-backed) 293/293 (up from 292, +1 for `mrpEngine`'s new PRODUCTION-type suggestion test).
 
-**Still open:** the CD pipeline (in progress — needs its own entry once done) and, unchanged, the `public` recruitment pipeline and the full 27-module known-gaps re-audit beyond this pass's Critical/first-5-High spot-check.
+**CD pipeline — done, see `.github/workflows/deploy.yml`:** `workflow_dispatch`-triggered (manual only — no staging environment exists yet, so no auto-deploy on push), re-runs `test.yml`'s two check jobs fresh as a gate, then a `guard-production-rules` job asserts `firebase.json` still points at `firestore.rules` (not `firestore.dev.rules`, the deliberately fully-open dev ruleset) before anything deploys. Hosting + Firestore rules deploy unconditionally; Cloud Functions deploy is a separate `continue-on-error: true` job, since it's expected to fail until the Firebase project is upgraded off the Spark billing plan — a handoff to the account owner, not fixable in code. Needs a one-time `FIREBASE_SERVICE_ACCOUNT` GitHub Actions secret the user has to provision themselves (documented in the workflow file's own header).
+
+**Still open:** the `public` recruitment pipeline and the full 27-module known-gaps re-audit beyond this pass's Critical/first-5-High spot-check — both unchanged, deliberately left for future, dedicated passes.
 
 ---
 
