@@ -31,13 +31,14 @@ describe("firestore.rules — sensitive-data cluster: standard-shape collections
     });
   }
 
-  // Both first_aid spellings (F-104), both compliance spellings (F-108/F-109) — declared
-  // separately in firestore.rules, tested separately here since a copy-paste drift between the
-  // two declarations would otherwise go unnoticed.
+  // Both compliance spellings (F-108/F-109) — declared separately in firestore.rules, tested
+  // separately here since a copy-paste drift between the two declarations would otherwise go
+  // unnoticed. first_aid_log (singular) was a similar leftover-spelling safety net for F-104,
+  // removed 2026-08-10 once confirmed zero code anywhere still reads/writes it — only the real
+  // 'first_aid_logs' spelling remains.
   const standardShape = [
     "hygiene_surveys",
     "first_aid_logs",
-    "first_aid_log",
     "safety_file_submissions",
     "contractor_safety_files",
     "compliance_docs",

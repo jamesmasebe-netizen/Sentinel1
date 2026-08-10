@@ -63,7 +63,15 @@ service cloud.firestore {
         allow create, update: if belongsToTenant(tenantId) && isManager();
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
-      
+      // PMO's WBS tasks — projects/{id}/wbs subcollection, written by PmoService.createWbsTask.
+      // Found undeclared 2026-08-10 (falls through to the global deny, so real writes would hit
+      // PERMISSION_DENIED) while re-verifying _known_gaps_rollup.md's §1.1 pattern.
+      match /projects/{projectId}/wbs/{taskId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create, update: if belongsToTenant(tenantId) && isManager();
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
       // Safety / Incidents — SHEQ officers and managers can write
       match /incidents/{incidentId} {
         allow read: if belongsToTenant(tenantId);
@@ -385,13 +393,11 @@ service cloud.firestore {
         allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
-      // Both spellings declared — code writes 'first_aid_logs', reads 'first_aid_log' (see docs/fixes/FIX_LIST.md F-104)
+      // F-104 (docs/fixes/FIX_LIST.md) reconciled first_aid_form.dart/first_aid_tab.dart onto
+      // this one spelling; HealthService now reads/writes only 'first_aid_logs'. The singular
+      // 'first_aid_log' block was a leftover safety net for the old mismatch — removed
+      // 2026-08-10 since grep confirms zero references anywhere in lib/.
       match /first_aid_logs/{logId} {
-        allow read: if belongsToTenant(tenantId);
-        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
-        allow delete: if belongsToTenant(tenantId) && isAdmin();
-      }
-      match /first_aid_log/{logId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
         allow delete: if belongsToTenant(tenantId) && isAdmin();

@@ -100,6 +100,45 @@ describe("firestore.rules — audit_logs/PMO/HR-self-service collections (Wave 2
     });
   }
 
+  // Found undeclared 2026-08-10 while re-verifying _known_gaps_rollup.md's §1.1 pattern —
+  // PmoService.createWbsTask writes here but no rule existed at all, so real writes hit
+  // PERMISSION_DENIED. Shape mirrors the parent /projects collection: read open to any tenant
+  // member, create/update gated to isManager(), delete gated to isAdmin().
+  describe("projects/{id}/wbs — manager create/update, admin delete", () => {
+    it("denies a plain employee from creating a WBS task", async () => {
+      const employee = authedContext(testEnv, "employee-wbs-1", TENANT_A, "employee");
+      await assertFails(
+        setDoc(doc(employee.firestore(), `tenants/${TENANT_A}/projects/proj-1/wbs/task-1`), {
+          title: "should be denied",
+        })
+      );
+    });
+
+    it("allows a manager to create, read, and update a WBS task", async () => {
+      const manager = authedContext(testEnv, "manager-wbs-1", TENANT_A, "manager");
+      const ref = doc(manager.firestore(), `tenants/${TENANT_A}/projects/proj-1/wbs/task-2`);
+      await assertSucceeds(setDoc(ref, { title: "Foundation pour" }));
+      await assertSucceeds(getDoc(ref));
+      await assertSucceeds(updateDoc(ref, { title: "Foundation pour — updated" }));
+    });
+
+    it("denies a manager from deleting — delete needs isAdmin() specifically", async () => {
+      await seed(`tenants/${TENANT_A}/projects/proj-1/wbs/task-3`, { title: "seed" });
+      const manager = authedContext(testEnv, "manager-wbs-2", TENANT_A, "manager");
+      await assertFails(
+        deleteDoc(doc(manager.firestore(), `tenants/${TENANT_A}/projects/proj-1/wbs/task-3`))
+      );
+    });
+
+    it("allows an admin to delete", async () => {
+      await seed(`tenants/${TENANT_A}/projects/proj-1/wbs/task-4`, { title: "seed" });
+      const admin = authedContext(testEnv, "admin-wbs-1", TENANT_A, "admin");
+      await assertSucceeds(
+        deleteDoc(doc(admin.firestore(), `tenants/${TENANT_A}/projects/proj-1/wbs/task-4`))
+      );
+    });
+  });
+
   // Shape: read/create/update all open to any tenant member; delete gated to isAdmin() — same
   // shape as compliance_prescreens from the sensitive-data cluster.
   const hrSelfService = ["competency_passports", "skills_matrix"];
