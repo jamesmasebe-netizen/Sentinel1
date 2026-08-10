@@ -234,4 +234,31 @@ void main() {
       expect(results.single.id, id);
     });
   });
+
+  group('streamInstancesByType', () {
+    // Backs AssetLifecycleScreen's fleet-wide view (lib/features/equipment/screens/
+    // asset_lifecycle_screen.dart) — every equipment's asset_lifecycle progress at
+    // once, as opposed to streamBpfInstancesByRecord's single-record scope.
+    test('finds every instance of the given bpfTypeId across the tenant, regardless of record',
+        () async {
+      final assetId = await service.startBpf(
+          'asset_lifecycle', 'acquisition', 'equipment', 'EQ-1');
+      await service.startBpf(
+          'asset_lifecycle', 'acquisition', 'equipment', 'EQ-2');
+      await service.startBpf(
+          'procure_to_pay', 'requisition', 'purchase_order', 'PO-999');
+
+      final results = await service.streamInstancesByType('asset_lifecycle').first;
+
+      expect(results, hasLength(2));
+      expect(results.map((r) => r.id), contains(assetId));
+      expect(results.every((r) => r.bpfTypeId == 'asset_lifecycle'), isTrue);
+    });
+
+    test('returns an empty list when no instance of that type exists', () async {
+      final results = await service.streamInstancesByType('asset_lifecycle').first;
+
+      expect(results, isEmpty);
+    });
+  });
 }

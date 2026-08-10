@@ -24,6 +24,11 @@ final bpfInstancesForRecordProvider = StreamProvider.family<List<BpfInstance>, M
   return service.streamBpfInstancesByRecord(recordType, recordId);
 });
 
+final bpfInstancesByTypeProvider = StreamProvider.family<List<BpfInstance>, String>((ref, bpfTypeId) {
+  final service = ref.watch(bpfServiceProvider);
+  return service.streamInstancesByType(bpfTypeId);
+});
+
 class BpfService {
   final FirebaseFirestore _db;
   final String _tenantId;
@@ -59,6 +64,18 @@ class BpfService {
   Stream<List<BpfInstance>> streamBpfInstancesByRecord(String recordType, String recordId) {
     return _bpfCollection
         .where('linkedRecordIds.$recordType', isEqualTo: recordId)
+        .snapshots()
+        .map((snap) => snap.docs
+            .map((d) => BpfInstance.fromMap(d.data() as Map<String, dynamic>, d.id))
+            .toList());
+  }
+
+  /// All instances of a given BPF flow across the tenant (e.g. every equipment's
+  /// asset_lifecycle progress at once), as opposed to streamBpfInstancesByRecord's
+  /// single-record scope.
+  Stream<List<BpfInstance>> streamInstancesByType(String bpfTypeId) {
+    return _bpfCollection
+        .where('bpfTypeId', isEqualTo: bpfTypeId)
         .snapshots()
         .map((snap) => snap.docs
             .map((d) => BpfInstance.fromMap(d.data() as Map<String, dynamic>, d.id))

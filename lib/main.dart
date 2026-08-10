@@ -67,19 +67,6 @@ void main() async {
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
-  // --- PRODUCTION DATA SEEDING (Run Once) ---
-  // Seeding complete. Commented out to prevent accidental runs.
-  /*
-  if (kDebugMode) {
-    try {
-      debugPrint('Seeding production data...');
-      await seedProductionData(firestore);
-      debugPrint('Successfully seeded production data.');
-    } catch (e) {
-      debugPrint('Error seeding production data: $e');
-    }
-  }
-  */
   await Hive.initFlutter();
   final preferencesBox = await Hive.openBox<bool>('preferences');
 

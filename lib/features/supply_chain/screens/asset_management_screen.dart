@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../property/screens/property_hub_screen.dart';
 import '../../equipment/screens/equipment_management_screen.dart';
+import '../../equipment/screens/asset_lifecycle_screen.dart';
 
 class AssetManagementScreen extends StatelessWidget {
   const AssetManagementScreen({super.key});
@@ -37,18 +38,28 @@ class AssetManagementScreen extends StatelessWidget {
               ),
             ),
           ),
-          const Card(
+          Card(
             child: ListTile(
-              leading: Icon(Icons.build_circle_outlined),
-              title: Text('Preventative Maintenance'),
-              subtitle: Text('Schedule and track maintenance tasks'),
+              leading: const Icon(Icons.build_circle_outlined),
+              title: const Text('Preventative Maintenance'),
+              subtitle: const Text('Schedule and track maintenance tasks'),
+              onTap: () => UIUtils.showSideSheet(
+                context: context,
+                title: 'Preventative Maintenance',
+                builder: (_) => const EquipmentManagementScreen(initialTabIndex: 2),
+              ),
             ),
           ),
-          const Card(
+          Card(
             child: ListTile(
-              leading: Icon(Icons.history),
-              title: Text('Asset Lifecycle'),
-              subtitle: Text('Depreciation and lifecycle tracking'),
+              leading: const Icon(Icons.history),
+              title: const Text('Asset Lifecycle'),
+              subtitle: const Text('Depreciation and lifecycle tracking'),
+              onTap: () => UIUtils.showSideSheet(
+                context: context,
+                title: 'Asset Lifecycle',
+                builder: (_) => const AssetLifecycleScreen(),
+              ),
             ),
           ),
         ],

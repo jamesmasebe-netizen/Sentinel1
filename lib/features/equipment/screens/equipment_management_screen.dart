@@ -11,11 +11,13 @@ import 'asset_detail_screen.dart';
 class EquipmentManagementScreen extends ConsumerStatefulWidget {
   final String? initialSearch;
   final String? highlightId;
+  final int initialTabIndex;
 
   const EquipmentManagementScreen({
     super.key,
     this.initialSearch,
     this.highlightId,
+    this.initialTabIndex = 0,
   });
 
   @override
@@ -29,7 +31,7 @@ class _EquipState extends ConsumerState<EquipmentManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 3, vsync: this);
+    _tab = TabController(length: 3, initialIndex: widget.initialTabIndex, vsync: this);
     if (widget.highlightId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.of(context).push(

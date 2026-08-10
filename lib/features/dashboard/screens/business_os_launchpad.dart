@@ -66,7 +66,9 @@ const _sections = [
     _TileData(title: 'Command Center', icon: Icons.monitor, color: Colors.blueGrey, route: '/operations'),
     _TileData(title: 'AI Chat', icon: Icons.smart_toy, color: Colors.purple, route: '/ai'),
     _TileData(title: 'Global Settings', icon: Icons.settings, color: Colors.grey, route: '/settings'),
-    _TileData(title: 'Global Control Tower', icon: Icons.satellite_alt, color: Colors.cyanAccent, route: '/control-tower'),
+    // Control Tower is now the Executive View toggle inside DashboardScreen, not a
+    // standalone route — /control-tower no longer exists in router.dart.
+    _TileData(title: 'Global Control Tower', icon: Icons.satellite_alt, color: Colors.cyanAccent, route: '/dashboard'),
     _TileData(title: 'Sentinel Copilot', icon: Icons.auto_awesome, color: Colors.deepPurpleAccent, route: '/copilot'),
     _TileData(title: 'Offline Sync Queue', icon: Icons.sync, color: Colors.blueGrey, route: '/offline-queue'),
   ]),
