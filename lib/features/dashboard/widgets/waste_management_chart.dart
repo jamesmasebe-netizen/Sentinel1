@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class WasteManagementChart extends ConsumerWidget {
@@ -11,6 +12,9 @@ class WasteManagementChart extends ConsumerWidget {
     final wasteAsync = ref.watch(dashboardWasteProvider);
     return wasteAsync.when(
       data: (wasteMap) {
+        if (wasteMap == null) {
+          return const GEmptyChartState(message: 'No waste manifests logged yet');
+        }
         final theme = Theme.of(context);
         final recycle = wasteMap['Recycle']!;
         final general = wasteMap['General']!;

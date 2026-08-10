@@ -1,21 +1,16 @@
 // Tests for lib/features/dashboard/providers/dashboard_providers.dart.
 //
-// REAL FINDING, NOT FIXED (see docs/testing/TEST_BACKLOG.md T3-DASHBOARD): every calculation
-// provider in this file (dashboardLtifrHistoryProvider, dashboardHiraMatrixProvider,
-// dashboardOhsComplianceProvider, dashboardTrainingProvider, dashboardCapaProvider,
-// dashboardWasteProvider — all 6, confirmed by reading the whole file) returns hardcoded,
-// made-up numbers whenever the real query returns zero documents (or there's no active tenant),
-// instead of representing "no data yet". This directly violates AGENTS.md §2's binding rule:
-// "No Hardcoded Data: Never use static, hardcoded, or placeholder data for business metrics. If a
-// feature is incomplete, disable the relevant button or feature instead of faking the data." On a
-// SHEQ platform, a brand-new tenant (or one that simply hasn't populated a given collection yet)
-// would see fabricated compliance/CAPA/waste percentages on the main dashboard
-// (control_tower_screen.dart) indistinguishable from real data. The 3 providers tested below
-// (dashboardOhsComplianceProvider, dashboardCapaProvider, dashboardWasteProvider) each have a
-// paired test proving the fake-fallback path fires — these are NOT regression tests for a fix
-// (there isn't one yet); they're the concrete evidence for this finding. Not fixed here because a
-// proper fix means designing an actual empty-state UI for each of 6 charts, not a mechanical code
-// change — the same "needs a product decision" bar as T2-BPFORCHESTRATOR/T3-CRM's unfixed findings.
+// FIXED (this pass, see docs/testing/TEST_BACKLOG.md's "Flagged-not-fixed follow-up pass" for
+// T3-DASHBOARD): every calculation provider in this file (dashboardLtifrHistoryProvider,
+// dashboardHiraMatrixProvider, dashboardOhsComplianceProvider, dashboardTrainingProvider,
+// dashboardCapaProvider, dashboardWasteProvider) previously returned hardcoded, made-up numbers
+// whenever the real query returned zero documents (or there was no active tenant), instead of
+// representing "no data yet" — a direct violation of AGENTS.md §2's "No Hardcoded Data" rule. Each
+// now returns null for "no data recorded at all" (an empty collection, or no active tenant); a
+// collection that has real documents but legitimately computes to zero (e.g. 0 incidents this
+// month) still returns a real, informative zero value, not null — the two are semantically
+// different and are tested separately below. The corresponding chart widgets in
+// lib/features/dashboard/widgets/ render GEmptyChartState (core/widgets/ds_widgets.dart) on null.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,10 +45,9 @@ void main() {
       expect(result, 50.0); // 2 of 4 valid/expiring
     });
 
-    test('FINDING: returns a hardcoded 94.0 fallback when there is no real data at all, not a "no data" signal',
-        () async {
+    test('returns null (not a fabricated 94.0) when there is no real data at all', () async {
       final result = await container.read(dashboardOhsComplianceProvider.future);
-      expect(result, 94.0);
+      expect(result, isNull);
     });
   });
 
@@ -70,9 +64,9 @@ void main() {
       expect(result, {'closed': 50.0, 'open': 50.0});
     });
 
-    test('FINDING: returns a hardcoded 60/40 fallback when there is no real data at all', () async {
+    test('returns null (not a fabricated 60/40) when there is no real data at all', () async {
       final result = await container.read(dashboardCapaProvider.future);
-      expect(result, {'closed': 60.0, 'open': 40.0});
+      expect(result, isNull);
     });
   });
 
@@ -92,15 +86,76 @@ void main() {
 
       final result = await container.read(dashboardWasteProvider.future);
 
-      expect(result['Recycle'], 2.0); // 2000kg -> 2.0 tonnes
+      expect(result!['Recycle'], 2.0); // 2000kg -> 2.0 tonnes
       expect(result['General'], 1.5); // unit != 'kg', taken as-is
       expect(result['Haz'], 0.5); // 500kg -> 0.5 tonnes
     });
 
-    test('FINDING: returns a hardcoded fallback {Recycle: 1.5, General: 2.0, Haz: 0.5} when there is no real data',
+    test('returns null (not a fabricated {Recycle: 1.5, General: 2.0, Haz: 0.5}) when there is no real data',
         () async {
       final result = await container.read(dashboardWasteProvider.future);
-      expect(result, {'Recycle': 1.5, 'General': 2.0, 'Haz': 0.5});
+      expect(result, isNull);
+    });
+  });
+
+  group('dashboardHiraMatrixProvider', () {
+    test('buckets real risk_assessments by likelihood/severity into a 5x5 matrix', () async {
+      final col = firestore.tenantCollection(tenantId, 'risk_assessments');
+      await col.add({'siteId': tenantId, 'likelihood': 'rare', 'severity': 'catastrophic'});
+      await col.add({'siteId': tenantId, 'likelihood': 'rare', 'severity': 'catastrophic'});
+      await col.add({'siteId': tenantId, 'likelihood': 'almost certain', 'severity': 'negligible'});
+
+      final result = await container.read(dashboardHiraMatrixProvider.future);
+
+      expect(result![0], 2); // row 0 (catastrophic) x col 0 (rare)
+      expect(result[24], 1); // row 4 (negligible) x col 4 (almost certain)
+      expect(result.fold<int>(0, (s, v) => s + v), 3);
+    });
+
+    test('returns null (not a fabricated matrix) when there is no real data at all', () async {
+      final result = await container.read(dashboardHiraMatrixProvider.future);
+      expect(result, isNull);
+    });
+  });
+
+  group('dashboardTrainingProvider', () {
+    test('computes real Valid+Expiring-Soon percentages per training category', () async {
+      final col = firestore.tenantCollection(tenantId, 'competency_passports');
+      await col.add({'siteId': tenantId, 'certification': 'First Aid Level 1', 'status': 'Valid'});
+      await col.add({'siteId': tenantId, 'certification': 'First Aid Level 1', 'status': 'Expired'});
+      await col.add({'siteId': tenantId, 'certification': 'SHE Rep / Samtrac', 'status': 'Valid'});
+
+      final result = await container.read(dashboardTrainingProvider.future);
+
+      expect(result!['First Aid'], 50.0);
+      expect(result['SHE Rep'], 100.0);
+      expect(result['Fire Fighting'], 0.0); // real zero: no matching records, not "unknown"
+    });
+
+    test('returns null (not a fabricated 90/65/100) when there is no real data at all', () async {
+      final result = await container.read(dashboardTrainingProvider.future);
+      expect(result, isNull);
+    });
+  });
+
+  group('dashboardLtifrHistoryProvider', () {
+    test('returns real zeros (not null) when the tenant has no incidents at all — a genuine "0" result', () async {
+      final result = await container.read(dashboardLtifrHistoryProvider.future);
+
+      expect(result, isNotNull);
+      expect(result, everyElement(0.0));
+    });
+
+    test('returns null when there is no active tenant at all, distinct from a real zero-incident result', () async {
+      final noTenantContainer = ProviderContainer(overrides: [
+        firestoreProvider.overrideWithValue(firestore),
+        currentTenantIdProvider.overrideWithValue(null),
+      ]);
+      addTearDown(noTenantContainer.dispose);
+
+      final result = await noTenantContainer.read(dashboardLtifrHistoryProvider.future);
+
+      expect(result, isNull);
     });
   });
 }

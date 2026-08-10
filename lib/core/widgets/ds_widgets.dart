@@ -60,6 +60,41 @@ class GHeader extends StatelessWidget {
   }
 }
 
+/// A standardized "no data yet" placeholder for dashboard charts backed by a real-time
+/// StreamProvider. Use this instead of substituting fabricated numbers when a query returns no
+/// documents — see AGENTS.md §2's "No Hardcoded Data" rule.
+class GEmptyChartState extends StatelessWidget {
+  final String message;
+  final IconData icon;
+
+  const GEmptyChartState({
+    super.key,
+    this.message = 'No data recorded yet',
+    this.icon = Icons.bar_chart_rounded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 28, color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// A standardized Status Badge using semantic colors.
 class GStatusTag extends StatelessWidget {
   final String label;

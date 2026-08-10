@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class OhsComplianceChart extends ConsumerWidget {
@@ -11,6 +12,9 @@ class OhsComplianceChart extends ConsumerWidget {
     final complianceAsync = ref.watch(dashboardOhsComplianceProvider);
     return complianceAsync.when(
       data: (val) {
+        if (val == null) {
+          return const GEmptyChartState(message: 'No compliance passports recorded yet');
+        }
         return Column(
           children: [
             Expanded(

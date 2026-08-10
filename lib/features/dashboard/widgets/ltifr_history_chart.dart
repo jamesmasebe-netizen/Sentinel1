@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class LtifrHistoryChart extends ConsumerWidget {
@@ -11,6 +12,9 @@ class LtifrHistoryChart extends ConsumerWidget {
     final ltifrAsync = ref.watch(dashboardLtifrHistoryProvider);
     return ltifrAsync.when(
       data: (values) {
+        if (values == null) {
+          return const GEmptyChartState(message: 'No incident history recorded yet');
+        }
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,

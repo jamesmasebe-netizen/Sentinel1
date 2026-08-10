@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class MandatoryTrainingChart extends ConsumerWidget {
@@ -11,6 +12,9 @@ class MandatoryTrainingChart extends ConsumerWidget {
     final trainingAsync = ref.watch(dashboardTrainingProvider);
     return trainingAsync.when(
       data: (trainingMap) {
+        if (trainingMap == null) {
+          return const GEmptyChartState(message: 'No mandatory training records yet');
+        }
         final theme = Theme.of(context);
         final items = [
           {

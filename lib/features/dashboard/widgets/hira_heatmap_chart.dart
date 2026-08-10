@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class HiraHeatmapChart extends ConsumerWidget {
@@ -11,6 +12,9 @@ class HiraHeatmapChart extends ConsumerWidget {
     final hiraAsync = ref.watch(dashboardHiraMatrixProvider);
     return hiraAsync.when(
       data: (counts) {
+        if (counts == null) {
+          return const GEmptyChartState(message: 'No risk assessments logged yet');
+        }
         return GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

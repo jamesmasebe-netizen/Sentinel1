@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math' as math;
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class CapaResolutionChart extends ConsumerWidget {
@@ -12,6 +13,9 @@ class CapaResolutionChart extends ConsumerWidget {
     final capaAsync = ref.watch(dashboardCapaProvider);
     return capaAsync.when(
       data: (capaMap) {
+        if (capaMap == null) {
+          return const GEmptyChartState(message: 'No CAPAs logged yet');
+        }
         final closed = capaMap['closed']!;
         final open = capaMap['open']!;
         return Row(

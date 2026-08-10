@@ -4,10 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 
-final dashboardLtifrHistoryProvider = StreamProvider<List<double>>((ref) {
+// FIXED (this pass): every provider below used to return a hardcoded, fabricated value whenever
+// its query returned zero documents (or there was no active tenant), instead of signaling "no data
+// yet" — a direct violation of AGENTS.md §2's "No Hardcoded Data" rule. Each now returns null for
+// that case (a genuinely empty collection still computes and returns a real, informative zero
+// value — e.g. "0 incidents this month" — only the "we have no records at all yet" case returns
+// null); the chart widgets in dashboard/widgets/ render GEmptyChartState (core/widgets/ds_widgets.dart)
+// when they see null instead of drawing a chart around fake numbers.
+
+final dashboardLtifrHistoryProvider = StreamProvider<List<double>?>((ref) {
   final siteId = ref.watch(currentTenantIdProvider);
   final firestore = ref.watch(firestoreProvider);
-  if (siteId == null) return Stream.value([75, 80, 60, 45, 30, 42]);
+  if (siteId == null) return Stream.value(null);
   return firestore
       .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'incidents')
       .where('siteId', isEqualTo: siteId)
@@ -33,10 +41,10 @@ final dashboardLtifrHistoryProvider = StreamProvider<List<double>>((ref) {
       });
 });
 
-final dashboardOhsComplianceProvider = StreamProvider<double>((ref) {
+final dashboardOhsComplianceProvider = StreamProvider<double?>((ref) {
   final siteId = ref.watch(currentTenantIdProvider);
   final firestore = ref.watch(firestoreProvider);
-  if (siteId == null) return Stream.value(94.0);
+  if (siteId == null) return Stream.value(null);
   return firestore
       .tenantCollection(
         ref.watch(currentTenantIdProvider) ?? "",
@@ -45,7 +53,7 @@ final dashboardOhsComplianceProvider = StreamProvider<double>((ref) {
       .where('siteId', isEqualTo: siteId)
       .snapshots()
       .map((s) {
-        if (s.docs.isEmpty) return 94.0;
+        if (s.docs.isEmpty) return null;
         final valid =
             s.docs
                 .where(
@@ -58,39 +66,11 @@ final dashboardOhsComplianceProvider = StreamProvider<double>((ref) {
       });
 });
 
-final dashboardHiraMatrixProvider = StreamProvider<List<int>>((ref) {
+final dashboardHiraMatrixProvider = StreamProvider<List<int>?>((ref) {
   final siteId = ref.watch(currentTenantIdProvider);
   final firestore = ref.watch(firestoreProvider);
 
-  final defaultCounts = [
-    0,
-    2,
-    0,
-    0,
-    1,
-    4,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    12,
-    3,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ];
-
-  if (siteId == null) return Stream.value(defaultCounts);
+  if (siteId == null) return Stream.value(null);
   return firestore
       .tenantCollection(
         ref.watch(currentTenantIdProvider) ?? "",
@@ -99,7 +79,7 @@ final dashboardHiraMatrixProvider = StreamProvider<List<int>>((ref) {
       .where('siteId', isEqualTo: siteId)
       .snapshots()
       .map((s) {
-        if (s.docs.isEmpty) return defaultCounts;
+        if (s.docs.isEmpty) return null;
         final matrix = List.filled(25, 0);
         final likelihoodMap = {
           'rare': 0,
@@ -133,16 +113,10 @@ final dashboardHiraMatrixProvider = StreamProvider<List<int>>((ref) {
       });
 });
 
-final dashboardTrainingProvider = StreamProvider<Map<String, double>>((ref) {
+final dashboardTrainingProvider = StreamProvider<Map<String, double>?>((ref) {
   final siteId = ref.watch(currentTenantIdProvider);
   final firestore = ref.watch(firestoreProvider);
-  if (siteId == null) {
-    return Stream.value({
-      'First Aid': 90.0,
-      'Fire Fighting': 65.0,
-      'SHE Rep': 100.0,
-    });
-  }
+  if (siteId == null) return Stream.value(null);
   return firestore
       .tenantCollection(
         ref.watch(currentTenantIdProvider) ?? "",
@@ -151,6 +125,7 @@ final dashboardTrainingProvider = StreamProvider<Map<String, double>>((ref) {
       .where('siteId', isEqualTo: siteId)
       .snapshots()
       .map((s) {
+        if (s.docs.isEmpty) return null;
         final total = {'First Aid': 0, 'Fire Fighting': 0, 'SHE Rep': 0};
         final valid = {'First Aid': 0, 'Fire Fighting': 0, 'SHE Rep': 0};
         for (final doc in s.docs) {
@@ -174,11 +149,6 @@ final dashboardTrainingProvider = StreamProvider<Map<String, double>>((ref) {
             }
           }
         }
-        if (total['First Aid'] == 0 &&
-            total['Fire Fighting'] == 0 &&
-            total['SHE Rep'] == 0) {
-          return {'First Aid': 90.0, 'Fire Fighting': 65.0, 'SHE Rep': 100.0};
-        }
         return {
           'First Aid':
               total['First Aid'] == 0
@@ -196,16 +166,16 @@ final dashboardTrainingProvider = StreamProvider<Map<String, double>>((ref) {
       });
 });
 
-final dashboardCapaProvider = StreamProvider<Map<String, double>>((ref) {
+final dashboardCapaProvider = StreamProvider<Map<String, double>?>((ref) {
   final siteId = ref.watch(currentTenantIdProvider);
   final firestore = ref.watch(firestoreProvider);
-  if (siteId == null) return Stream.value({'closed': 60.0, 'open': 40.0});
+  if (siteId == null) return Stream.value(null);
   return firestore
       .tenantCollection(ref.watch(currentTenantIdProvider) ?? "", 'capas')
       .where('siteId', isEqualTo: siteId)
       .snapshots()
       .map((s) {
-        if (s.docs.isEmpty) return {'closed': 60.0, 'open': 40.0};
+        if (s.docs.isEmpty) return null;
         final closed =
             s.docs.where((d) {
               final status = d.data()['status'] ?? '';
@@ -219,12 +189,10 @@ final dashboardCapaProvider = StreamProvider<Map<String, double>>((ref) {
       });
 });
 
-final dashboardWasteProvider = StreamProvider<Map<String, double>>((ref) {
+final dashboardWasteProvider = StreamProvider<Map<String, double>?>((ref) {
   final siteId = ref.watch(currentTenantIdProvider);
   final firestore = ref.watch(firestoreProvider);
-  if (siteId == null) {
-    return Stream.value({'Recycle': 1.5, 'General': 2.0, 'Haz': 0.5});
-  }
+  if (siteId == null) return Stream.value(null);
   return firestore
       .tenantCollection(
         ref.watch(currentTenantIdProvider) ?? "",
@@ -233,6 +201,7 @@ final dashboardWasteProvider = StreamProvider<Map<String, double>>((ref) {
       .where('siteId', isEqualTo: siteId)
       .snapshots()
       .map((s) {
+        if (s.docs.isEmpty) return null;
         double recyclable = 0.0;
         double general = 0.0;
         double hazardous = 0.0;
@@ -251,9 +220,6 @@ final dashboardWasteProvider = StreamProvider<Map<String, double>>((ref) {
           } else if (type.contains('haz')) {
             hazardous += qty;
           }
-        }
-        if (recyclable == 0 && general == 0 && hazardous == 0) {
-          return {'Recycle': 1.5, 'General': 2.0, 'Haz': 0.5};
         }
         return {'Recycle': recyclable, 'General': general, 'Haz': hazardous};
       });

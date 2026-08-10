@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../providers/dashboard_providers.dart';
 
 class IncidentHeatmapScatterPlot extends ConsumerWidget {
@@ -11,12 +12,9 @@ class IncidentHeatmapScatterPlot extends ConsumerWidget {
     final heatmapAsync = ref.watch(dashboardIncidentHeatmapProvider);
     return heatmapAsync.when(
       data: (points) {
-        final defaultPoints = [
-          {'x': 0.2, 'y': 0.1, 'isCritical': 1.0},
-          {'x': 0.5, 'y': 0.8, 'isCritical': 0.0},
-          {'x': 0.8, 'y': 0.4, 'isCritical': 1.0},
-        ];
-        final activePoints = points.isEmpty ? defaultPoints : points;
+        if (points.isEmpty) {
+          return const GEmptyChartState(message: 'No incidents recorded yet');
+        }
         return Padding(
           padding: const EdgeInsets.only(left: 16, bottom: 16),
           child: Container(
@@ -69,7 +67,7 @@ class IncidentHeatmapScatterPlot extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    ...activePoints.map((p) {
+                    ...points.map((p) {
                       final x = p['x']! * (width - 16);
                       final y = p['y']! * (height - 16);
                       final isCrit = p['isCritical'] == 1.0;
