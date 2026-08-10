@@ -1,10 +1,9 @@
 // Tests for HRService (lib/features/people/services/hr_service.dart) — the
-// Department/JobRole/OhsRole CRUD service. Not to be confused with the
-// unrelated, unreachable HRService class in
-// lib/features/people/providers/hr_provider.dart (see that file's own
-// comment and TEST_BACKLOG.md for the duplicate-name/dead-code finding);
-// this is the real one, injected into BpfOrchestrator and reachable from
-// org_config_screen.dart.
+// Department/JobRole/OhsRole CRUD service, injected into BpfOrchestrator and
+// reachable from org_config_screen.dart. A duplicate-named, fully unreachable
+// HRService class previously lived in lib/features/people/providers/
+// hr_provider.dart, alongside 2 equally-orphaned screens that only it fed —
+// all 3 files deleted 2026-08-10 (confirmed zero external references).
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentinel1/features/people/models/hr_models.dart';

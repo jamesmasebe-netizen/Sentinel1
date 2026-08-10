@@ -24,6 +24,7 @@ import '../features/crm/screens/crm_hub_screen.dart';
 import '../features/customer_service/screens/customer_service_hub_screen.dart';
 
 import '../features/people/screens/people_hub_screen.dart';
+import '../features/people/screens/employee_360_profile_screen.dart';
 import '../features/people/screens/hr_hub_screen.dart';
 import '../features/people/screens/okr_dashboard_screen.dart';
 import '../features/safety/screens/safety_hub_screen.dart';
@@ -197,6 +198,19 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/people',
             pageBuilder:
                 (c, s) => const NoTransitionPage(child: PeopleHubScreen()),
+          ),
+          // Found undeclared 2026-08-10: employee_list.dart's onTap has always called
+          // context.push('/employee-360/${id}'), but this route never existed — every tap on an
+          // employee card in the live Employee Profiles list silently failed. Also the only thing
+          // blocking the hire_to_retire BPF (Employee360ProfileScreen's "Complete Onboarding"
+          // button) from being reachable at all.
+          GoRoute(
+            path: '/employee-360/:employeeId',
+            pageBuilder: (c, s) => NoTransitionPage(
+              child: Employee360ProfileScreen(
+                employeeId: s.pathParameters['employeeId']!,
+              ),
+            ),
           ),
           GoRoute(
             path: '/revenue-recognition',
