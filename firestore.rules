@@ -319,6 +319,13 @@ service cloud.firestore {
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
 
+      // SHEQ-AI chat logs (SheqChatTab's "Save to SHEQ Log" action)
+      match /sheq_chat_logs/{logId} {
+        allow read: if belongsToTenant(tenantId);
+        allow create: if belongsToTenant(tenantId); // Anyone can save their own chat
+        allow delete: if belongsToTenant(tenantId) && isAdmin();
+      }
+
       // Supply Chain
       match /purchase_orders/{poId} {
         allow read: if belongsToTenant(tenantId);

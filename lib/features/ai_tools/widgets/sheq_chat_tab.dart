@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../../config/theme.dart';
+import '../../../core/providers/app_providers.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../providers/gemini_provider.dart';
 import 'sheq_chat_widgets.dart';
 
@@ -16,6 +18,7 @@ class _SheqChatState extends ConsumerState<SheqChatTab> {
   final _scroll = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _loading = false;
+  bool _isSaving = false;
   late ChatSession _chat;
 
   static const _systemPrompt =
@@ -81,6 +84,41 @@ class _SheqChatState extends ConsumerState<SheqChatTab> {
     }
   }
 
+  /// Saves the conversation so far as a durable SHEQ log entry — mirrors
+  /// hazard_photo_tab.dart/safety_flash_tab.dart's own direct
+  /// firestoreServiceProvider().createDocument() save pattern.
+  Future<void> _saveToLog() async {
+    if (_isSaving || !_messages.any((m) => m.isUser)) return;
+    setState(() => _isSaving = true);
+    try {
+      final profile = ref.read(userProfileProvider).valueOrNull;
+      if (profile == null) throw Exception('Not logged in');
+      final firestoreService = ref.read(firestoreServiceProvider);
+      await firestoreService.createDocument(
+        tenantId: ref.read(currentTenantIdProvider) ?? '',
+        collection: 'sheq_chat_logs',
+        data: {
+          'messages': _messages
+              .map((m) => {'text': m.text, 'isUser': m.isUser})
+              .toList(),
+          'postedById': profile.uid,
+          'postedByName': profile.displayName,
+          'siteId': profile.tenantId,
+          'createdAt': DateTime.now().toIso8601String(),
+        },
+      );
+      if (mounted) {
+        UIUtils.showToast(context, 'Saved to SHEQ Log', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        UIUtils.showToast(context, 'Error saving: $e', type: ToastType.error);
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
   void _scrollDown() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
@@ -95,14 +133,31 @@ class _SheqChatState extends ConsumerState<SheqChatTab> {
 
   @override
   Widget build(BuildContext context) {
+    final hasUserMessages = _messages.any((m) => m.isUser);
     return Column(
       children: [
-        // Quick prompts
-        QuickPrompts(
-          onPromptSelected: (q) {
-            _ctrl.text = q;
-            _send();
-          },
+        Row(
+          children: [
+            Expanded(
+              child: QuickPrompts(
+                onPromptSelected: (q) {
+                  _ctrl.text = q;
+                  _send();
+                },
+              ),
+            ),
+            IconButton(
+              tooltip: 'Save to SHEQ Log',
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_outlined, size: 20),
+              onPressed: hasUserMessages && !_isSaving ? _saveToLog : null,
+            ),
+          ],
         ),
         // Messages
         Expanded(

@@ -19,6 +19,10 @@
  * - safety_flashes: create is manager-or-sheq gated, delete is isAdmin()-gated, but there is NO
  *   `allow update` statement in this block AT ALL — update is implicitly denied for every role,
  *   including admin. Confirmed by reading the real firestore.rules file, not assumed.
+ * - sheq_chat_logs (added 2026-08-10, SheqChatTab's "Save to SHEQ Log" action): same
+ *   create-anyone/delete-admin/no-update shape as hazards' create tier and safety_flashes' missing
+ *   update rule, just combined differently — create has NO role gate at all (unlike safety_flashes'
+ *   manager-or-sheq requirement), since any employee using the chat can save their own transcript.
  */
 import { assertFails, assertSucceeds, RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { deleteDoc, doc, setDoc, updateDoc } from "firebase/firestore";
@@ -224,6 +228,43 @@ describe("firestore.rules — HR/SHEQ cluster: distinctive-shape collections (Wa
       const admin = authedContext(testEnv, "admin-flash-2", TENANT_A, "admin");
       await assertSucceeds(
         deleteDoc(doc(admin.firestore(), `tenants/${TENANT_A}/safety_flashes/flash-3`))
+      );
+    });
+  });
+
+  describe("sheq_chat_logs — create open to anyone (SheqChatTab's 'Save to SHEQ Log'), delete admin, NO update rule", () => {
+    it("allows a plain employee to create — 'anyone can save their own chat'", async () => {
+      const employee = authedContext(testEnv, "employee-chatlog-1", TENANT_A, "employee");
+      await assertSucceeds(
+        setDoc(doc(employee.firestore(), `tenants/${TENANT_A}/sheq_chat_logs/log-1`), {
+          messages: [{ text: "hi", isUser: true }],
+        })
+      );
+    });
+
+    it("denies UPDATE for every role, including admin — no allow-update statement exists for this collection", async () => {
+      await seed(`tenants/${TENANT_A}/sheq_chat_logs/log-2`, { note: "seed" });
+      const admin = authedContext(testEnv, "admin-chatlog-1", TENANT_A, "admin");
+      await assertFails(
+        updateDoc(doc(admin.firestore(), `tenants/${TENANT_A}/sheq_chat_logs/log-2`), {
+          note: "should be denied — no update rule exists for this collection",
+        })
+      );
+    });
+
+    it("denies a plain employee from deleting — delete needs isAdmin() specifically", async () => {
+      await seed(`tenants/${TENANT_A}/sheq_chat_logs/log-3`, { note: "seed" });
+      const employee = authedContext(testEnv, "employee-chatlog-2", TENANT_A, "employee");
+      await assertFails(
+        deleteDoc(doc(employee.firestore(), `tenants/${TENANT_A}/sheq_chat_logs/log-3`))
+      );
+    });
+
+    it("allows an admin to delete", async () => {
+      await seed(`tenants/${TENANT_A}/sheq_chat_logs/log-4`, { note: "seed" });
+      const admin = authedContext(testEnv, "admin-chatlog-2", TENANT_A, "admin");
+      await assertSucceeds(
+        deleteDoc(doc(admin.firestore(), `tenants/${TENANT_A}/sheq_chat_logs/log-4`))
       );
     });
   });
