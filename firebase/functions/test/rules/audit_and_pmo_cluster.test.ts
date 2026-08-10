@@ -2,9 +2,13 @@
  * Wave 2c — supplemental cluster: explicit test coverage for the 8 remaining collections added to
  * firestore.rules during the T2c-SENSITIVE security/availability fix (see TEST_BACKLOG.md) that
  * don't fit the managerGated/sheqGated loops already covered elsewhere — audit_logs, counters,
- * the 4 PMO self-logged collections (actuals/expenses/timeEntries/time_entries), and the 2 HR
+ * the 3 PMO self-logged collections (actuals/expenses/time_entries), and the 2 HR
  * self-service collections (competency_passports/skills_matrix). That fix verified the rules text
  * directly but didn't add dedicated tests; this closes that gap.
+ *
+ * 2026-08-10: 'timeEntries' (a separate, naming-drift duplicate of 'time_entries' that had no
+ * reader anywhere in lib/) was unified onto 'time_entries' and its own rules block removed —
+ * dropped from the pmoSelfLogged loop below accordingly.
  */
 import { assertFails, assertSucceeds, RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { addDoc, collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
@@ -70,7 +74,7 @@ describe("firestore.rules — audit_logs/PMO/HR-self-service collections (Wave 2
 
   // Shape: read open to any tenant member; create open to any tenant member (self-logged);
   // update/delete gated to isManager().
-  const pmoSelfLogged = ["actuals", "expenses", "timeEntries", "time_entries"];
+  const pmoSelfLogged = ["actuals", "expenses", "time_entries"];
 
   for (const collection of pmoSelfLogged) {
     it(`${collection}: any employee can create (self-logged), but only a manager can update or delete`, async () => {

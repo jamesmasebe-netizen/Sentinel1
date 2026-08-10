@@ -188,13 +188,10 @@ service cloud.firestore {
         allow create: if belongsToTenant(tenantId);
         allow update, delete: if belongsToTenant(tenantId) && isManager();
       }
-      // Both spellings declared — project_providers.dart writes 'timeEntries',
-      // pmo_service.dart's TimeEntry CRUD writes 'time_entries' (naming drift, not yet unified).
-      match /timeEntries/{entryId} {
-        allow read: if belongsToTenant(tenantId);
-        allow create: if belongsToTenant(tenantId);
-        allow update, delete: if belongsToTenant(tenantId) && isManager();
-      }
+      // Unified onto this single collection 2026-08-10 — project_providers.dart's
+      // addTimeEntry (which wrote a separate, never-read 'timeEntries') was
+      // repointed to PmoService.createTimeEntry, the same TimeEntry model
+      // project_detail_screen.dart's Time Entries tab already reads.
       match /time_entries/{entryId} {
         allow read: if belongsToTenant(tenantId);
         allow create: if belongsToTenant(tenantId);

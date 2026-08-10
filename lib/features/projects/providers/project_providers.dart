@@ -155,13 +155,6 @@ class ProjectService {
 
 
 
-  Future<void> addTimeEntry(ProjectTimeEntry entry) async {
-    await _firestore
-        .tenantCollection(_tenantId, 'timeEntries')
-        .doc(entry.id)
-        .set(entry.toFirestore());
-  }
-
   /// Evaluates compliance locks and approves a stage if valid
   Future<void> approveStage(
     String projectId,

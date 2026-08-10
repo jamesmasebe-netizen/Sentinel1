@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../core/providers/app_providers.dart';
-import '../models/project_models.dart';
-import '../providers/project_providers.dart';
+import '../models/pmo_models.dart';
+import '../services/pmo_service.dart';
 
 class TimesheetEntryScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -42,17 +42,26 @@ class _TimesheetEntryScreenState extends ConsumerState<TimesheetEntryScreen> {
         throw Exception('Not authenticated or no active tenant.');
       }
 
-      final entry = ProjectTimeEntry(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      // Unified onto the same time_entries collection/TimeEntry model as
+      // PmoService's Time Entries tab (project_detail_screen.dart) reads from —
+      // previously this screen wrote to a separate 'timeEntries' collection that
+      // had no reader anywhere in the app. No specific WBS task is selected from
+      // this quick-entry screen, so taskId is left blank (matches TimeEntry's own
+      // fromJson default for an absent task).
+      final entry = TimeEntry(
+        entryId: DateTime.now().millisecondsSinceEpoch.toString(),
+        resourceId: profile.uid,
         projectId: widget.projectId,
-        tenantId: tenantId,
-        description: _descriptionController.text.trim(),
-        hours: double.parse(_hoursController.text.trim()),
+        taskId: '',
         date: _selectedDate,
-        loggedBy: profile.uid,
+        hours: double.parse(_hoursController.text.trim()),
+        description: _descriptionController.text.trim(),
+        isBillable: true,
+        billingStatus: 'Unbilled',
+        approvalStatus: 'Draft',
       );
 
-      await ref.read(projectServiceProvider).addTimeEntry(entry);
+      await ref.read(pmoServiceProvider).createTimeEntry(entry);
 
       if (mounted) {
         UIUtils.showToast(context, 'Timesheet submitted successfully', type: ToastType.success);
