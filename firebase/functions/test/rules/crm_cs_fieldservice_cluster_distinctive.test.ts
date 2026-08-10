@@ -16,10 +16,14 @@
  *   reachable pre-authentication (careers portal, per docs/fixes/FIX_LIST.md F-501) — those two
  *   assertions belong in zzz_unauthenticated_access.test.ts per that file's own stated convention
  *   for every testEnv.unauthenticatedContext() case in this suite, not here.
+ *
+ * public_tenant_directory's authenticated create/update/delete cases (added during the recruitment
+ * pipeline redesign, see TEST_BACKLOG.md T3-PUBLIC) live here too, for the same reason — its
+ * `allow read: if true` unauthenticated case is already in zzz_unauthenticated_access.test.ts.
  */
 import { assertFails, assertSucceeds, RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { authedContext, getTestEnv, TENANT_A } from "../helpers/rules_test_env";
+import { authedContext, getTestEnv, TENANT_A, TENANT_B } from "../helpers/rules_test_env";
 
 describe("firestore.rules — CRM/Sales/CS/FieldService cluster: distinctive-shape collections (Wave 2c)", () => {
   let testEnv: RulesTestEnvironment;
@@ -184,6 +188,68 @@ describe("firestore.rules — CRM/Sales/CS/FieldService cluster: distinctive-sha
       await assertSucceeds(getDoc(ref));
       await assertSucceeds(updateDoc(ref, { status: "reviewed" }));
       await assertSucceeds(deleteDoc(ref));
+    });
+  });
+
+  describe("public_tenant_directory — authenticated create/update/delete (public `read: if true` covered in zzz_unauthenticated_access.test.ts)", () => {
+    it("allows an admin to claim a not-yet-existing slug for their OWN tenant", async () => {
+      const admin = authedContext(testEnv, "admin-slug-1", TENANT_A, "admin");
+      await assertSucceeds(
+        setDoc(doc(admin.firestore(), "public_tenant_directory/acme-corp"), {
+          tenantId: TENANT_A,
+        })
+      );
+    });
+
+    it("denies a manager (not just an employee) from claiming a slug — needs isAdmin()", async () => {
+      const manager = authedContext(testEnv, "manager-slug-1", TENANT_A, "manager");
+      await assertFails(
+        setDoc(doc(manager.firestore(), "public_tenant_directory/acme-corp-2"), {
+          tenantId: TENANT_A,
+        })
+      );
+    });
+
+    it("denies an admin from claiming a slug on behalf of a DIFFERENT tenant than their own", async () => {
+      const admin = authedContext(testEnv, "admin-slug-2", TENANT_A, "admin");
+      await assertFails(
+        setDoc(doc(admin.firestore(), "public_tenant_directory/other-co"), {
+          tenantId: TENANT_B,
+        })
+      );
+    });
+
+    it("allows the owning tenant's admin to update their already-claimed slug", async () => {
+      await seed("public_tenant_directory/acme-corp-3", { tenantId: TENANT_A });
+      const admin = authedContext(testEnv, "admin-slug-3", TENANT_A, "admin");
+      await assertSucceeds(
+        updateDoc(doc(admin.firestore(), "public_tenant_directory/acme-corp-3"), {
+          tenantId: TENANT_A,
+        })
+      );
+    });
+
+    it("denies a DIFFERENT tenant's admin from hijacking an already-claimed slug via update", async () => {
+      await seed("public_tenant_directory/acme-corp-4", { tenantId: TENANT_A });
+      const otherAdmin = authedContext(testEnv, "admin-slug-4", TENANT_B, "admin");
+      await assertFails(
+        updateDoc(doc(otherAdmin.firestore(), "public_tenant_directory/acme-corp-4"), {
+          tenantId: TENANT_B,
+        })
+      );
+    });
+
+    it("allows the owning tenant's admin to delete their claimed slug, denies a different tenant's admin", async () => {
+      await seed("public_tenant_directory/acme-corp-5", { tenantId: TENANT_A });
+      const otherAdmin = authedContext(testEnv, "admin-slug-5", TENANT_B, "admin");
+      await assertFails(
+        deleteDoc(doc(otherAdmin.firestore(), "public_tenant_directory/acme-corp-5"))
+      );
+
+      const owningAdmin = authedContext(testEnv, "admin-slug-6", TENANT_A, "admin");
+      await assertSucceeds(
+        deleteDoc(doc(owningAdmin.firestore(), "public_tenant_directory/acme-corp-5"))
+      );
     });
   });
 });
