@@ -7,6 +7,7 @@ import '../../../core/bpf/bpf_orchestrator.dart';
 import '../../crm/providers/crm_providers.dart';
 import '../../crm/models/crm_models.dart';
 import '../../../core/widgets/entity_selector.dart';
+import '../providers/scm_streams_provider.dart';
 
 class PurchaseOrderForm extends ConsumerStatefulWidget {
   final PurchaseOrder? initialData;
@@ -182,12 +183,13 @@ class _PurchaseOrderFormState extends ConsumerState<PurchaseOrderForm> {
             displayMapper: (a) => a.name,
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _warehouseIdController,
-            decoration: const InputDecoration(
-              labelText: 'Warehouse ID',
-              border: OutlineInputBorder(),
-            ),
+          EntitySelector<Warehouse>(
+            value: _warehouseIdController.text.isEmpty ? null : _warehouseIdController.text,
+            onChanged: (val) => setState(() => _warehouseIdController.text = val ?? ''),
+            label: 'Warehouse',
+            asyncEntities: ref.watch(warehousesStreamProvider),
+            idMapper: (w) => w.id,
+            displayMapper: (w) => w.name,
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
