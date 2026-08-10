@@ -50,13 +50,18 @@ function buildRequest(data: unknown): CallableRequest {
   return req as unknown as CallableRequest;
 }
 
-async function seedInventoryItem(tenantId: string, itemId: string, stockLevel: number) {
+async function seedInventoryItem(
+  tenantId: string,
+  itemId: string,
+  stockLevel: number,
+  itemType?: string
+) {
   await db
     .collection("tenants")
     .doc(tenantId)
     .collection("inventory_items")
     .doc(itemId)
-    .set({ stock_level: stockLevel, name: itemId });
+    .set({ stock_level: stockLevel, name: itemId, ...(itemType ? { item_type: itemType } : {}) });
 }
 
 async function seedSalesOrder(tenantId: string, orderId: string, data: Record<string, unknown>) {
@@ -183,6 +188,22 @@ describe("runMrp — emulator-backed reads/batch write (T2-003)", () => {
       .get();
     // Aggregate demand = 22, supply = 15, shortage = 7.
     expect(suggestions.docs[0].data().suggestedQuantity).toBe(7);
+  });
+
+  it("suggests type PRODUCTION (not PURCHASE) for a shortage on a manufactured (FINISHED_GOOD/SUB_ASSEMBLY) item", async () => {
+    const tenantId = "tenant-mrp-manufactured";
+    await seedInventoryItem(tenantId, "item-drone-kit", 5, "FINISHED_GOOD");
+    await seedSalesOrder(tenantId, "so-6", { status: "OPEN" });
+    await seedSalesOrderLine(tenantId, "so-6", "line-1", "item-drone-kit", 20);
+
+    await wrapped(buildRequest({ tenantId }));
+
+    const suggestions = await db
+      .collection("tenants")
+      .doc(tenantId)
+      .collection("mrp_suggestions")
+      .get();
+    expect(suggestions.docs[0].data().type).toBe("PRODUCTION");
   });
 
   it("ignores sales orders whose status is not OPEN or CONFIRMED", async () => {

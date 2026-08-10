@@ -20,11 +20,19 @@ export const runMrp = functions.https.onCall(async (request) => {
         // 1. Fetch current inventory (Supply)
         const inventorySnap = await tenantRef.collection('inventory_items').get();
         const inventoryMap: { [itemId: string]: number } = {};
+        // Manufactured items (assembled in-house from a BOM) get a Production suggestion
+        // instead of a Purchase one — see the type assignment below. item_type is the same
+        // field InventoryItemForm's dropdown writes (RAW_MATERIAL/COMPONENT/SUB_ASSEMBLY/
+        // FINISHED_GOOD/CONSUMABLE/ASSET); FINISHED_GOOD/SUB_ASSEMBLY are the ones actually
+        // built, not bought.
+        const manufacturedTypes = new Set(['FINISHED_GOOD', 'SUB_ASSEMBLY']);
+        const itemTypeMap: { [itemId: string]: string } = {};
         inventorySnap.docs.forEach(doc => {
             const data = doc.data();
             // F-201: was data.quantityOnHand, a key the Dart client never writes.
             // stock_level is what InventoryItem/ScmService actually persist.
             inventoryMap[doc.id] = data.stock_level || 0;
+            itemTypeMap[doc.id] = data.item_type || '';
         });
 
         // 2. Fetch open Sales Orders (Demand)
@@ -59,12 +67,12 @@ export const runMrp = functions.https.onCall(async (request) => {
             if (demandQty > supplyQty) {
                 const shortage = demandQty - supplyQty;
                 
-                // Create an MRP Suggestion (Draft PO equivalent)
+                // Create an MRP Suggestion (Draft PO/Production Order equivalent)
                 const suggestionRef = tenantRef.collection('mrp_suggestions').doc();
                 const suggestion = {
                     itemId: itemId,
                     suggestedQuantity: shortage,
-                    type: 'PURCHASE', // Could be 'PRODUCTION' if it's a manufactured item
+                    type: manufacturedTypes.has(itemTypeMap[itemId]) ? 'PRODUCTION' : 'PURCHASE',
                     status: 'DRAFT',
                     reason: 'Sales Order Demand Exceeds Supply',
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
