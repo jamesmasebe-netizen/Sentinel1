@@ -4,10 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import '../models/user_profile.dart';
-import '../../config/firebase_config.dart';
 
 /// Authentication service handling Google Sign-In, biometrics, and user profile management.
 class AuthService {
+  // Default site for new users. Previously lived in config/firebase_config.dart alongside
+  // an unused appId constant and a doc comment about now-removed hardcoded API keys (F-502);
+  // this was the file's only real consumer, so it moved here and the file was deleted 2026-08-10.
+  static const String _defaultSiteId = 'LDN-01';
+
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final FlutterSecureStorage _secureStorage;
@@ -176,7 +180,7 @@ class AuthService {
       displayName: user.displayName ?? 'New User',
       photoURL: user.photoURL,
       role: 'employee',
-      tenantId: FirebaseConfig.defaultSiteId,
+      tenantId: _defaultSiteId,
     );
 
     await docRef.set(newProfile.toFirestore());
