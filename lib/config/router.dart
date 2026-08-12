@@ -26,6 +26,7 @@ import '../features/customer_service/screens/customer_service_hub_screen.dart';
 import '../features/people/screens/people_hub_screen.dart';
 import '../features/people/screens/employee_360_profile_screen.dart';
 import '../features/people/screens/hr_hub_screen.dart';
+import '../features/people/screens/employee_hub_screen.dart';
 import '../features/people/screens/okr_dashboard_screen.dart';
 import '../features/safety/screens/safety_hub_screen.dart';
 import '../features/compliance/screens/compliance_docs_screen.dart';
@@ -144,6 +145,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/hr',
             pageBuilder: (c, s) => const NoTransitionPage(child: HrHubScreen()),
+          ),
+          // Added 2026-08-12 — EmployeeHubScreen ("My Portal") existed with no route
+          // registration anywhere; wired up as part of the D365 IA reorg's Human
+          // Resources section (masterplan's "Employee Hub fuses into HR" mapping).
+          GoRoute(
+            path: '/my-portal',
+            pageBuilder: (c, s) => const NoTransitionPage(child: EmployeeHubScreen()),
           ),
           GoRoute(
             path: '/training',
@@ -274,11 +282,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/loto-management',
             pageBuilder: (c, s) => const NoTransitionPage(child: LotoManagementScreen()),
-          ),
-          GoRoute(
-            path: '/equipment',
-            pageBuilder:
-                (c, s) => const NoTransitionPage(child: EquipmentManagementScreen()),
           ),
           GoRoute(
             path: '/properties',
