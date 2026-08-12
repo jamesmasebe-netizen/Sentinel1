@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../../emergency/screens/emergency_response_screen.dart';
+import '../../safety/screens/permit_to_work_screen.dart';
 import 'dispatcher_board_screen.dart';
 import 'work_order_list_screen.dart';
 import 'route_optimization_screen.dart';
@@ -36,7 +39,7 @@ class FieldServiceHubScreen extends StatelessWidget {
               title: 'Emergency Response',
               icon: Icons.emergency,
               color: Colors.red,
-              destination: null, // Placeholder
+              destination: const EmergencyResponseScreen(),
             ),
             _buildDashboardCard(
               context,
@@ -50,7 +53,7 @@ class FieldServiceHubScreen extends StatelessWidget {
               title: 'Safety PTW Registry',
               icon: Icons.security,
               color: Colors.orange,
-              destination: null, // Placeholder
+              destination: const PermitToWorkScreen(),
             ),
           ],
         ),
@@ -63,24 +66,17 @@ class FieldServiceHubScreen extends StatelessWidget {
     required String title,
     required IconData icon,
     required Color color,
-    Widget? destination,
+    required Widget destination,
   }) {
     return Card(
       elevation: 4.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
       child: InkWell(
-        onTap: () {
-          if (destination != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => destination),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$title is under construction.')),
-            );
-          }
-        },
+        onTap: () => UIUtils.showSideSheet(
+          context: context,
+          title: title,
+          builder: (ctx) => destination,
+        ),
         borderRadius: BorderRadius.circular(16.0),
         child: Container(
           decoration: BoxDecoration(
