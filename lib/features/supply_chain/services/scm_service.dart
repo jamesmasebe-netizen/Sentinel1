@@ -166,34 +166,9 @@ class ScmService {
     await _poLinesRef(poId).doc(lineId).delete();
   }
 
-  // ==========================================
-  // ASSETS (Collection: assets)
-  // ==========================================
-  CollectionReference<Map<String, dynamic>> get _assetsRef =>
-      _tenantDoc.collection('assets');
-
-  Future<List<Asset>> getAssets() async {
-    final snap = await _assetsRef.get();
-    return snap.docs.map((doc) => Asset.fromJson(doc.data(), doc.id)).toList();
-  }
-
-  Future<Asset?> getAsset(String id) async {
-    final doc = await _assetsRef.doc(id).get();
-    if (!doc.exists) return null;
-    return Asset.fromJson(doc.data()!, doc.id);
-  }
-
-  Future<void> createAsset(Asset asset) async {
-    await _assetsRef.doc(asset.id).set(asset.toJson());
-  }
-
-  Future<void> updateAsset(Asset asset) async {
-    await _assetsRef.doc(asset.id).update(asset.toJson());
-  }
-
-  Future<void> deleteAsset(String id) async {
-    await _assetsRef.doc(id).delete();
-  }
+  // Asset/getAssets/getAsset/createAsset/updateAsset/deleteAsset/streamAssets removed 2026-08-12
+  // — confirmed fully dead (zero callers anywhere in lib/); equipment/models/equipment_models.dart's
+  // EquipmentModel is the real, live asset-tracking model.
 
   // ==========================================
   // SALES ORDERS (Collection: sales_orders)
@@ -431,13 +406,6 @@ class ScmService {
           snap.docs
               .map((doc) => PurchaseOrder.fromJson(doc.data(), doc.id))
               .toList(),
-    );
-  }
-
-  Stream<List<Asset>> streamAssets() {
-    return _assetsRef.snapshots().map(
-      (snap) =>
-          snap.docs.map((doc) => Asset.fromJson(doc.data(), doc.id)).toList(),
     );
   }
 

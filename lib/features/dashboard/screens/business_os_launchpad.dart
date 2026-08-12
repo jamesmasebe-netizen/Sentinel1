@@ -68,7 +68,10 @@ const _sections = [
     _TileData(title: 'Global Settings', icon: Icons.settings, color: Colors.grey, route: '/settings'),
     // Control Tower is now the Executive View toggle inside DashboardScreen, not a
     // standalone route — /control-tower no longer exists in router.dart.
-    _TileData(title: 'Global Control Tower', icon: Icons.satellite_alt, color: Colors.cyanAccent, route: '/dashboard'),
+    // Renamed from "Global Control Tower" 2026-08-12 — DashboardScreen already merged the two
+    // concepts behind an Operational/Executive toggle (see dashboard_screen.dart), and this is
+    // the only launchpad tile pointing at /dashboard, so the label should say what it now is.
+    _TileData(title: 'Dashboard', icon: Icons.satellite_alt, color: Colors.cyanAccent, route: '/dashboard'),
     _TileData(title: 'Sentinel Copilot', icon: Icons.auto_awesome, color: Colors.deepPurpleAccent, route: '/copilot'),
     _TileData(title: 'Offline Sync Queue', icon: Icons.sync, color: Colors.blueGrey, route: '/offline-queue'),
   ]),

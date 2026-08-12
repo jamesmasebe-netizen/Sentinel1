@@ -1,7 +1,11 @@
 // Tests for ScmService (lib/features/supply_chain/services/scm_service.dart) — representative
-// CRUD coverage for InventoryItem, PurchaseOrder+lines, Asset, TransferOrder, and
-// WarehouseBinLocation. SalesOrder+so_lines already has dedicated coverage in
-// scm_service_so_lines_test.dart (added earlier this session alongside the mrpEngine fix).
+// CRUD coverage for InventoryItem, PurchaseOrder+lines, TransferOrder, and WarehouseBinLocation.
+// SalesOrder+so_lines already has dedicated coverage in scm_service_so_lines_test.dart (added
+// earlier this session alongside the mrpEngine fix).
+//
+// Asset/createAsset/getAsset/streamAssets and their test coverage were removed 2026-08-12 —
+// confirmed fully dead (zero callers anywhere in lib/ outside this service's own definition);
+// equipment/models/equipment_models.dart's EquipmentModel is the real, live asset-tracking model.
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sentinel1/features/supply_chain/models/scm_models.dart';
@@ -77,23 +81,6 @@ void main() {
 
       expect(lines, hasLength(1));
       expect(lines.single.quantityOrdered, 10);
-    });
-  });
-
-  group('Asset', () {
-    test('createAsset then getAsset round-trips', () async {
-      await service.createAsset(Asset(
-        id: 'asset-1',
-        assetTag: 'AST-001',
-        name: 'Forklift',
-        category: 'Heavy Equipment',
-        status: 'InUse',
-      ));
-
-      final result = await service.getAsset('asset-1');
-
-      expect(result, isNotNull);
-      expect(result!.name, 'Forklift');
     });
   });
 

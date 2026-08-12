@@ -676,11 +676,9 @@ service cloud.firestore {
       }
 
       // Supply Chain
-      match /assets/{assetId} {
-        allow read: if belongsToTenant(tenantId);
-        allow create, update: if belongsToTenant(tenantId) && isManager();
-        allow delete: if belongsToTenant(tenantId) && isAdmin();
-      }
+      // 'assets' rule removed 2026-08-12 — ScmService's Asset CRUD was confirmed fully dead
+      // (zero callers anywhere in lib/) and deleted; equipment/models/equipment_models.dart's
+      // EquipmentModel is the real, live asset-tracking model.
       match /sales_orders/{orderId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId) && isManager();
