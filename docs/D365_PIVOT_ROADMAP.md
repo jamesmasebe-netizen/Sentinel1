@@ -138,11 +138,24 @@ onto a parallel schema for no functional gain.
 Ordered by (a) how much of the pillar's *stated* D365-competitive gap it actually closes, and (b)
 how much it reuses already-built foundations rather than starting fresh:
 
-1. **Module Launchpad / IA reorg** (masterplan §1) — the one part of the original pitch that's
-   still a live, real gap: today's launchpad is a flat tile grid (`business_os_launchpad.dart`),
-   not the proposed 7-pillar grouping. This is a genuinely scoped, mostly-UI exercise — group
-   existing routes under new section headers — and doesn't require touching business logic at
-   all. Good candidate for a focused first phase.
+1. **Module Launchpad / IA reorg** (masterplan §1) — ✅ **done, 2026-08-12.** This bullet's own
+   claim that "today's launchpad is a flat tile grid" was already stale when written — earlier
+   session work had given `business_os_launchpad.dart` 6 section headers, just not ones matching
+   the masterplan's pillar boundaries (Sales/Customer Service/Field Service were merged into one
+   "Customer Engagement" bucket; Safety/Risk/Environment/Compliance/Workers Comp/Occupational
+   Health were scattered across HR/Project Ops/Supply Chain instead of grouped as EHS). Fixed:
+   the launchpad now has 9 sections — the 7 named D365 pillars plus "EHS & Risk Management" (per
+   the masterplan's own explicit "Existing Code Mapping" instruction) and "System Administration."
+   Two real reachability bugs surfaced by the same audit were fixed alongside it, not scope creep
+   — `EmployeeHubScreen` ("My Portal," a complete self-service screen) had zero route registration
+   anywhere, and `field_service_hub_screen.dart` used a banned `Navigator.push`/`ScaffoldMessenger`
+   pattern with 2 dead "under construction" placeholder cards that had real screens to point at
+   instead. AI Copilot's masterplan-proposed "omnipresent floating overlay" was deliberately left
+   out of this pass — it's an app-shell change (touches every `Scaffold`), not a launchpad
+   regroup; still a routed tile today. Two more findings from the same audit were logged to
+   `docs/OUTSTANDING_WORK.md` instead of silently resolved: `OkrDashboardScreen` (768 lines of
+   pure mock data, zero callers) and a second live HR dashboard, `HrHubScreen`, duplicating
+   `PeopleHubScreen`'s launchpad-facing role.
 2. **Finance**: bank reconciliation + multi-currency — the largest *confirmed-missing* piece in
    the pillar with the most existing infrastructure to build on (`FinanceService`,
    `fin_*` collections, the tax engine).
