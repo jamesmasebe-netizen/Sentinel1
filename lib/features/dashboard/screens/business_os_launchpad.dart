@@ -28,9 +28,38 @@ class _SectionData {
   const _SectionData(this.title, this.tiles);
 }
 
+// D365 Pivot Roadmap Phase 0 (2026-08-12): sections now mirror the 7 named D365
+// pillars (Finance/Project Operations/Human Resources/Field Service/Customer
+// Service/Sales/Supply Chain Management) plus the masterplan's explicit
+// "Existing Code Mapping" — Risk/Safety/Emergency/Environment grouped under
+// EHS & Risk Management rather than scattered across HR/Project Ops/Supply
+// Chain. See docs/D365_PIVOT_ROADMAP.md and docs/dynamics_365_masterplan.md §1.
 const _sections = [
   _SectionData('Finance', [
     _TileData(title: 'Finance', icon: Icons.account_balance, color: Colors.blueAccent, route: '/finance'),
+  ]),
+  _SectionData('Project Operations', [
+    _TileData(title: 'Projects', icon: Icons.architecture, color: Colors.indigo, route: '/projects'),
+    _TileData(title: 'Project Ops', icon: Icons.construction, color: Colors.teal, route: '/projects-ops'),
+    _TileData(title: 'Schedule Board', icon: Icons.calendar_view_week, color: Colors.blueAccent, route: '/schedule-board'),
+    _TileData(title: 'Contractors', icon: Icons.engineering, color: Colors.brown, route: '/contractors', contractorVisible: true),
+  ]),
+  _SectionData('Human Resources', [
+    _TileData(title: 'HR & Payroll', icon: Icons.people, color: Colors.pinkAccent, route: '/people'),
+    _TileData(title: 'Training', icon: Icons.model_training, color: Colors.lightBlue, route: '/training', contractorVisible: true),
+    // Wired up 2026-08-12 — EmployeeHubScreen ("My Portal") existed with zero route
+    // registration and zero callers anywhere; this is the masterplan's "Employee Hub
+    // fuses into HR" instruction, just never actually connected.
+    _TileData(title: 'My Portal', icon: Icons.badge, color: Colors.deepPurple, route: '/my-portal'),
+  ]),
+  _SectionData('Field Service', [
+    _TileData(title: 'Field Service', icon: Icons.handyman, color: Colors.lime, route: '/field-service'),
+  ]),
+  _SectionData('Customer Service', [
+    _TileData(title: 'Customer Service', icon: Icons.support_agent, color: Colors.deepPurple, route: '/customer-service'),
+  ]),
+  _SectionData('Sales', [
+    _TileData(title: 'CRM', icon: Icons.point_of_sale, color: Colors.lightGreen, route: '/crm'),
   ]),
   _SectionData('Supply Chain Management', [
     _TileData(title: 'Supply Chain', icon: Icons.local_shipping, color: Colors.orangeAccent, route: '/supply-chain'),
@@ -39,27 +68,14 @@ const _sections = [
     _TileData(title: 'Manufacturing', icon: Icons.precision_manufacturing, color: Colors.amber, route: '/manufacturing'),
     _TileData(title: 'Equipment', icon: Icons.precision_manufacturing, color: Colors.amber, route: '/equipment'),
     _TileData(title: 'Property & Facilities', icon: Icons.business, color: Colors.grey, route: '/properties'),
-    _TileData(title: 'Environment', icon: Icons.eco, color: Colors.green, route: '/environment'),
   ]),
-  _SectionData('Human Resources', [
-    _TileData(title: 'HR & Payroll', icon: Icons.people, color: Colors.pinkAccent, route: '/people'),
-    _TileData(title: 'Training', icon: Icons.model_training, color: Colors.lightBlue, route: '/training', contractorVisible: true),
-    _TileData(title: 'Workers Comp', icon: Icons.personal_injury, color: Colors.orange, route: '/workers-comp'),
-    _TileData(title: 'Occupational Health', icon: Icons.medical_services, color: Colors.pink, route: '/health'),
+  _SectionData('EHS & Risk Management', [
     _TileData(title: 'Safety', icon: Icons.health_and_safety, color: Colors.redAccent, route: '/safety', contractorVisible: true),
     _TileData(title: 'Compliance', icon: Icons.fact_check, color: Colors.deepPurpleAccent, route: '/compliance', contractorVisible: true),
-  ]),
-  _SectionData('Project Operations', [
-    _TileData(title: 'Projects', icon: Icons.architecture, color: Colors.indigo, route: '/projects'),
-    _TileData(title: 'Project Ops', icon: Icons.construction, color: Colors.teal, route: '/projects-ops'),
-    _TileData(title: 'Schedule Board', icon: Icons.calendar_view_week, color: Colors.blueAccent, route: '/schedule-board'),
-    _TileData(title: 'Contractors', icon: Icons.engineering, color: Colors.brown, route: '/contractors', contractorVisible: true),
+    _TileData(title: 'Workers Comp', icon: Icons.personal_injury, color: Colors.orange, route: '/workers-comp'),
+    _TileData(title: 'Occupational Health', icon: Icons.medical_services, color: Colors.pink, route: '/health'),
     _TileData(title: 'Risk', icon: Icons.warning_amber_rounded, color: Colors.deepOrange, route: '/risk'),
-  ]),
-  _SectionData('Customer Engagement', [
-    _TileData(title: 'CRM', icon: Icons.point_of_sale, color: Colors.lightGreen, route: '/crm'),
-    _TileData(title: 'Customer Service', icon: Icons.support_agent, color: Colors.deepPurple, route: '/customer-service'),
-    _TileData(title: 'Field Service', icon: Icons.handyman, color: Colors.lime, route: '/field-service'),
+    _TileData(title: 'Environment', icon: Icons.eco, color: Colors.green, route: '/environment'),
     _TileData(title: 'Emergency', icon: Icons.emergency, color: Colors.red, route: '/emergency', contractorVisible: true),
   ]),
   _SectionData('System Administration', [
