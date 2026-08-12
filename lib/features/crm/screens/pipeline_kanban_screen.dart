@@ -2,7 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/crm_models.dart';
+import '../providers/crm_providers.dart';
 import '../services/crm_service.dart';
+
+/// Re-pointed onto Opportunity 2026-08-12 — previously ran on the separate Deal/DealStage
+/// pipeline (CRM's own, independently-routed one), which is now retired (see crm_service.dart's
+/// header comment). Opportunity's stage vocabulary is its own real 10-stage pipeline (matching
+/// opportunity_form.dart's dropdown exactly), richer than Deal's 6 simplified stages — this is
+/// the one genuinely live, BPF-integrated pipeline the app has, so the Kanban board (Deal's one
+/// real advantage over Opportunity — a drag-and-drop view Opportunity's own screens never had)
+/// now visualizes it instead.
+const _stages = [
+  'Prospecting',
+  'Qualification',
+  'Needs Analysis',
+  'Value Proposition',
+  'Id. Decision Makers',
+  'Perception Analysis',
+  'Proposal/Price Quote',
+  'Negotiation/Review',
+  'Closed Won',
+  'Closed Lost',
+];
 
 class PipelineKanbanScreen extends ConsumerStatefulWidget {
   const PipelineKanbanScreen({super.key});
@@ -15,7 +36,8 @@ class PipelineKanbanScreen extends ConsumerStatefulWidget {
 class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
   @override
   Widget build(BuildContext context) {
-    final dealsAsyncValue = ref.watch(dealsStreamProvider);
+    final opportunitiesAsync = ref.watch(opportunitiesStreamProvider);
+    final accountsAsync = ref.watch(accountsStreamProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -25,30 +47,35 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: dealsAsyncValue.when(
-        data: (deals) {
-          return _buildKanbanBoard(context, deals, theme);
+      body: opportunitiesAsync.when(
+        data: (opportunities) {
+          final accountNames = <String, String>{
+            for (final a in accountsAsync.valueOrNull ?? <Account>[]) a.id: a.name,
+          };
+          return _buildKanbanBoard(context, opportunities, accountNames, theme);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error loading deals: $err')),
+        error: (err, stack) =>
+            Center(child: Text('Error loading opportunities: $err')),
       ),
     );
   }
 
   Widget _buildKanbanBoard(
     BuildContext context,
-    List<Deal> deals,
+    List<Opportunity> opportunities,
+    Map<String, String> accountNames,
     ThemeData theme,
   ) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: DealStage.values.length,
+        itemCount: _stages.length,
         itemBuilder: (context, index) {
-          final stage = DealStage.values[index];
-          final stageDeals = deals.where((d) => d.stage == stage).toList();
-          return _buildStageColumn(context, stage, stageDeals, theme);
+          final stage = _stages[index];
+          final stageOpps = opportunities.where((o) => o.stage == stage).toList();
+          return _buildStageColumn(context, stage, stageOpps, accountNames, theme);
         },
       ),
     );
@@ -56,22 +83,23 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
 
   Widget _buildStageColumn(
     BuildContext context,
-    DealStage stage,
-    List<Deal> deals,
+    String stage,
+    List<Opportunity> opportunities,
+    Map<String, String> accountNames,
     ThemeData theme,
   ) {
     final formatCurrency = NumberFormat.simpleCurrency();
-    final totalStageValue = deals.fold<double>(
+    final totalStageValue = opportunities.fold<double>(
       0.0,
-      (prev, deal) => prev + deal.value,
+      (prev, opp) => prev + opp.amount,
     );
 
-    return DragTarget<Deal>(
+    return DragTarget<Opportunity>(
       onAcceptWithDetails: (details) {
-        final deal = details.data;
-        if (deal.stage != stage) {
+        final opp = details.data;
+        if (opp.stage != stage) {
           final crmService = ref.read(crmServiceProvider);
-          crmService.updateDeal(deal.copyWith(stage: stage));
+          crmService.updateOpportunity(_withStage(opp, stage));
         }
       },
       builder: (context, candidateData, rejectedData) {
@@ -117,14 +145,14 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _getStageName(stage),
+                            stage,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${deals.length} deals • ${formatCurrency.format(totalStageValue)}',
+                            '${opportunities.length} opportunities • ${formatCurrency.format(totalStageValue)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -145,26 +173,29 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(12.0),
-                  itemCount: deals.length,
+                  itemCount: opportunities.length,
                   itemBuilder: (context, index) {
-                    final deal = deals[index];
-                    return Draggable<Deal>(
-                      data: deal,
+                    final opp = opportunities[index];
+                    return Draggable<Opportunity>(
+                      data: opp,
                       feedback: Material(
                         color: Colors.transparent,
                         child: Opacity(
                           opacity: 0.8,
                           child: SizedBox(
                             width: 296,
-                            child: _buildDealCard(deal, theme, formatCurrency),
+                            child: _buildOpportunityCard(
+                                opp, accountNames, theme, formatCurrency),
                           ),
                         ),
                       ),
                       childWhenDragging: Opacity(
                         opacity: 0.3,
-                        child: _buildDealCard(deal, theme, formatCurrency),
+                        child: _buildOpportunityCard(
+                            opp, accountNames, theme, formatCurrency),
                       ),
-                      child: _buildDealCard(deal, theme, formatCurrency),
+                      child: _buildOpportunityCard(
+                          opp, accountNames, theme, formatCurrency),
                     );
                   },
                 ),
@@ -176,8 +207,9 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
     );
   }
 
-  Widget _buildDealCard(
-    Deal deal,
+  Widget _buildOpportunityCard(
+    Opportunity opp,
+    Map<String, String> accountNames,
     ThemeData theme,
     NumberFormat currencyFormat,
   ) {
@@ -196,7 +228,7 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              deal.title,
+              opp.name,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 fontSize: 16,
@@ -215,7 +247,7 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    deal.customerName,
+                    accountNames[opp.accountId] ?? 'Unknown Account',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -239,7 +271,7 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    currencyFormat.format(deal.value),
+                    currencyFormat.format(opp.amount),
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -247,7 +279,7 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
                   ),
                 ),
                 Text(
-                  DateFormat.MMMd().format(deal.createdAt),
+                  '${opp.probability.toInt()}%',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -260,37 +292,48 @@ class _PipelineKanbanScreenState extends ConsumerState<PipelineKanbanScreen> {
     );
   }
 
-  String _getStageName(DealStage stage) {
-    switch (stage) {
-      case DealStage.lead:
-        return 'Leads';
-      case DealStage.qualified:
-        return 'Qualified';
-      case DealStage.proposal:
-        return 'Proposal Made';
-      case DealStage.negotiation:
-        return 'Negotiation';
-      case DealStage.closedWon:
-        return 'Closed Won';
-      case DealStage.closedLost:
-        return 'Closed Lost';
-    }
-  }
+  Opportunity _withStage(Opportunity opp, String stage) => Opportunity(
+        id: opp.id,
+        name: opp.name,
+        accountId: opp.accountId,
+        primaryContactId: opp.primaryContactId,
+        stage: stage,
+        amount: opp.amount,
+        probability: opp.probability,
+        expectedCloseDate: opp.expectedCloseDate,
+        forecastCategory: opp.forecastCategory,
+        leadSource: opp.leadSource,
+        nextStep: opp.nextStep,
+        ownerId: opp.ownerId,
+        lossReason: opp.lossReason,
+        createdAt: opp.createdAt,
+        updatedAt: opp.updatedAt,
+      );
 
-  IconData _getStageIcon(DealStage stage) {
+  IconData _getStageIcon(String stage) {
     switch (stage) {
-      case DealStage.lead:
+      case 'Prospecting':
         return Icons.person_add_alt_1;
-      case DealStage.qualified:
+      case 'Qualification':
         return Icons.fact_check_outlined;
-      case DealStage.proposal:
+      case 'Needs Analysis':
+        return Icons.search;
+      case 'Value Proposition':
+        return Icons.lightbulb_outline;
+      case 'Id. Decision Makers':
+        return Icons.groups_outlined;
+      case 'Perception Analysis':
+        return Icons.psychology_outlined;
+      case 'Proposal/Price Quote':
         return Icons.description_outlined;
-      case DealStage.negotiation:
+      case 'Negotiation/Review':
         return Icons.handshake_outlined;
-      case DealStage.closedWon:
+      case 'Closed Won':
         return Icons.emoji_events_outlined;
-      case DealStage.closedLost:
+      case 'Closed Lost':
         return Icons.cancel_outlined;
+      default:
+        return Icons.circle_outlined;
     }
   }
 }

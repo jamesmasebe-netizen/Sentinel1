@@ -8,68 +8,6 @@ DateTime? _parseDateTime(dynamic value) {
   return null;
 }
 
-class Deal {
-  final String id;
-  final String title;
-  final String customerName;
-  final double value;
-  final DealStage stage;
-  final DateTime createdAt;
-
-  Deal({
-    required this.id,
-    required this.title,
-    required this.customerName,
-    required this.value,
-    required this.stage,
-    required this.createdAt,
-  });
-
-  Deal copyWith({
-    String? id,
-    String? title,
-    String? customerName,
-    double? value,
-    DealStage? stage,
-    DateTime? createdAt,
-  }) {
-    return Deal(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      customerName: customerName ?? this.customerName,
-      value: value ?? this.value,
-      stage: stage ?? this.stage,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  factory Deal.fromJson(Map<String, dynamic> json, String id) {
-    return Deal(
-      id: id,
-      title: json['title'] as String? ?? '',
-      customerName: json['customerName'] as String? ?? '',
-      value: (json['value'] as num?)?.toDouble() ?? 0.0,
-      stage: DealStage.values.firstWhere(
-        (e) => e.name == json['stage'],
-        orElse: () => DealStage.lead,
-      ),
-      createdAt: _parseDateTime(json['createdAt']) ?? DateTime.now(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'customerName': customerName,
-      'value': value,
-      'stage': stage.name,
-      'createdAt': Timestamp.fromDate(createdAt),
-    };
-  }
-}
-
-enum DealStage { lead, qualified, proposal, negotiation, closedWon, closedLost }
-
 class Account {
   final String id;
   final String name;

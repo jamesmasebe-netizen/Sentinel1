@@ -7,41 +7,15 @@ final crmServiceProvider = Provider<CrmService>((ref) {
   return CrmService(ref.watch(tenantDocProvider));
 });
 
-final dealsStreamProvider = StreamProvider<List<Deal>>((ref) {
-  return ref.watch(crmServiceProvider).streamDeals();
-});
-
+/// Deal/DealStage (the 'deals' collection, plus createDeal/updateDeal/deleteDeal/streamDeals)
+/// removed 2026-08-12 — merged into Opportunity (see pipeline_kanban_screen.dart's header
+/// comment). It was a second, independently-routed sales pipeline with no real Account/Contact
+/// links (customerName was a free-text string), genuinely duplicating Opportunity's own live,
+/// BPF-integrated pipeline.
 class CrmService {
   final DocumentReference _tenantDoc;
 
   CrmService(this._tenantDoc);
-
-  // ---------- DEALS ----------
-
-  Future<void> createDeal(Deal deal) async {
-    final docRef = _tenantDoc.collection('deals').doc();
-    final data = deal.toJson();
-    data['createdAt'] = FieldValue.serverTimestamp();
-    await docRef.set(data);
-  }
-
-  Future<void> updateDeal(Deal deal) async {
-    final data = deal.toJson();
-    data.remove('createdAt'); // Don't override createdAt
-    await _tenantDoc.collection('deals').doc(deal.id).update(data);
-  }
-
-  Future<void> deleteDeal(String dealId) async {
-    await _tenantDoc.collection('deals').doc(dealId).delete();
-  }
-
-  Stream<List<Deal>> streamDeals() {
-    return _tenantDoc.collection('deals').snapshots().map((snapshot) {
-      return snapshot.docs
-          .map((doc) => Deal.fromJson(doc.data(), doc.id))
-          .toList();
-    });
-  }
 
   // ---------- ACCOUNTS ----------
 

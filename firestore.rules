@@ -791,11 +791,8 @@ service cloud.firestore {
         allow create, update: if belongsToTenant(tenantId);
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
-      match /deals/{dealId} {
-        allow read: if belongsToTenant(tenantId);
-        allow create, update: if belongsToTenant(tenantId);
-        allow delete: if belongsToTenant(tenantId) && isAdmin();
-      }
+      // 'deals' rule removed 2026-08-12 — Deal/DealStage merged into Opportunity, which already
+      // has its own rule block (see pipeline_kanban_screen.dart's header comment for why).
 
       // Notifications
       match /notifications/{notificationId} {

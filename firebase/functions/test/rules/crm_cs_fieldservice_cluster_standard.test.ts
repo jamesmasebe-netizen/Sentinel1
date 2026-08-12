@@ -1,11 +1,14 @@
 /**
- * Wave 2c — firestore.rules matrix, CRM/Sales/CS/FieldService cluster, part 1: the 15 collections
+ * Wave 2c — firestore.rules matrix, CRM/Sales/CS/FieldService cluster, part 1: the 14 collections
  * sharing one of two standard shapes (confirmed by reading the real firestore.rules text
  * directly). The 3 genuinely distinctive collections (cs_tickets + its messages subcollection,
  * job_requisitions, job_applications) get hand-written coverage in
  * crm_cs_fieldservice_cluster_distinctive.test.ts instead — job_requisitions/job_applications also
  * have public, pre-authentication read/create cases covered in zzz_unauthenticated_access.test.ts
  * per that file's own stated convention (see its header comment).
+ *
+ * 2026-08-12: 'deals' removed from the openWrite list below — Deal/DealStage merged into
+ * Opportunity (already covered by this same shape, under 'opportunities').
  *
  * Binding rule (see TEST_STRATEGY.md §7): call `.firestore()` at most once per context object,
  * ever. Every context here uses a globally-unique uid and exactly one `.firestore()` call.
@@ -47,7 +50,6 @@ describe("firestore.rules — CRM/Sales/CS/FieldService cluster: standard-shape 
     "contacts",
     "customerJourneys",
     "activities",
-    "deals",
   ];
 
   // Shape B: create/update gated to isManager(), delete to isAdmin() — same shape as the

@@ -2,17 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/crm_models.dart';
-import '../services/crm_service.dart';
+import '../providers/crm_providers.dart';
 import 'pipeline_kanban_screen.dart';
-import 'quote_generation_screen.dart';
 import 'account_list_screen.dart';
 
+/// Re-pointed onto Opportunity 2026-08-12 — previously ran entirely on the separate Deal/DealStage
+/// pipeline. See pipeline_kanban_screen.dart's header comment for the full merge rationale.
+/// The "Generate Quote" quick-action tile (QuoteGenerationScreen) was removed rather than
+/// re-pointed — investigation found its "Generate PDF Quote" button never wrote anything real
+/// (just a success toast + pop), fully superseded by the real, working Quote flow already built
+/// this session on Opportunity's own BPF chain (opportunity_detail_screen.dart's "Generate Quote").
 class CrmHubScreen extends ConsumerWidget {
   const CrmHubScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dealsAsyncValue = ref.watch(dealsStreamProvider);
+    final opportunitiesAsync = ref.watch(opportunitiesStreamProvider);
+    final accountsAsync = ref.watch(accountsStreamProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -22,36 +28,41 @@ class CrmHubScreen extends ConsumerWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: dealsAsyncValue.when(
-        data: (deals) => _buildDashboard(context, deals, theme),
+      body: opportunitiesAsync.when(
+        data: (opportunities) {
+          final accountNames = <String, String>{
+            for (final a in accountsAsync.valueOrNull ?? <Account>[]) a.id: a.name,
+          };
+          return _buildDashboard(context, opportunities, accountNames, theme);
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error loading deals: $err')),
+        error: (err, stack) =>
+            Center(child: Text('Error loading opportunities: $err')),
       ),
     );
   }
 
   Widget _buildDashboard(
     BuildContext context,
-    List<Deal> deals,
+    List<Opportunity> opportunities,
+    Map<String, String> accountNames,
     ThemeData theme,
   ) {
     final formatCurrency = NumberFormat.simpleCurrency();
 
     // Calculate metrics
-    final totalPipelineValue = deals
-        .where((d) => d.stage != DealStage.closedLost)
-        .fold(0.0, (sum, item) => sum + item.value);
+    final totalPipelineValue = opportunities
+        .where((o) => o.stage != 'Closed Lost')
+        .fold(0.0, (sum, item) => sum + item.amount);
 
-    final wonValue = deals
-        .where((d) => d.stage == DealStage.closedWon)
-        .fold(0.0, (sum, item) => sum + item.value);
+    final wonValue = opportunities
+        .where((o) => o.stage == 'Closed Won')
+        .fold(0.0, (sum, item) => sum + item.amount);
 
-    final activeDealsCount =
-        deals
+    final activeOpportunitiesCount =
+        opportunities
             .where(
-              (d) =>
-                  d.stage != DealStage.closedLost &&
-                  d.stage != DealStage.closedWon,
+              (o) => o.stage != 'Closed Lost' && o.stage != 'Closed Won',
             )
             .length;
 
@@ -92,8 +103,8 @@ class CrmHubScreen extends ConsumerWidget {
               Expanded(
                 child: _buildMetricCard(
                   context: context,
-                  title: 'Active Deals',
-                  value: activeDealsCount.toString(),
+                  title: 'Active Opportunities',
+                  value: activeOpportunitiesCount.toString(),
                   icon: Icons.assignment,
                   color: Colors.orange,
                 ),
@@ -137,31 +148,18 @@ class CrmHubScreen extends ConsumerWidget {
                   );
                 },
               ),
-              const SizedBox(width: 16),
-              _buildActionCard(
-                context: context,
-                title: 'Generate Quote',
-                icon: Icons.request_quote,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const QuoteGenerationScreen(),
-                    ),
-                  );
-                },
-              ),
             ],
           ),
           const SizedBox(height: 32),
           Text(
-            'Recent Active Deals',
+            'Recent Active Opportunities',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          _buildRecentDealsList(context, deals, theme, formatCurrency),
+          _buildRecentOpportunitiesList(
+              context, opportunities, accountNames, theme, formatCurrency),
         ],
       ),
     );
@@ -246,33 +244,36 @@ class CrmHubScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentDealsList(
+  Widget _buildRecentOpportunitiesList(
     BuildContext context,
-    List<Deal> deals,
+    List<Opportunity> opportunities,
+    Map<String, String> accountNames,
     ThemeData theme,
     NumberFormat formatCurrency,
   ) {
-    final activeDeals =
-        deals
+    final activeOpportunities =
+        opportunities
             .where(
-              (d) =>
-                  d.stage != DealStage.closedLost &&
-                  d.stage != DealStage.closedWon,
+              (o) => o.stage != 'Closed Lost' && o.stage != 'Closed Won',
             )
             .toList();
-    activeDeals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final recentDeals = activeDeals.take(5).toList();
+    activeOpportunities.sort((a, b) {
+      final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bDate = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bDate.compareTo(aDate);
+    });
+    final recentOpportunities = activeOpportunities.take(5).toList();
 
-    if (recentDeals.isEmpty) {
-      return const Text('No active deals found.');
+    if (recentOpportunities.isEmpty) {
+      return const Text('No active opportunities found.');
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: recentDeals.length,
+      itemCount: recentOpportunities.length,
       itemBuilder: (context, index) {
-        final deal = recentDeals[index];
+        final opp = recentOpportunities[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           elevation: 0,
@@ -291,12 +292,13 @@ class CrmHubScreen extends ConsumerWidget {
               ),
             ),
             title: Text(
-              deal.title,
+              opp.name,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('${deal.customerName} • ${deal.stage.name}'),
+            subtitle: Text(
+                '${accountNames[opp.accountId] ?? 'Unknown Account'} • ${opp.stage}'),
             trailing: Text(
-              formatCurrency.format(deal.value),
+              formatCurrency.format(opp.amount),
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.colorScheme.primary,
