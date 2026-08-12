@@ -11,7 +11,7 @@
  *   create/update use the manager-or-sheq combination.
  * - contractor_documents: create is open to anyone, update is isSheqOfficer()-gated, delete is
  *   isAdmin()-gated — three different gates across three operations.
- * - compliance_prescreens: create/update have NO role gate at all (a Cloud Function writes
+ * - contractor_prescreens: create/update have NO role gate at all (a Cloud Function writes
  *   these, per the source comment) — only delete is isAdmin()-gated.
  *
  * These 3 role-gated-read collections (medical_records, coida_claims, coida_compliance_checklist)
@@ -154,19 +154,19 @@ describe("firestore.rules — sensitive-data cluster: distinctive-shape collecti
     });
   });
 
-  describe("compliance_prescreens — create/update have no role gate at all (Cloud Function writes these)", () => {
+  describe("contractor_prescreens — create/update have no role gate at all (Cloud Function writes these)", () => {
     it("allows a plain employee to create and update", async () => {
       const employee = authedContext(testEnv, "employee-prescreen-1", TENANT_A, "employee");
-      const ref = doc(employee.firestore(), `tenants/${TENANT_A}/compliance_prescreens/screen-1`);
+      const ref = doc(employee.firestore(), `tenants/${TENANT_A}/contractor_prescreens/screen-1`);
       await assertSucceeds(setDoc(ref, { note: "seed" }));
       await assertSucceeds(updateDoc(ref, { note: "updated" }));
     });
 
     it("denies a plain employee from deleting — delete is still isAdmin()-gated", async () => {
-      await seed(`tenants/${TENANT_A}/compliance_prescreens/screen-2`, { note: "seed" });
+      await seed(`tenants/${TENANT_A}/contractor_prescreens/screen-2`, { note: "seed" });
       const employee = authedContext(testEnv, "employee-prescreen-2", TENANT_A, "employee");
       await assertFails(
-        deleteDoc(doc(employee.firestore(), `tenants/${TENANT_A}/compliance_prescreens/screen-2`))
+        deleteDoc(doc(employee.firestore(), `tenants/${TENANT_A}/contractor_prescreens/screen-2`))
       );
     });
   });

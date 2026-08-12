@@ -3,7 +3,7 @@
  * "standard" shape for this cluster — read open to any tenant member, create/update gated to
  * isManager() || isSheqOfficer(), delete gated to isAdmin(). The 5 collections with genuinely
  * role-gated READ access or other distinctive shapes (medical_records, coida_claims,
- * coida_compliance_checklist, contractor_documents, compliance_prescreens) get hand-written
+ * coida_compliance_checklist, contractor_documents, contractor_prescreens) get hand-written
  * coverage in sensitive_cluster_distinctive.test.ts instead.
  */
 import { assertFails, assertSucceeds, RulesTestEnvironment } from "@firebase/rules-unit-testing";

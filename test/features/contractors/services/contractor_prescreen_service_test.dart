@@ -1,10 +1,10 @@
-// Tests for AiComplianceService (lib/features/contractors/services/ai_compliance_service.dart).
+// Tests for ContractorPrescreenService (lib/features/contractors/services/contractor_prescreen_service.dart).
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sentinel1/features/contractors/models/compliance_prescreen_models.dart';
-import 'package:sentinel1/features/contractors/services/ai_compliance_service.dart';
+import 'package:sentinel1/features/contractors/models/contractor_prescreen_models.dart';
+import 'package:sentinel1/features/contractors/services/contractor_prescreen_service.dart';
 
 class MockFirebaseFunctions extends Mock implements FirebaseFunctions {}
 
@@ -19,13 +19,13 @@ void main() {
   group('triggerPreScreen', () {
     late MockFirebaseFunctions functions;
     late MockHttpsCallable callable;
-    late AiComplianceService service;
+    late ContractorPrescreenService service;
 
     setUp(() {
       functions = MockFirebaseFunctions();
       callable = MockHttpsCallable();
-      service = AiComplianceService(FakeFirebaseFirestore(), functions, tenantId);
-      when(() => functions.httpsCallable('preScreenComplianceDocument')).thenReturn(callable);
+      service = ContractorPrescreenService(FakeFirebaseFirestore(), functions, tenantId);
+      when(() => functions.httpsCallable('prescreenContractorDocument')).thenReturn(callable);
     });
 
     test('calls the callable with documentId, documentUrl, and tenantId', () async {
@@ -43,7 +43,7 @@ void main() {
     });
 
     test('is a no-op when there is no active tenant', () async {
-      final noTenantService = AiComplianceService(FakeFirebaseFirestore(), functions, '');
+      final noTenantService = ContractorPrescreenService(FakeFirebaseFirestore(), functions, '');
 
       await noTenantService.triggerPreScreen('doc-2', 'https://storage.test/doc-2.pdf');
 
@@ -62,11 +62,11 @@ void main() {
 
   group('streamPreScreenResult', () {
     late FakeFirebaseFirestore firestore;
-    late AiComplianceService service;
+    late ContractorPrescreenService service;
 
     setUp(() {
       firestore = FakeFirebaseFirestore();
-      service = AiComplianceService(firestore, MockFirebaseFunctions(), tenantId);
+      service = ContractorPrescreenService(firestore, MockFirebaseFunctions(), tenantId);
     });
 
     test('returns null when no pre-screen result exists yet for the document', () async {
@@ -78,7 +78,7 @@ void main() {
       await firestore
           .collection('tenants')
           .doc(tenantId)
-          .collection('compliance_prescreens')
+          .collection('contractor_prescreens')
           .doc('screen-1')
           .set({
         'documentId': 'doc-5',
@@ -98,7 +98,7 @@ void main() {
     });
 
     test('returns null when there is no active tenant', () async {
-      final noTenantService = AiComplianceService(firestore, MockFirebaseFunctions(), '');
+      final noTenantService = ContractorPrescreenService(firestore, MockFirebaseFunctions(), '');
       final result = await noTenantService.streamPreScreenResult('doc-6').first;
       expect(result, isNull);
     });

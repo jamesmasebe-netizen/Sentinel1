@@ -140,7 +140,7 @@ describe("firestore.rules — audit_logs/PMO/HR-self-service collections (Wave 2
   });
 
   // Shape: read/create/update all open to any tenant member; delete gated to isAdmin() — same
-  // shape as compliance_prescreens from the sensitive-data cluster.
+  // shape as contractor_prescreens from the sensitive-data cluster.
   const hrSelfService = ["competency_passports", "skills_matrix"];
 
   for (const collection of hrSelfService) {

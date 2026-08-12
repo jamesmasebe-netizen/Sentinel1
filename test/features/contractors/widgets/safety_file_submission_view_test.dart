@@ -14,10 +14,10 @@
 // requiring a real Firebase.initializeApp() unconditionally just to construct the widget at all.
 // Converted to a lazy getter, only evaluated inside _generateReport() (Download Report tapped) —
 // tests below never tap that button, so Firebase Core is never touched. Separately,
-// aiComplianceServiceProvider (a different provider, watched unconditionally by AiPreScreenBadge
+// contractorPrescreenServiceProvider (a different provider, watched unconditionally by AiPreScreenBadge
 // the instant ANY document row renders) hardcodes FirebaseFirestore.instance/FirebaseFunctions.instance
 // directly rather than routing through firestoreProvider — this one required a provider override
-// instead (see the golden-path test below), not a source change, since AiComplianceService already
+// instead (see the golden-path test below), not a source change, since ContractorPrescreenService already
 // takes both as constructor params.
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -25,7 +25,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sentinel1/features/contractors/services/ai_compliance_service.dart';
+import 'package:sentinel1/features/contractors/services/contractor_prescreen_service.dart';
 import 'package:sentinel1/features/contractors/widgets/document_review_dialog.dart';
 import 'package:sentinel1/features/contractors/widgets/safety_file_submission_view.dart';
 
@@ -132,8 +132,8 @@ void main() {
 
     final mockFunctions = MockFirebaseFunctions();
     final container = buildLoggedInContainer(firestore: firestore, extraOverrides: [
-      aiComplianceServiceProvider.overrideWithValue(
-        AiComplianceService(firestore, mockFunctions, _tenantId),
+      contractorPrescreenServiceProvider.overrideWithValue(
+        ContractorPrescreenService(firestore, mockFunctions, _tenantId),
       ),
     ]);
     addTearDown(container.dispose);
@@ -163,12 +163,12 @@ void main() {
 
     final mockFunctions = MockFirebaseFunctions();
     final mockCallable = MockHttpsCallable();
-    when(() => mockFunctions.httpsCallable('preScreenComplianceDocument')).thenReturn(mockCallable);
+    when(() => mockFunctions.httpsCallable('prescreenContractorDocument')).thenReturn(mockCallable);
     when(() => mockCallable.call(any())).thenAnswer((_) async => MockHttpsCallableResult());
 
     final container = buildLoggedInContainer(firestore: firestore, extraOverrides: [
-      aiComplianceServiceProvider.overrideWithValue(
-        AiComplianceService(firestore, mockFunctions, _tenantId),
+      contractorPrescreenServiceProvider.overrideWithValue(
+        ContractorPrescreenService(firestore, mockFunctions, _tenantId),
       ),
     ]);
     addTearDown(container.dispose);
@@ -200,8 +200,8 @@ void main() {
 
     final mockFunctions = MockFirebaseFunctions();
     final container = buildLoggedInContainer(firestore: firestore, extraOverrides: [
-      aiComplianceServiceProvider.overrideWithValue(
-        AiComplianceService(firestore, mockFunctions, _tenantId),
+      contractorPrescreenServiceProvider.overrideWithValue(
+        ContractorPrescreenService(firestore, mockFunctions, _tenantId),
       ),
     ]);
     addTearDown(container.dispose);

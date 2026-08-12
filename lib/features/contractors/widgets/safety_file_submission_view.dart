@@ -11,7 +11,7 @@ import '../../../core/utils/ui_utils.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 import 'document_review_dialog.dart';
 import 'ai_prescreen_badge.dart';
-import '../services/ai_compliance_service.dart';
+import '../services/contractor_prescreen_service.dart';
 import '../services/contractor_review_service.dart';
 import 'finding_list_item.dart';
 import 'finding_update_dialog.dart';
@@ -59,7 +59,7 @@ class _SafetyFileSubmissionViewState
   Future<void> _triggerPreScreen(ContractorDocument doc) async {
     setState(() => _preScreeningIds.add(doc.id));
     try {
-      await ref.read(aiComplianceServiceProvider).triggerPreScreen(doc.id, doc.url);
+      await ref.read(contractorPrescreenServiceProvider).triggerPreScreen(doc.id, doc.url);
     } catch (e) {
       if (mounted) UIUtils.showToast(context, 'AI pre-screen failed: $e', type: ToastType.error);
     } finally {

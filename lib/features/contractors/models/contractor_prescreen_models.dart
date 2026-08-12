@@ -2,14 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum PreScreenStatus { pending, processing, completed, failed }
 
-class ComplianceFlag {
+class PrescreenFlag {
   final String field;
   final String issue;
   final String severity; // 'critical', 'warning', 'info'
   final String? detectedValue;
   final String? expectedValue;
 
-  ComplianceFlag({
+  PrescreenFlag({
     required this.field,
     required this.issue,
     required this.severity,
@@ -17,8 +17,8 @@ class ComplianceFlag {
     this.expectedValue,
   });
 
-  factory ComplianceFlag.fromMap(Map<String, dynamic> map) {
-    return ComplianceFlag(
+  factory PrescreenFlag.fromMap(Map<String, dynamic> map) {
+    return PrescreenFlag(
       field: map['field'] ?? '',
       issue: map['issue'] ?? '',
       severity: map['severity'] ?? 'info',
@@ -36,19 +36,19 @@ class ComplianceFlag {
   };
 }
 
-class CompliancePreScreenResult {
+class ContractorPrescreenResult {
   final String id;
   final String documentId;
   final String submissionId;
   final PreScreenStatus status;
-  final List<ComplianceFlag> flags;
+  final List<PrescreenFlag> flags;
   final double confidenceScore;
   final Map<String, String> extractedDates; // e.g. {'medicalCertExpiry': '2026-12-01'}
   final Map<String, String> extractedCertifications; // e.g. {'firstAid': 'Level 2'}
   final DateTime processedAt;
   final String? errorMessage;
 
-  CompliancePreScreenResult({
+  ContractorPrescreenResult({
     required this.id,
     required this.documentId,
     required this.submissionId,
@@ -61,9 +61,9 @@ class CompliancePreScreenResult {
     this.errorMessage,
   });
 
-  factory CompliancePreScreenResult.fromFirestore(DocumentSnapshot doc) {
+  factory ContractorPrescreenResult.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
-    return CompliancePreScreenResult(
+    return ContractorPrescreenResult(
       id: doc.id,
       documentId: data['documentId'] ?? '',
       submissionId: data['submissionId'] ?? '',
@@ -72,7 +72,7 @@ class CompliancePreScreenResult {
         orElse: () => PreScreenStatus.pending,
       ),
       flags: (data['flags'] as List<dynamic>? ?? [])
-          .map((f) => ComplianceFlag.fromMap(f as Map<String, dynamic>))
+          .map((f) => PrescreenFlag.fromMap(f as Map<String, dynamic>))
           .toList(),
       confidenceScore: (data['confidenceScore'] as num?)?.toDouble() ?? 0.0,
       extractedDates: Map<String, String>.from(data['extractedDates'] ?? {}),

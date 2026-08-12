@@ -1,9 +1,13 @@
 /**
- * Wave 2c — firestore.rules matrix, Finance/SCM cluster: 15 top-level collections plus 3
+ * Wave 2c — firestore.rules matrix, Finance/SCM cluster: 14 top-level collections plus 3
  * subcollections, every single one sharing the exact same shape (confirmed by reading the real
  * firestore.rules text directly, not assumed) — read open to any tenant member, create/update
  * gated to isManager(), delete gated to isAdmin(). No "distinctive" file needed for this cluster;
  * unlike HR/SHEQ and sensitive-data, nothing here has a different role combination.
+ *
+ * 2026-08-12: 'assets' removed from this list — ScmService's Asset CRUD (and its firestore.rules
+ * block) was confirmed fully dead (zero callers anywhere in lib/) and deleted; equipment's
+ * EquipmentModel is the real, live asset-tracking model.
  *
  * Note: fin_ap_invoices, fin_ar_invoices, fin_journal_headers, fin_chart_of_accounts,
  * fin_tax_codes, fin_budget_models, and fin_cost_centers are each declared TWICE in
@@ -48,7 +52,6 @@ describe("firestore.rules — Finance/SCM cluster (Wave 2c)", () => {
     "fin_tax_codes",
     "fin_budget_models",
     "fin_cost_centers",
-    "assets",
     "sales_orders",
     "transfer_orders",
     "mrp_suggestions",

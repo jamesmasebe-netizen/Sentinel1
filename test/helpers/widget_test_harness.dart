@@ -20,7 +20,7 @@ class MockOfflineSyncService extends Mock implements OfflineSyncService {}
 /// full widget pump can avoid Firebase.initializeApp() at all. `firestore` defaults to a fresh
 /// FakeFirebaseFirestore(); pass one in if the test needs to seed data before building the
 /// container. `extraOverrides` is for provider/service seams a specific screen needs (e.g.
-/// offlineSyncServiceProvider, ledgerPostingServiceProvider, aiComplianceServiceProvider).
+/// offlineSyncServiceProvider, ledgerPostingServiceProvider, contractorPrescreenServiceProvider).
 ProviderContainer buildLoggedInContainer({
   FakeFirebaseFirestore? firestore,
   List<Override> extraOverrides = const [],

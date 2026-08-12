@@ -4,34 +4,34 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/tenant_firestore_extension.dart';
-import '../models/compliance_prescreen_models.dart';
+import '../models/contractor_prescreen_models.dart';
 
-final aiComplianceServiceProvider = Provider<AiComplianceService>((ref) {
+final contractorPrescreenServiceProvider = Provider<ContractorPrescreenService>((ref) {
   final tenantId = ref.watch(currentTenantIdProvider) ?? '';
-  return AiComplianceService(
+  return ContractorPrescreenService(
     FirebaseFirestore.instance,
     FirebaseFunctions.instance,
     tenantId,
   );
 });
 
-final compliancePreScreenProvider = StreamProvider.family<CompliancePreScreenResult?, String>((ref, String documentId) {
-  final service = ref.watch(aiComplianceServiceProvider);
+final contractorPrescreenResultProvider = StreamProvider.family<ContractorPrescreenResult?, String>((ref, String documentId) {
+  final service = ref.watch(contractorPrescreenServiceProvider);
   return service.streamPreScreenResult(documentId);
 });
 
-class AiComplianceService {
+class ContractorPrescreenService {
   final FirebaseFirestore _firestore;
   final FirebaseFunctions _functions;
   final String _tenantId;
 
-  AiComplianceService(this._firestore, this._functions, this._tenantId);
+  ContractorPrescreenService(this._firestore, this._functions, this._tenantId);
 
   Future<void> triggerPreScreen(String documentId, String documentUrl) async {
     if (_tenantId.isEmpty) return;
     
     try {
-      final callable = _functions.httpsCallable('preScreenComplianceDocument');
+      final callable = _functions.httpsCallable('prescreenContractorDocument');
       await callable.call({
         'documentId': documentId,
         'documentUrl': documentUrl,
@@ -44,17 +44,17 @@ class AiComplianceService {
     }
   }
 
-  Stream<CompliancePreScreenResult?> streamPreScreenResult(String documentId) {
+  Stream<ContractorPrescreenResult?> streamPreScreenResult(String documentId) {
     if (_tenantId.isEmpty) return Stream.value(null);
 
     return _firestore
-        .tenantCollection(_tenantId, 'compliance_prescreens')
+        .tenantCollection(_tenantId, 'contractor_prescreens')
         .where('documentId', isEqualTo: documentId)
         .limit(1)
         .snapshots()
         .map((snapshot) {
       if (snapshot.docs.isEmpty) return null;
-      return CompliancePreScreenResult.fromFirestore(snapshot.docs.first);
+      return ContractorPrescreenResult.fromFirestore(snapshot.docs.first);
     });
   }
 }

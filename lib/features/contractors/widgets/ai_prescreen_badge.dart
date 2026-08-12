@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/ai_compliance_service.dart';
-import '../models/compliance_prescreen_models.dart';
+import '../services/contractor_prescreen_service.dart';
+import '../models/contractor_prescreen_models.dart';
 
 class AiPreScreenBadge extends ConsumerWidget {
   final String documentId;
@@ -10,7 +10,7 @@ class AiPreScreenBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncResult = ref.watch(compliancePreScreenProvider(documentId));
+    final asyncResult = ref.watch(contractorPrescreenResultProvider(documentId));
 
     return asyncResult.when(
       data: (result) {
@@ -63,7 +63,7 @@ class AiPreScreenBadge extends ConsumerWidget {
     );
   }
 
-  void _showDialog(BuildContext context, CompliancePreScreenResult result) {
+  void _showDialog(BuildContext context, ContractorPrescreenResult result) {
     showDialog(
       context: context,
       builder: (context) {

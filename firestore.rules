@@ -136,8 +136,8 @@ service cloud.firestore {
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
       
-      // Compliance Pre-Screen Results (AI)
-      match /compliance_prescreens/{screenId} {
+      // Contractor AI Pre-Screen Results
+      match /contractor_prescreens/{screenId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId); // Cloud Function writes these
         allow delete: if belongsToTenant(tenantId) && isAdmin();
@@ -224,7 +224,7 @@ service cloud.firestore {
       }
 
       // HR self-service records — any employee logs their own, no role gate on write besides
-      // tenant membership (mirrors compliance_prescreens).
+      // tenant membership (mirrors contractor_prescreens).
       match /competency_passports/{passportId} {
         allow read, create, update: if belongsToTenant(tenantId);
         allow delete: if belongsToTenant(tenantId) && isAdmin();
