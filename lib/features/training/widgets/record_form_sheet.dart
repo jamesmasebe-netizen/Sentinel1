@@ -5,6 +5,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../../people/widgets/employee_selector.dart';
 import '../../people/providers/employee_providers.dart';
+import '../models/training_certificate.dart';
 
 class RecordFormSheet extends ConsumerStatefulWidget {
   const RecordFormSheet({super.key});
@@ -51,18 +52,19 @@ class _RecordFormSheetState extends ConsumerState<RecordFormSheet> {
           .createDocument(
             tenantId: ref.read(currentTenantIdProvider) ?? '',
             collection: 'training_records',
-            data: {
-              'employeeId': _selectedEmployeeId,
-              'employeeName': selectedEmployee?.fullName ?? 'Unknown Employee',
-              'idNumber': _idNumCtrl.text.trim(),
-              'courseName': _courseCtrl.text.trim(),
-              'dateCompleted': _completed.toIso8601String(),
-              'expiryDate': _expiry.toIso8601String(),
-              'status': status,
-              'authorId': profile.uid,
-              'siteId': profile.tenantId,
-              'createdAt': DateTime.now().toIso8601String(),
-            },
+            data: TrainingCertificate(
+              id: '',
+              employeeId: _selectedEmployeeId!,
+              employeeName: selectedEmployee?.fullName ?? 'Unknown Employee',
+              idNumber: _idNumCtrl.text.trim(),
+              courseName: _courseCtrl.text.trim(),
+              dateCompleted: _completed,
+              expiryDate: _expiry,
+              status: status,
+              authorId: profile.uid,
+              siteId: profile.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ).toFirestore(),
           );
 
       if (mounted) {

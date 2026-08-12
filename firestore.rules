@@ -409,14 +409,15 @@ service cloud.firestore {
         allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
+      // Unified 2026-08-12 — previously 2 collections (enrollments/training_enrollments) for the
+      // identical underlying concept (self-paced vs. manager-assigned course progress,
+      // discriminated now by Enrollment.source). Kept this block's already-open create/update
+      // shape rather than training_enrollments' manager-only one: course completion
+      // (CoursePlayerScreen) needs a plain employee to update a manager-assigned entry too, not
+      // just their own self-paced one.
       match /enrollments/{enrollmentId} {
         allow read: if belongsToTenant(tenantId);
         allow create, update: if belongsToTenant(tenantId);
-        allow delete: if belongsToTenant(tenantId) && isAdmin();
-      }
-      match /training_enrollments/{enrollmentId} {
-        allow read: if belongsToTenant(tenantId);
-        allow create, update: if belongsToTenant(tenantId) && (isManager() || isSheqOfficer());
         allow delete: if belongsToTenant(tenantId) && isAdmin();
       }
       match /toolbox_talks/{talkId} {

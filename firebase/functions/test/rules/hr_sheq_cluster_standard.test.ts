@@ -1,9 +1,13 @@
 /**
- * Wave 2c — firestore.rules matrix, HR/SHEQ cluster, part 1: the 11 collections sharing one of
+ * Wave 2c — firestore.rules matrix, HR/SHEQ cluster, part 1: the 10 collections sharing one of
  * three "standard" shapes (read: any tenant member; create/update: gated by role; delete:
  * isAdmin()). The 6 collections with genuinely distinct role combinations (bbs_observations,
  * findings, loto_events, enrollments, hazards, safety_flashes) get explicit, hand-written
  * coverage in hr_sheq_cluster_distinctive.test.ts instead of being forced into this table.
+ *
+ * 2026-08-12: 'training_enrollments' (previously manager-or-sheq-gated) unified onto
+ * 'enrollments' — a separate, always fully-open-to-any-tenant-member collection (see
+ * hr_sheq_cluster_distinctive.test.ts) — dropped from this list accordingly.
  *
  * Binding rule (see TEST_STRATEGY.md §7): call `.firestore()` at most once per context object,
  * ever — calling it twice throws a deterministic "already started" SDK error. Every context here
@@ -44,7 +48,6 @@ describe("firestore.rules — HR/SHEQ cluster: standard-shape collections (Wave 
     "contractor_inductions",
     "ppe_compliance",
     "courses",
-    "training_enrollments",
     "toolbox_talks",
   ];
 

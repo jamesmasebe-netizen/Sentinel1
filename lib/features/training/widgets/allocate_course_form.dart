@@ -57,7 +57,9 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
             .read(firestoreServiceProvider)
             .createDocument(
               tenantId: ref.read(currentTenantIdProvider) ?? '',
-              collection: 'training_enrollments',
+              // Unified onto 'enrollments' 2026-08-12 — source: 'manager_assigned' is the
+              // discriminator that replaced the separate 'training_enrollments' collection.
+              collection: 'enrollments',
               data: {
                 'employeeId': empId,
                 'employeeName': employeeNames[empId] ?? 'Unknown Employee',
@@ -69,6 +71,7 @@ class _AllocateCourseFormState extends ConsumerState<AllocateCourseForm> {
                 // allocation is invisible on that dashboard (see docs/fixes/FIX_LIST.md F-009)
                 'assignedAt': DateTime.now().toIso8601String(),
                 'status': isAlreadyCompleted ? 'Completed' : 'Assigned',
+                'source': 'manager_assigned',
                 'authorId': profile.uid,
                 'siteId': profile.tenantId,
                 'progressPercentage': isAlreadyCompleted ? 1.0 : 0.0,

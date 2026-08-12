@@ -4,6 +4,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../models/course.dart';
 import '../models/enrollment.dart';
+import '../models/training_certificate.dart';
 import '../../people/providers/employee_providers.dart';
 import '../../../core/providers/app_providers.dart';
 import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
@@ -29,62 +30,61 @@ class _CoursePlayerScreenState extends ConsumerState<CoursePlayerScreen> {
 
       if (profile == null) throw Exception('Not logged in');
 
+      final tenantId = ref.read(currentTenantIdProvider) ?? "";
+      final enrollmentsRef = firestore.tenantCollection(tenantId, 'enrollments');
+
       if (widget.enrollment != null) {
-        await firestore
-            .tenantCollection(
-              ref.watch(currentTenantIdProvider) ?? "",
-              'enrollments',
-            )
+        await enrollmentsRef
             .doc(widget.enrollment!.id)
             .update({'progressPercentage': 1.0, 'status': 'Completed'});
       } else {
-        await firestore
-            .tenantCollection(
-              ref.watch(currentTenantIdProvider) ?? "",
-              'enrollments',
-            )
-            .add({
-              'courseId': widget.course.id,
-              'employeeId': profile.uid,
-              'progressPercentage': 1.0,
-              'status': 'Completed',
-              'enrollmentDate': DateTime.now().toIso8601String(),
-            });
+        await enrollmentsRef.add(
+          Enrollment(
+            id: '',
+            courseId: widget.course.id,
+            employeeId: profile.uid,
+            progressPercentage: 1.0,
+            status: 'Completed',
+            enrollmentDate: DateTime.now(),
+            source: 'self_paced',
+          ).toMap()..remove('id'),
+        );
       }
 
-      // Sync with manager allocations (training_enrollments)
-      final tenantId = ref.read(currentTenantIdProvider) ?? "";
-      final allocationsQuery = await firestore
-          .tenantCollection(tenantId, 'training_enrollments')
+      // Sync any OTHER enrollment for this employee+course — unified 2026-08-12, this collection
+      // now holds both self-paced and manager-assigned entries; an employee may have one of each
+      // for the same course (self-started it before a manager also assigned it, or vice versa),
+      // and completing one should mark both done, matching the pre-unification sync behavior.
+      final otherEnrollments = await enrollmentsRef
           .where('employeeId', isEqualTo: profile.uid)
           .where('courseId', isEqualTo: widget.course.id)
           .get();
-      
-      for (var doc in allocationsQuery.docs) {
+      for (final doc in otherEnrollments.docs) {
+        if (doc.id == widget.enrollment?.id) continue;
         await doc.reference.update({
           'progressPercentage': 1.0,
           'status': 'Completed',
         });
       }
 
-      // Auto-generate a compliance certificate (training_records)
+      // Auto-generate a completion certificate (training_records)
       final employees = ref.read(employeesProvider).valueOrNull ?? [];
       final empName = employees.where((e) => e.id == profile.uid).firstOrNull?.fullName ?? 'Unknown Employee';
 
-      await firestore
-          .tenantCollection(tenantId, 'training_records')
-          .add({
-            'employeeId': profile.uid,
-            'employeeName': empName,
-            'idNumber': '', 
-            'courseName': widget.course.title,
-            'dateCompleted': DateTime.now().toIso8601String(),
-            'expiryDate': DateTime.now().add(const Duration(days: 365)).toIso8601String(),
-            'status': 'Active',
-            'authorId': profile.uid,
-            'siteId': profile.tenantId,
-            'createdAt': DateTime.now().toIso8601String(),
-          });
+      await firestore.tenantCollection(tenantId, 'training_records').add(
+            TrainingCertificate(
+              id: '',
+              employeeId: profile.uid,
+              employeeName: empName,
+              courseName: widget.course.title,
+              dateCompleted: DateTime.now(),
+              expiryDate: DateTime.now().add(const Duration(days: 365)),
+              status: 'Active',
+              authorId: profile.uid,
+              siteId: profile.tenantId ?? '',
+              createdAt: DateTime.now(),
+            ).toFirestore(),
+          );
 
       if (mounted) {
         UIUtils.showToast(context, 'Course marked as completed!');

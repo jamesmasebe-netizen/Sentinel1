@@ -40,13 +40,17 @@ class TrainingLMSTab extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           StreamBuilder<QuerySnapshot>(
+            // Unified onto 'enrollments' 2026-08-12 — filtered to source == 'manager_assigned',
+            // same discriminator manager_training_dashboard.dart uses; that collection replaced
+            // the separate 'training_enrollments' this tab previously read.
             stream:
                 firestore
                     .tenantCollection(
                       ref.watch(currentTenantIdProvider) ?? "",
-                      'training_enrollments',
+                      'enrollments',
                     )
                     .where('employeeId', isEqualTo: employeeId)
+                    .where('source', isEqualTo: 'manager_assigned')
                     .orderBy('assignedAt', descending: true)
                     .snapshots(),
             builder: (context, snapshot) {

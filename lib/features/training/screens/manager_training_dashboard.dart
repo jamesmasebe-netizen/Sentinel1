@@ -31,7 +31,6 @@ class _ManagerTrainingDashboardState
   @override
   Widget build(BuildContext context) {
     final firestore = ref.watch(firestoreProvider);
-    final siteId = ref.watch(currentTenantIdProvider);
 
     return Column(
       children: [
@@ -56,13 +55,17 @@ class _ManagerTrainingDashboardState
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
+            // Unified onto 'enrollments' 2026-08-12 — filtered to source == 'manager_assigned'
+            // (the discriminator that replaced the separate 'training_enrollments' collection).
+            // Same query shape as before (1 equality filter + orderBy a different field), just
+            // swapping which field is filtered, so no new composite-index requirement.
             stream:
                 firestore
                     .tenantCollection(
                       ref.watch(currentTenantIdProvider) ?? "",
-                      'training_enrollments',
+                      'enrollments',
                     )
-                    .where('siteId', isEqualTo: siteId)
+                    .where('source', isEqualTo: 'manager_assigned')
                     .orderBy('assignedAt', descending: true)
                     .snapshots(),
             builder: (context, snapshot) {

@@ -9,16 +9,19 @@ final trainingServiceProvider = Provider<TrainingService>((ref) {
   return TrainingService(firestore, tenantId);
 });
 
+/// Unified 2026-08-12: 'enrollments' now covers both self-paced (CoursePlayerScreen) and
+/// manager-assigned (AllocateCourseForm) progress tracking, discriminated by Enrollment.source —
+/// previously 2 separate collections ('enrollments'/'training_enrollments') for the identical
+/// underlying concept. 'training_records' stays separate — a genuinely different concept
+/// (completion/qualification certificates, not in-progress tracking).
 class ComprehensiveTrainingRecord {
   final String employeeId;
-  final List<Map<String, dynamic>> enrollments; // Self-paced e-learning
-  final List<Map<String, dynamic>> trainingEnrollments; // Manager allocated
-  final List<Map<String, dynamic>> trainingRecords; // Certificates / External
+  final List<Map<String, dynamic>> enrollments;
+  final List<Map<String, dynamic>> trainingRecords;
 
   ComprehensiveTrainingRecord({
     required this.employeeId,
     required this.enrollments,
-    required this.trainingEnrollments,
     required this.trainingRecords,
   });
 }
@@ -32,15 +35,13 @@ class TrainingService {
   Future<ComprehensiveTrainingRecord> getComprehensiveEmployeeRecord(String employeeId) async {
     final futures = await Future.wait([
       _firestore.tenantCollection(_tenantId, 'enrollments').where('employeeId', isEqualTo: employeeId).get(),
-      _firestore.tenantCollection(_tenantId, 'training_enrollments').where('employeeId', isEqualTo: employeeId).get(),
       _firestore.tenantCollection(_tenantId, 'training_records').where('employeeId', isEqualTo: employeeId).get(),
     ]);
 
     return ComprehensiveTrainingRecord(
       employeeId: employeeId,
       enrollments: futures[0].docs.map((d) => {'id': d.id, ...d.data()}).toList(),
-      trainingEnrollments: futures[1].docs.map((d) => {'id': d.id, ...d.data()}).toList(),
-      trainingRecords: futures[2].docs.map((d) => {'id': d.id, ...d.data()}).toList(),
+      trainingRecords: futures[1].docs.map((d) => {'id': d.id, ...d.data()}).toList(),
     );
   }
 }
