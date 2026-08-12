@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/widgets/ds_widgets.dart';
+import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../models/emergency_equipment.dart';
 
 class EquipmentListItem extends StatelessWidget {
@@ -71,6 +71,13 @@ class EquipmentListItem extends StatelessWidget {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  if (equipment.propertyName != null)
+                    Text(
+                      equipment.propertyName!,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
                 ],
               ),
             ),

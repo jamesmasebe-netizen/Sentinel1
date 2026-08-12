@@ -109,6 +109,23 @@ void main() {
       expect(data['createdAt'], isA<String>());
       expect(DateTime.tryParse(data['createdAt'] as String), isNotNull);
     });
+
+    test('includes propertyId/propertyName when set (2026-08-12 multi-site addition), omits them when not', () async {
+      await service.createContact(EmergencyContact(
+        id: '',
+        name: 'HQ Reception',
+        number: '011 000 0000',
+        authorId: 'author-1',
+        siteId: _tenantId,
+        propertyId: 'prop-1',
+        propertyName: 'HQ Building',
+        createdAt: DateTime.now(),
+      ));
+
+      final data = capturedQueueArgs()[2] as Map<String, dynamic>;
+      expect(data['propertyId'], 'prop-1');
+      expect(data['propertyName'], 'HQ Building');
+    });
   });
 
   group('streamContacts', () {

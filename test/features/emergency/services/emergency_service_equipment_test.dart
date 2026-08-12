@@ -123,6 +123,22 @@ void main() {
       final data = capturedQueueArgs()[2] as Map<String, dynamic>;
       expect(data.containsKey('siteId'), isFalse);
     });
+
+    test('includes propertyId/propertyName when set (2026-08-12 multi-site addition)', () async {
+      await service.createEquipment(EmergencyEquipment(
+        id: '',
+        equipmentType: 'Extinguisher',
+        status: 'Operational',
+        authorId: 'author-1',
+        propertyId: 'prop-1',
+        propertyName: 'Main Site',
+        createdAt: DateTime.now(),
+      ));
+
+      final data = capturedQueueArgs()[2] as Map<String, dynamic>;
+      expect(data['propertyId'], 'prop-1');
+      expect(data['propertyName'], 'Main Site');
+    });
   });
 
   group('streamEquipment', () {

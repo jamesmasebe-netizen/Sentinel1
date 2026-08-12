@@ -4,6 +4,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../services/emergency_service.dart';
 import 'equipment_form_card.dart';
 import 'equipment_list_item.dart';
+import 'property_filter_dropdown.dart';
 
 class EmergencyEquipmentTab extends ConsumerStatefulWidget {
   const EmergencyEquipmentTab({super.key});
@@ -15,6 +16,7 @@ class EmergencyEquipmentTab extends ConsumerStatefulWidget {
 
 class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
   bool _showEquipForm = false;
+  String? _propertyFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,11 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
+              PropertyFilterDropdown(
+                value: _propertyFilter,
+                onChanged: (val) => setState(() => _propertyFilter = val),
+              ),
+              const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed:
                     () => setState(() => _showEquipForm = !_showEquipForm),
@@ -50,7 +57,10 @@ class _EmergencyEquipmentTabState extends ConsumerState<EmergencyEquipmentTab> {
           child: equipmentAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err')),
-            data: (equipment) {
+            data: (allEquipment) {
+              final equipment = _propertyFilter == null
+                  ? allEquipment
+                  : allEquipment.where((e) => e.propertyId == _propertyFilter).toList();
               if (equipment.isEmpty) {
                 return Center(
                   child: Column(

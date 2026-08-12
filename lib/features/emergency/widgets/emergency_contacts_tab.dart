@@ -7,6 +7,7 @@ import '../../../core/utils/ui_utils.dart';
 import '../../../core/widgets/ds_widgets.dart';
 import '../services/emergency_service.dart';
 import 'emergency_contact_form_card.dart';
+import 'property_filter_dropdown.dart';
 
 // Display-only metadata (icon/color) for the well-known default contacts, matched back to
 // EmergencyService.defaultContacts by name — the (name, number) pairs actually written live on
@@ -28,6 +29,7 @@ class EmergencyContactsTab extends ConsumerStatefulWidget {
 class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
   bool _showForm = false;
   bool _isSeeding = false;
+  String? _propertyFilter;
 
   Future<void> _seedDefaults() async {
     setState(() => _isSeeding = true);
@@ -58,6 +60,11 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
+              PropertyFilterDropdown(
+                value: _propertyFilter,
+                onChanged: (val) => setState(() => _propertyFilter = val),
+              ),
+              const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed: () => setState(() => _showForm = !_showForm),
                 icon: Icon(_showForm ? Icons.close : Icons.add, size: 18),
@@ -71,7 +78,10 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
           child: contactsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err')),
-            data: (contacts) {
+            data: (allContacts) {
+              final contacts = _propertyFilter == null
+                  ? allContacts
+                  : allContacts.where((c) => c.propertyId == _propertyFilter).toList();
               if (contacts.isEmpty) {
                 return Center(
                   child: Column(
@@ -94,7 +104,11 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
                 padding: const EdgeInsets.all(16),
                 itemCount: contacts.length,
                 itemBuilder: (context, i) {
-                  return _ContactCard(name: contacts[i].name, number: contacts[i].number);
+                  return _ContactCard(
+                    name: contacts[i].name,
+                    number: contacts[i].number,
+                    propertyName: contacts[i].propertyName,
+                  );
                 },
               );
             },
@@ -107,8 +121,9 @@ class _EmergencyContactsTabState extends ConsumerState<EmergencyContactsTab> {
 
 class _ContactCard extends StatelessWidget {
   final String name, number;
+  final String? propertyName;
 
-  const _ContactCard({required this.name, required this.number});
+  const _ContactCard({required this.name, required this.number, this.propertyName});
 
   IconData get _icon {
     final match = _defaultContactDisplay.firstWhere(
@@ -162,7 +177,10 @@ class _ContactCard extends StatelessWidget {
           name,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(number, style: Theme.of(context).textTheme.bodySmall),
+        subtitle: Text(
+          propertyName == null ? number : '$number · $propertyName',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         trailing: IconButton.filledTonal(
           onPressed: () => _call(context),
           icon: const Icon(Icons.phone),

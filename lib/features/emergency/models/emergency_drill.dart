@@ -6,6 +6,9 @@
 /// so it may legitimately be an empty string). This collection has no `siteId` field — every
 /// document already lives at the tenant-scoped `tenants/{tenantId}/emergency_drills` path, so no
 /// additional per-document tenant field or query filter is needed (see `EmergencyService`).
+///
+/// `propertyId`/`propertyName` (added 2026-08-12): a genuine multi-site reference to a `property`
+/// module `Property` record, nullable — a drill with no property set applies tenant-wide.
 class EmergencyDrill {
   final String id;
   final String drillType;
@@ -15,6 +18,8 @@ class EmergencyDrill {
   final String scenarioDescription;
   final String areasForImprovement;
   final String authorId;
+  final String? propertyId;
+  final String? propertyName;
   final DateTime createdAt;
 
   EmergencyDrill({
@@ -26,6 +31,8 @@ class EmergencyDrill {
     this.scenarioDescription = '',
     this.areasForImprovement = '',
     required this.authorId,
+    this.propertyId,
+    this.propertyName,
     required this.createdAt,
   });
 
@@ -39,6 +46,8 @@ class EmergencyDrill {
       scenarioDescription: json['scenarioDescription'] ?? '',
       areasForImprovement: json['areasForImprovement'] ?? '',
       authorId: json['authorId'] ?? '',
+      propertyId: json['propertyId'],
+      propertyName: json['propertyName'],
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
@@ -53,6 +62,8 @@ class EmergencyDrill {
       'scenarioDescription': scenarioDescription,
       'areasForImprovement': areasForImprovement,
       'authorId': authorId,
+      if (propertyId != null) 'propertyId': propertyId,
+      if (propertyName != null) 'propertyName': propertyName,
       'createdAt': createdAt.toIso8601String(),
     };
   }

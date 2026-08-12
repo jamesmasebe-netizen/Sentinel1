@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/widgets/ds_widgets.dart';
+import '../../../config/theme.dart';
+import '../../../core/widgets/ds_widgets.dart';
 import '../models/emergency_drill.dart';
 
 class DrillListItem extends StatelessWidget {
@@ -63,6 +63,15 @@ class DrillListItem extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
+            if (drill.propertyName != null) ...[
+              GSpacing.vSm,
+              Text(
+                drill.propertyName!,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
           ],
         ),
         trailing: Icon(

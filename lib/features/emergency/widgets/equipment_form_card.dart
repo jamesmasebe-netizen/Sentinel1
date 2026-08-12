@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/providers/app_providers.dart';
-import '../../../../core/widgets/ds_widgets.dart';
-import '../../../../core/utils/ui_utils.dart';
+import '../../../core/providers/app_providers.dart';
+import '../../../core/widgets/ds_widgets.dart';
+import '../../../core/widgets/entity_selector.dart';
+import '../../../core/utils/ui_utils.dart';
+import '../../property/models/property_models.dart';
+import '../../property/providers/property_providers.dart';
 import '../models/emergency_equipment.dart';
 import '../services/emergency_service.dart';
 
@@ -21,6 +24,7 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
   String _equipStatus = 'Operational';
   final _equipLocCtrl = TextEditingController();
   final _inspDateCtrl = TextEditingController();
+  String? _propertyId;
 
   @override
   void dispose() {
@@ -35,6 +39,16 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
     try {
       final p = ref.read(userProfileProvider).valueOrNull;
       if (p == null) throw Exception('Not logged in');
+      String? propertyName;
+      if (_propertyId != null) {
+        final properties = ref.read(propertiesProvider).valueOrNull ?? [];
+        for (final prop in properties) {
+          if (prop.id == _propertyId) {
+            propertyName = prop.name;
+            break;
+          }
+        }
+      }
       await ref.read(emergencyServiceProvider).createEquipment(
             EmergencyEquipment(
               id: '',
@@ -43,6 +57,8 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
               nextInspectionDate: _inspDateCtrl.text.trim(),
               status: _equipStatus,
               authorId: p.uid,
+              propertyId: _propertyId,
+              propertyName: propertyName,
               createdAt: DateTime.now(),
             ),
           );
@@ -124,6 +140,15 @@ class _EquipmentFormCardState extends ConsumerState<EquipmentFormCard> {
                 labelText: 'Next Inspection Date',
                 hintText: 'YYYY-MM-DD',
               ),
+            ),
+            GSpacing.vMd,
+            EntitySelector<Property>(
+              value: _propertyId,
+              onChanged: (val) => setState(() => _propertyId = val),
+              label: 'Site / Property (optional)',
+              asyncEntities: ref.watch(propertiesProvider),
+              idMapper: (p) => p.id,
+              displayMapper: (p) => p.name,
             ),
             GSpacing.vLg,
             SizedBox(

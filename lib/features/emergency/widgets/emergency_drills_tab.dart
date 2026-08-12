@@ -4,6 +4,7 @@ import '../../../core/widgets/ds_widgets.dart';
 import '../services/emergency_service.dart';
 import 'drill_form_card.dart';
 import 'drill_list_item.dart';
+import 'property_filter_dropdown.dart';
 
 class EmergencyDrillsTab extends ConsumerStatefulWidget {
   const EmergencyDrillsTab({super.key});
@@ -14,6 +15,7 @@ class EmergencyDrillsTab extends ConsumerStatefulWidget {
 
 class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
   bool _showDrillForm = false;
+  String? _propertyFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,11 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const Spacer(),
+              PropertyFilterDropdown(
+                value: _propertyFilter,
+                onChanged: (val) => setState(() => _propertyFilter = val),
+              ),
+              const SizedBox(width: 8),
               FilledButton.icon(
                 onPressed:
                     () => setState(() => _showDrillForm = !_showDrillForm),
@@ -46,7 +53,10 @@ class _EmergencyDrillsTabState extends ConsumerState<EmergencyDrillsTab> {
           child: drillsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err')),
-            data: (drills) {
+            data: (allDrills) {
+              final drills = _propertyFilter == null
+                  ? allDrills
+                  : allDrills.where((d) => d.propertyId == _propertyFilter).toList();
               if (drills.isEmpty) {
                 return Center(
                   child: Column(
