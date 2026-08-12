@@ -51,28 +51,52 @@ class PassportComplianceChecker {
     final issues = <String>[];
     final now = DateTime.now();
 
-    // 1. Check medical certificate
+    // 1. Check medical certificate — reads health's real medical_records collection (2026-08-12).
+    // Previously read training_records where type == 'medical_certificate', but nothing anywhere
+    // in lib/ ever wrote that shape, so this check silently reported "No medical certificate on
+    // file" for every real employee regardless of their actual medical status.
+    //
+    // medical_records' own firestore.rules gate READ to isManager()||isSheqOfficer() (rightly —
+    // it holds real occupational-health data), but this checker is reachable from QrScannerScreen
+    // with no role gate of its own (e.g. gate/security staff running a passport scan). Caught
+    // explicitly rather than letting a PERMISSION_DENIED crash the whole compliance check for a
+    // legitimate lower-privileged caller — see NEEDS_YOUR_INPUT.md for the real fix this points
+    // at (a Cloud Function proxy returning only the pass/fail verdict, not raw medical data).
     bool hasMedicalCert = false;
     bool medicalCertValid = false;
     DateTime? medicalCertExpiry;
-    final medSnap =
-        await _db
-            .tenantCollection(_tenantId, 'training_records')
-            .where('employeeId', isEqualTo: employeeId)
-            .where('type', isEqualTo: 'medical_certificate')
-            .get();
-    if (medSnap.docs.isNotEmpty) {
+    QuerySnapshot<Map<String, dynamic>>? medSnap;
+    try {
+      medSnap = await _db
+          .tenantCollection(_tenantId, 'medical_records')
+          .where('employeeId', isEqualTo: employeeId)
+          .get();
+    } on FirebaseException catch (e) {
+      if (e.code != 'permission-denied') rethrow;
+      issues.add('Unable to verify medical status (insufficient permissions)');
+    }
+    if (medSnap != null && medSnap.docs.isNotEmpty) {
       hasMedicalCert = true;
-      final expiryStr = medSnap.docs.first.data()['expiryDate'];
-      if (expiryStr != null) {
-        medicalCertExpiry = DateTime.tryParse(expiryStr.toString());
-        medicalCertValid =
-            medicalCertExpiry != null && medicalCertExpiry.isAfter(now);
-        if (!medicalCertValid) issues.add('Medical certificate expired');
-      } else {
-        medicalCertValid = true;
+      // Most recent exam by dateConducted — an employee may have several records over time.
+      var latest = medSnap.docs.first;
+      var latestDate = DateTime.tryParse(latest.data()['dateConducted']?.toString() ?? '');
+      for (final doc in medSnap.docs.skip(1)) {
+        final date = DateTime.tryParse(doc.data()['dateConducted']?.toString() ?? '');
+        if (date != null && (latestDate == null || date.isAfter(latestDate))) {
+          latest = doc;
+          latestDate = date;
+        }
       }
-    } else {
+      final data = latest.data();
+      medicalCertExpiry = DateTime.tryParse(data['nextDueDate']?.toString() ?? '');
+      final isExpired = medicalCertExpiry != null && medicalCertExpiry.isBefore(now);
+      final isUnfit = data['status'] == 'Unfit';
+      medicalCertValid = !isExpired && !isUnfit;
+      if (isExpired) issues.add('Medical certificate expired');
+      if (isUnfit) issues.add('Medical status: Unfit');
+    } else if (medSnap != null) {
+      // A real, successful query that just found nothing — distinct from medSnap being null,
+      // which means the query itself failed (permission-denied) and already added its own issue.
       issues.add('No medical certificate on file');
     }
 
@@ -131,7 +155,8 @@ class PassportComplianceChecker {
 
     // Determine overall level
     ComplianceLevel level;
-    if (issues.any((i) => i.contains('expired') || i.contains('No medical'))) {
+    if (issues.any((i) =>
+        i.contains('expired') || i.contains('No medical') || i.contains('Unfit'))) {
       level = ComplianceLevel.nonCompliant;
     } else if (issues.isNotEmpty) {
       level = ComplianceLevel.warning;

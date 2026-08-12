@@ -8,8 +8,10 @@ import 'package:sentinel1/core/utils/tenant_firestore_extension.dart';
 const testTenantId = 'test-tenant';
 
 /// Seeds a `training_records` doc. [type] drives which branch of
-/// `checkEmployeeCompliance` reads it: 'medical_certificate' | 'induction' |
-/// any other string (treated as a generic training record).
+/// `checkEmployeeCompliance` reads it: 'induction' | any other string
+/// (treated as a generic training record). Medical certificates moved to
+/// `medical_records` (see [seedMedicalRecord]) 2026-08-12 — this collection
+/// never had a real writer for that shape.
 Future<void> seedTrainingRecord(
   FirebaseFirestore db, {
   required String employeeId,
@@ -20,6 +22,26 @@ Future<void> seedTrainingRecord(
     'employeeId': employeeId,
     'type': type,
     if (expiryDate != null) 'expiryDate': expiryDate.toIso8601String(),
+  });
+}
+
+/// Seeds a `medical_records` doc — health's real occupational-medicine
+/// record, now what `checkEmployeeCompliance`'s medical-certificate check
+/// actually reads (2026-08-12). [dateConducted] defaults to now so a single
+/// seeded record is always "the latest" in tests with only one record;
+/// override it to test the most-recent-record-wins logic across several.
+Future<void> seedMedicalRecord(
+  FirebaseFirestore db, {
+  required String employeeId,
+  DateTime? nextDueDate,
+  String status = 'Fit',
+  DateTime? dateConducted,
+}) async {
+  await db.tenantCollection(testTenantId, 'medical_records').add({
+    'employeeId': employeeId,
+    'status': status,
+    'dateConducted': (dateConducted ?? DateTime.now()).toIso8601String(),
+    if (nextDueDate != null) 'nextDueDate': nextDueDate.toIso8601String(),
   });
 }
 
