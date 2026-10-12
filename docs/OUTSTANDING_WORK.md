@@ -6,6 +6,10 @@ Compiled 2026-08-10, updated same day after a full pass through it, updated agai
 
 ---
 
+## 0. 2026-10-12 project review (highest priority)
+
+The prioritized findings from the 2026-10-12 review, with locations and fixes, are in `docs/PROJECT_REVIEW_2026-10-12.md`. Work through its Critical and High items first. Item C1 must be fixed before the Blaze upgrade (see `docs/NEEDS_YOUR_INPUT.md`).
+
 ## 1. Known-gaps rollup patterns — now fully re-verified
 
 All 6 of `_known_gaps_rollup.md`'s cross-cutting patterns (§1.1 through §1.10, minus §1.3/§1.5/§1.6/§1.7 which were already done) have now been checked against current code:
